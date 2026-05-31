@@ -277,9 +277,7 @@ function getFormData() {
 function sameFlight(a, b) {
   return (
     a.date === b.date &&
-    a.flightNumber === b.flightNumber &&
-    a.routeFrom === b.routeFrom &&
-    a.routeTo === b.routeTo
+    a.flightNumber === b.flightNumber
   );
 }
 
