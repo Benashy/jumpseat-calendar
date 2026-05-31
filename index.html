@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#17344a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Jumpseat" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="description" content="A local jumpseat request calendar for flight sectors." />
+    <title>Jumpseat Calendar</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <h1>Jumpseat Calendar</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-button" id="exportButton" type="button" title="Export data" aria-label="Export data">
+            <span aria-hidden="true">↓</span>
+          </button>
+          <label class="icon-button import-button" title="Import data" aria-label="Import data">
+            <span aria-hidden="true">↑</span>
+            <input id="importInput" type="file" accept="application/json" />
+          </label>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="day-panel" aria-label="Daily calendar">
+          <div class="date-toolbar">
+            <button class="icon-button" id="previousDay" type="button" title="Previous day" aria-label="Previous day">
+              <span aria-hidden="true">‹</span>
+            </button>
+            <div class="date-picker-group">
+              <label for="selectedDate">Date</label>
+              <input id="selectedDate" type="date" />
+            </div>
+            <button class="icon-button" id="nextDay" type="button" title="Next day" aria-label="Next day">
+              <span aria-hidden="true">›</span>
+            </button>
+            <button class="text-button" id="todayButton" type="button">Today</button>
+          </div>
+
+          <div class="day-summary">
+            <div>
+              <span id="weekdayLabel">Today</span>
+              <strong id="dateLabel">Loading</strong>
+            </div>
+            <div class="summary-counts" aria-label="Day totals">
+              <span><strong id="flightCount">0</strong> flights</span>
+              <span><strong id="seatCount">0</strong> requests</span>
+            </div>
+          </div>
+
+          <section class="upcoming-panel" aria-label="Upcoming requests">
+            <div class="section-heading">
+              <h2>Upcoming requests</h2>
+              <span>Next 7 days</span>
+            </div>
+            <div class="upcoming-list" id="upcomingList"></div>
+          </section>
+
+          <section class="find-panel" aria-label="Find request">
+            <div class="section-heading">
+              <h2>Find request</h2>
+              <span>All dates</span>
+            </div>
+            <label for="globalSearch">Search all saved requests</label>
+            <input id="globalSearch" type="search" placeholder="Name, flight, route or note" autocomplete="off" />
+            <div class="global-results" id="globalResults" aria-live="polite"></div>
+          </section>
+
+          <div class="request-list" id="requestList" aria-live="polite"></div>
+        </section>
+
+        <aside class="entry-panel" aria-label="Jumpseat request form">
+          <div class="form-heading">
+            <h2 id="formTitle">Add request</h2>
+            <button class="text-button secondary hidden" id="cancelEditButton" type="button">Cancel edit</button>
+          </div>
+
+          <form id="requestForm">
+            <input id="editingId" type="hidden" />
+
+            <div class="field-grid">
+              <label>
+                Flight number
+                <input id="flightNumber" name="flightNumber" type="text" placeholder="BA123" autocomplete="off" required />
+              </label>
+              <label>
+                Date
+                <input id="requestDate" name="requestDate" type="date" required />
+              </label>
+              <label>
+                Departure time
+                <span class="zulu-field">
+                  <input id="departureTime" name="departureTime" type="time" />
+                  <span aria-hidden="true">Z</span>
+                </span>
+              </label>
+              <label>
+                Available jumpseats
+                <input id="availableSeats" name="availableSeats" type="number" min="0" max="99" placeholder="Optional" inputmode="numeric" />
+              </label>
+              <label>
+                From
+                <input id="routeFrom" name="routeFrom" type="text" placeholder="LHR" autocomplete="off" required />
+              </label>
+              <label>
+                To
+                <input id="routeTo" name="routeTo" type="text" placeholder="JFK" autocomplete="off" required />
+              </label>
+            </div>
+
+            <fieldset>
+              <legend>Staff names</legend>
+              <div class="staff-fields" id="staffFields"></div>
+              <button class="text-button secondary add-request-button" id="addSeatButton" type="button">Add request</button>
+            </fieldset>
+
+            <label>
+              Notes
+              <textarea id="notes" name="notes" rows="4" placeholder="Anything useful for this request"></textarea>
+            </label>
+
+            <div class="form-actions">
+              <button class="primary-button" id="saveButton" type="submit">Save request</button>
+            </div>
+          </form>
+        </aside>
+      </main>
+    </div>
+
+    <template id="requestTemplate">
+      <article class="request-card">
+        <div class="request-main">
+          <div>
+            <p class="flight-line"></p>
+            <h3></h3>
+          </div>
+          <span class="seat-badge"></span>
+        </div>
+        <ul class="name-list"></ul>
+        <p class="notes-text"></p>
+        <div class="card-actions">
+          <button class="text-button secondary edit-button" type="button">Edit</button>
+          <button class="text-button danger delete-button" type="button">Delete</button>
+        </div>
+      </article>
+    </template>
+
+    <script src="./app.js?v=home-screen-1"></script>
+  </body>
+</html>
