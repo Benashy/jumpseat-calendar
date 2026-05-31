@@ -140,6 +140,21 @@ function clearValidation() {
   getStaffInputs().forEach((input) => input.classList.remove("invalid"));
 }
 
+function showFormError(message) {
+  elements.formError.textContent = message;
+  elements.formError.classList.remove("hidden");
+}
+
+function updateAddRequestButton() {
+  const staffInputs = getStaffInputs();
+  const hasReachedLimit = staffInputs.length >= MAX_REQUESTS_PER_FLIGHT;
+  const hasBlankVisibleRequest = staffInputs.some((input) => !input.value.trim());
+
+  elements.addSeatButton.classList.toggle("hidden", hasReachedLimit);
+  elements.addSeatButton.disabled = hasReachedLimit || hasBlankVisibleRequest;
+  elements.addSeatButton.title = hasBlankVisibleRequest ? "Enter the current request name first" : "";
+}
+
 function validateRequestForm() {
   clearValidation();
 
@@ -159,16 +174,16 @@ function validateRequestForm() {
     }
   });
 
-  const firstStaffInput = getStaffInputs()[0];
-  if (!firstStaffInput?.value.trim()) {
-    firstStaffInput?.classList.add("invalid");
-    missing.push("request name");
-  }
+  getStaffInputs().forEach((input, index) => {
+    if (!input.value.trim()) {
+      input.classList.add("invalid");
+      missing.push(`request ${index + 1} name`);
+    }
+  });
 
   if (missing.length === 0) return true;
 
-  elements.formError.textContent = `Please complete: ${missing.join(", ")}.`;
-  elements.formError.classList.remove("hidden");
+  showFormError(`Please complete: ${missing.join(", ")}.`);
   document.querySelector(".invalid")?.focus();
   return false;
 }
@@ -199,11 +214,14 @@ function renderStaffFields(values = [""]) {
     input.className = "staff-input";
     input.name = `staff${index + 1}`;
     input.type = "text";
-    input.placeholder = index === 0 ? "Name" : "Optional";
+    input.placeholder = "Name";
     input.autocomplete = "off";
     input.value = value;
-    if (index === 0) input.required = true;
-    input.addEventListener("input", clearValidation);
+    input.required = true;
+    input.addEventListener("input", () => {
+      clearValidation();
+      updateAddRequestButton();
+    });
 
     label.append(input);
     row.append(label);
@@ -251,7 +269,7 @@ function renderStaffFields(values = [""]) {
     elements.staffFields.append(row);
   });
 
-  elements.addSeatButton.classList.toggle("hidden", visibleValues.length >= MAX_REQUESTS_PER_FLIGHT);
+  updateAddRequestButton();
 }
 
 function removeStaffField(indexToRemove) {
@@ -544,6 +562,17 @@ elements.cancelEditButton.addEventListener("click", () => {
 elements.addSeatButton.addEventListener("click", () => {
   const values = getStaffValues();
   if (values.length >= MAX_REQUESTS_PER_FLIGHT) return;
+
+  const blankIndex = values.findIndex((value) => !value.trim());
+  if (blankIndex >= 0) {
+    const input = getStaffInputs()[blankIndex];
+    input.classList.add("invalid");
+    showFormError(`Please enter request ${blankIndex + 1} before adding another request.`);
+    input.focus();
+    updateAddRequestButton();
+    return;
+  }
+
   renderStaffFields([...values, ""]);
   getStaffInputs().at(-1)?.focus();
 });

@@ -65,9 +65,7 @@ button {
   margin-bottom: 18px;
   border: 1px solid rgba(198, 161, 90, 0.34);
   border-radius: 8px;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.075) 1px, transparent 1px) 0 0 / 52px 52px,
-    linear-gradient(135deg, var(--navy-strong), var(--navy) 54%, #173c55);
+  background: var(--navy);
   box-shadow: var(--shadow);
   color: #fff;
   overflow: hidden;
@@ -86,14 +84,7 @@ button {
 }
 
 .topbar::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 12% 25%, rgba(198, 161, 90, 0.24), transparent 42%),
-    radial-gradient(circle at 88% 70%, rgba(200, 204, 208, 0.18), transparent 46%);
-  mix-blend-mode: screen;
+  content: none;
 }
 
 .brand-block {
@@ -282,6 +273,11 @@ textarea.invalid {
 .text-button:hover {
   border-color: rgba(198, 161, 90, 0.42);
   background: linear-gradient(180deg, #fffefa, #f4ecd9);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
 }
 
 .topbar .icon-button,
@@ -503,12 +499,15 @@ textarea.invalid {
 
 .request-card {
   border: 1px solid rgba(198, 161, 90, 0.2);
-  border-left: 4px solid var(--gold);
+  border-left: 5px solid var(--gold);
   border-radius: 8px;
   background:
+    linear-gradient(90deg, rgba(198, 161, 90, 0.18), transparent 34%),
     linear-gradient(180deg, rgba(200, 204, 208, 0.1), transparent 35%),
     #fffefa;
-  box-shadow: var(--soft-shadow);
+  box-shadow:
+    0 16px 34px rgba(30, 38, 43, 0.1),
+    0 0 0 1px rgba(198, 161, 90, 0.16);
   padding: 14px;
 }
 
@@ -523,6 +522,18 @@ textarea.invalid {
   border-radius: 8px;
   pointer-events: none;
   box-shadow: inset 0 0 0 1px var(--silver-soft);
+}
+
+.request-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 16px;
+  left: 16px;
+  height: 3px;
+  border-radius: 0 0 999px 999px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  pointer-events: none;
 }
 
 .request-main {
