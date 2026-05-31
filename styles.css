@@ -662,7 +662,14 @@ fieldset {
 }
 
 legend {
-  padding: 0 6px;
+  float: left;
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+legend + * {
+  clear: both;
 }
 
 .staff-fields {

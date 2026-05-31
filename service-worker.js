@@ -1,9 +1,9 @@
-const CACHE_NAME = "jumpseat-calendar-v10";
+const CACHE_NAME = "jumpseat-calendar-v11";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=today-section-1",
-  "./app.js?v=today-section-1",
+  "./styles.css?v=requests-heading-1",
+  "./app.js?v=requests-heading-1",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
