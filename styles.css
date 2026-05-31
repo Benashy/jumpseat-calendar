@@ -100,6 +100,8 @@ button {
   display: flex;
   align-items: center;
   min-width: 0;
+  position: relative;
+  z-index: 1;
 }
 
 h1,
@@ -125,11 +127,38 @@ h1 {
   gap: 10px;
 }
 
-.layout {
+.topbar-actions {
+  position: relative;
+  z-index: 1;
+}
+
+.app-tabs {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
-  gap: 18px;
-  align-items: start;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.tab-button {
+  min-height: 46px;
+  border: 1px solid rgba(198, 161, 90, 0.24);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fffefa, #f4ecd9);
+  color: var(--navy);
+  font: inherit;
+  font-weight: 900;
+}
+
+.tab-button.active {
+  border-color: rgba(198, 161, 90, 0.48);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent),
+    linear-gradient(135deg, var(--navy), var(--navy-strong));
+  color: #fff;
+}
+
+.layout {
+  display: block;
 }
 
 .day-panel,
@@ -147,8 +176,6 @@ h1 {
 }
 
 .entry-panel {
-  position: sticky;
-  top: 18px;
   padding: 20px;
 }
 
@@ -259,8 +286,15 @@ textarea:focus {
 }
 
 .topbar .icon-button:hover,
-.topbar .import-button:hover {
+.topbar .import-button:hover,
+.topbar .data-button:hover {
   background: rgba(255, 255, 255, 0.18);
+}
+
+.data-button {
+  display: inline-grid;
+  min-width: 88px;
+  place-items: center;
 }
 
 .secondary {
@@ -666,10 +700,6 @@ legend {
 }
 
 @media (max-width: 880px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-
   .entry-panel {
     position: static;
   }
@@ -685,6 +715,14 @@ legend {
   .day-summary {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .topbar-actions {
+    width: 100%;
+  }
+
+  .data-button {
+    flex: 1;
   }
 
   .field-grid {

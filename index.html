@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=premium-2" />
+    <link rel="stylesheet" href="./styles.css?v=tabs-1" />
   </head>
   <body>
     <div class="app-shell">
@@ -21,18 +21,23 @@
           <h1>Jumpseat Calendar</h1>
         </div>
         <div class="topbar-actions">
-          <button class="icon-button" id="exportButton" type="button" title="Export data" aria-label="Export data">
-            <span aria-hidden="true">↓</span>
+          <button class="text-button data-button" id="exportButton" type="button" title="Back up data">
+            Backup
           </button>
-          <label class="icon-button import-button" title="Import data" aria-label="Import data">
-            <span aria-hidden="true">↑</span>
+          <label class="text-button data-button import-button" title="Restore data">
+            Restore
             <input id="importInput" type="file" accept="application/json" />
           </label>
         </div>
       </header>
 
+      <nav class="app-tabs" aria-label="App sections">
+        <button class="tab-button active" id="homeTab" type="button" aria-controls="homeView" aria-selected="true">Home</button>
+        <button class="tab-button" id="addTab" type="button" aria-controls="addView" aria-selected="false">Add</button>
+      </nav>
+
       <main class="layout">
-        <section class="day-panel" aria-label="Daily calendar">
+        <section class="day-panel view-panel" id="homeView" aria-label="Daily calendar">
           <div class="date-toolbar">
             <button class="icon-button" id="previousDay" type="button" title="Previous day" aria-label="Previous day">
               <span aria-hidden="true">‹</span>
@@ -79,7 +84,7 @@
           <div class="request-list" id="requestList" aria-live="polite"></div>
         </section>
 
-        <aside class="entry-panel" aria-label="Jumpseat request form">
+        <aside class="entry-panel view-panel hidden" id="addView" aria-label="Jumpseat request form">
           <div class="form-heading">
             <h2 id="formTitle">Add request</h2>
             <button class="text-button secondary hidden" id="cancelEditButton" type="button">Cancel edit</button>
@@ -90,12 +95,20 @@
 
             <div class="field-grid">
               <label>
+                Date
+                <input id="requestDate" name="requestDate" type="date" required />
+              </label>
+              <label>
                 Flight number
                 <input id="flightNumber" name="flightNumber" type="text" placeholder="BA123" autocomplete="off" required />
               </label>
               <label>
-                Date
-                <input id="requestDate" name="requestDate" type="date" required />
+                From
+                <input id="routeFrom" name="routeFrom" type="text" placeholder="LHR" autocomplete="off" required />
+              </label>
+              <label>
+                To
+                <input id="routeTo" name="routeTo" type="text" placeholder="JFK" autocomplete="off" required />
               </label>
               <label>
                 Departure time
@@ -108,18 +121,10 @@
                 Available jumpseats
                 <input id="availableSeats" name="availableSeats" type="number" min="0" max="99" placeholder="Optional" inputmode="numeric" />
               </label>
-              <label>
-                From
-                <input id="routeFrom" name="routeFrom" type="text" placeholder="LHR" autocomplete="off" required />
-              </label>
-              <label>
-                To
-                <input id="routeTo" name="routeTo" type="text" placeholder="JFK" autocomplete="off" required />
-              </label>
             </div>
 
             <fieldset>
-              <legend>Staff names</legend>
+              <legend>Requests</legend>
               <div class="staff-fields" id="staffFields"></div>
               <button class="text-button secondary add-request-button" id="addSeatButton" type="button">Add request</button>
             </fieldset>
@@ -155,6 +160,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=premium-2"></script>
+    <script src="./app.js?v=tabs-1"></script>
   </body>
 </html>

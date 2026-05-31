@@ -4,6 +4,10 @@ const MAX_REQUESTS_PER_FLIGHT = 10;
 const elements = {
   selectedDate: document.querySelector("#selectedDate"),
   requestDate: document.querySelector("#requestDate"),
+  homeTab: document.querySelector("#homeTab"),
+  addTab: document.querySelector("#addTab"),
+  homeView: document.querySelector("#homeView"),
+  addView: document.querySelector("#addView"),
   previousDay: document.querySelector("#previousDay"),
   nextDay: document.querySelector("#nextDay"),
   todayButton: document.querySelector("#todayButton"),
@@ -34,6 +38,16 @@ const elements = {
 };
 
 let requests = loadRequests();
+
+function setActiveTab(tabName) {
+  const isHome = tabName === "home";
+  elements.homeView.classList.toggle("hidden", !isHome);
+  elements.addView.classList.toggle("hidden", isHome);
+  elements.homeTab.classList.toggle("active", isHome);
+  elements.addTab.classList.toggle("active", !isHome);
+  elements.homeTab.setAttribute("aria-selected", String(isHome));
+  elements.addTab.setAttribute("aria-selected", String(!isHome));
+}
 
 function todayIso() {
   const now = new Date();
@@ -239,6 +253,12 @@ function clearForm(keepDate = true) {
   renderStaffFields();
 }
 
+function startAdd() {
+  clearForm();
+  setActiveTab("add");
+  elements.requestDate.focus();
+}
+
 function setSelectedDate(iso) {
   elements.selectedDate.value = iso;
   elements.requestDate.value = iso;
@@ -421,6 +441,7 @@ function startEdit(id) {
   elements.formTitle.textContent = "Edit request";
   elements.saveButton.textContent = "Update request";
   elements.cancelEditButton.classList.remove("hidden");
+  setActiveTab("add");
   elements.flightNumber.focus();
 }
 
@@ -462,8 +483,11 @@ elements.requestForm.addEventListener("submit", (event) => {
   saveRequests();
   setSelectedDate(formData.date);
   clearForm();
+  setActiveTab("home");
 });
 
+elements.homeTab.addEventListener("click", () => setActiveTab("home"));
+elements.addTab.addEventListener("click", startAdd);
 elements.selectedDate.addEventListener("change", () => setSelectedDate(elements.selectedDate.value));
 elements.requestDate.addEventListener("change", () => {
   if (!elements.editingId.value) elements.selectedDate.value = elements.requestDate.value;
@@ -472,7 +496,10 @@ elements.previousDay.addEventListener("click", () => setSelectedDate(shiftDate(e
 elements.nextDay.addEventListener("click", () => setSelectedDate(shiftDate(elements.selectedDate.value, 1)));
 elements.todayButton.addEventListener("click", () => setSelectedDate(todayIso()));
 elements.globalSearch.addEventListener("input", renderGlobalSearch);
-elements.cancelEditButton.addEventListener("click", () => clearForm());
+elements.cancelEditButton.addEventListener("click", () => {
+  clearForm();
+  setActiveTab("home");
+});
 elements.addSeatButton.addEventListener("click", () => {
   const values = getStaffValues();
   if (values.length >= MAX_REQUESTS_PER_FLIGHT) return;
