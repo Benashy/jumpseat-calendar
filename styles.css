@@ -73,16 +73,6 @@ button {
   position: relative;
 }
 
-.topbar::after {
-  content: "";
-  position: absolute;
-  right: 22px;
-  bottom: 16px;
-  width: min(360px, 42vw);
-  height: 3px;
-  background: linear-gradient(90deg, transparent, var(--silver), var(--gold), transparent);
-}
-
 .topbar::before {
   content: none;
 }
