@@ -59,9 +59,8 @@ button {
 .topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  min-height: 108px;
+  justify-content: center;
+  min-height: 92px;
   margin-bottom: 18px;
   border: 1px solid rgba(198, 161, 90, 0.34);
   border-radius: 8px;
@@ -69,8 +68,9 @@ button {
   box-shadow: var(--shadow);
   color: #fff;
   overflow: hidden;
-  padding: 20px;
+  padding: 22px 20px;
   position: relative;
+  text-align: center;
 }
 
 .topbar::before {
@@ -80,6 +80,7 @@ button {
 .brand-block {
   display: flex;
   align-items: center;
+  justify-content: center;
   min-width: 0;
   position: relative;
   z-index: 1;
@@ -98,7 +99,6 @@ h1 {
   color: #fff;
 }
 
-.topbar-actions,
 .date-toolbar,
 .form-actions,
 .card-actions,
@@ -106,11 +106,6 @@ h1 {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.topbar-actions {
-  position: relative;
-  z-index: 1;
 }
 
 .app-tabs {
@@ -270,44 +265,12 @@ button:disabled {
   opacity: 0.48;
 }
 
-.topbar .icon-button,
-.topbar .text-button,
-.topbar .import-button {
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-}
-
-.topbar .icon-button:hover,
-.topbar .import-button:hover,
-.topbar .data-button:hover {
-  background: rgba(255, 255, 255, 0.18);
-}
-
-.data-button {
-  display: inline-grid;
-  min-width: 88px;
-  place-items: center;
-}
-
 .secondary {
   color: var(--accent-strong);
 }
 
 .danger {
   color: var(--warn);
-}
-
-.import-button {
-  position: relative;
-  overflow: hidden;
-}
-
-.import-button input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
 }
 
 .day-summary {
@@ -752,18 +715,9 @@ legend + * {
     padding-top: 14px;
   }
 
-  .topbar,
   .day-summary {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .topbar-actions {
-    width: 100%;
-  }
-
-  .data-button {
-    flex: 1;
   }
 
   .field-grid {

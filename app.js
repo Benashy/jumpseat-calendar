@@ -33,8 +33,6 @@ const elements = {
   staffFields: document.querySelector("#staffFields"),
   addSeatButton: document.querySelector("#addSeatButton"),
   notes: document.querySelector("#notes"),
-  exportButton: document.querySelector("#exportButton"),
-  importInput: document.querySelector("#importInput"),
   template: document.querySelector("#requestTemplate"),
 };
 
@@ -575,49 +573,6 @@ elements.addSeatButton.addEventListener("click", () => {
 
   renderStaffFields([...values, ""]);
   getStaffInputs().at(-1)?.focus();
-});
-
-elements.exportButton.addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), requests }, null, 2)], {
-    type: "application/json",
-  });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `jumpseat-calendar-${todayIso()}.json`;
-  link.click();
-  URL.revokeObjectURL(link.href);
-});
-
-elements.importInput.addEventListener("change", async (event) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
-
-  try {
-    const payload = JSON.parse(await file.text());
-    const imported = Array.isArray(payload) ? payload : payload.requests;
-    if (!Array.isArray(imported)) throw new Error("Invalid file");
-
-    requests = imported
-      .filter((request) => request.date && request.flightNumber && Array.isArray(request.staff))
-      .map((request) => ({
-        id: request.id || crypto.randomUUID(),
-        date: request.date,
-        flightNumber: normalizeText(request.flightNumber).toUpperCase(),
-        departureTime: request.departureTime || "",
-        availableSeats: request.availableSeats ?? null,
-        routeFrom: normalizeText(request.routeFrom || ""),
-        routeTo: normalizeText(request.routeTo || ""),
-        staff: request.staff.slice(0, MAX_REQUESTS_PER_FLIGHT).map(normalizeText).filter(Boolean),
-        notes: normalizeText(request.notes || ""),
-        updatedAt: request.updatedAt || new Date().toISOString(),
-      }));
-    saveRequests();
-    render();
-  } catch {
-    window.alert("That import file could not be read.");
-  } finally {
-    event.target.value = "";
-  }
 });
 
 setSelectedDate(todayIso());
