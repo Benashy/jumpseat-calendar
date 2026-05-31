@@ -1,5 +1,5 @@
 {
-  "name": "Jumpseat Calendar",
+  "name": "Ben's Jumpseat Calendar",
   "short_name": "Jumpseat",
   "description": "A local jumpseat request calendar for flight sectors.",
   "start_url": "./index.html",
