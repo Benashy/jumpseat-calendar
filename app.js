@@ -21,6 +21,7 @@ const elements = {
   requestList: document.querySelector("#requestList"),
   requestForm: document.querySelector("#requestForm"),
   editingId: document.querySelector("#editingId"),
+  formError: document.querySelector("#formError"),
   formTitle: document.querySelector("#formTitle"),
   cancelEditButton: document.querySelector("#cancelEditButton"),
   saveButton: document.querySelector("#saveButton"),
@@ -131,6 +132,47 @@ function getStaffInputs() {
   return Array.from(elements.staffFields.querySelectorAll(".staff-input"));
 }
 
+function clearValidation() {
+  elements.formError.classList.add("hidden");
+  elements.formError.textContent = "";
+  [elements.requestDate, elements.flightNumber, elements.routeFrom, elements.routeTo, elements.departureTime]
+    .forEach((field) => field.classList.remove("invalid"));
+  getStaffInputs().forEach((input) => input.classList.remove("invalid"));
+}
+
+function validateRequestForm() {
+  clearValidation();
+
+  const requiredFields = [
+    { field: elements.requestDate, label: "date" },
+    { field: elements.flightNumber, label: "flight number" },
+    { field: elements.routeFrom, label: "from" },
+    { field: elements.routeTo, label: "to" },
+    { field: elements.departureTime, label: "departure time" },
+  ];
+  const missing = [];
+
+  requiredFields.forEach(({ field, label }) => {
+    if (!field.value.trim()) {
+      field.classList.add("invalid");
+      missing.push(label);
+    }
+  });
+
+  const firstStaffInput = getStaffInputs()[0];
+  if (!firstStaffInput?.value.trim()) {
+    firstStaffInput?.classList.add("invalid");
+    missing.push("request name");
+  }
+
+  if (missing.length === 0) return true;
+
+  elements.formError.textContent = `Please complete: ${missing.join(", ")}.`;
+  elements.formError.classList.remove("hidden");
+  document.querySelector(".invalid")?.focus();
+  return false;
+}
+
 function getStaffValues() {
   return getStaffInputs().map((input) => input.value);
 }
@@ -161,6 +203,7 @@ function renderStaffFields(values = [""]) {
     input.autocomplete = "off";
     input.value = value;
     if (index === 0) input.required = true;
+    input.addEventListener("input", clearValidation);
 
     label.append(input);
     row.append(label);
@@ -251,6 +294,7 @@ function clearForm(keepDate = true) {
   elements.saveButton.textContent = "Save request";
   elements.cancelEditButton.classList.add("hidden");
   renderStaffFields();
+  clearValidation();
 }
 
 function startAdd() {
@@ -460,12 +504,9 @@ function deleteRequest(id) {
 
 elements.requestForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  const formData = getFormData();
+  if (!validateRequestForm()) return;
 
-  if (formData.staff.length === 0) {
-    getStaffInputs()[0]?.focus();
-    return;
-  }
+  const formData = getFormData();
 
   const existingIndex = requests.findIndex((request) => request.id === formData.id);
   const duplicate = requests.find((request) => request.id !== formData.id && sameFlight(request, formData));
@@ -488,6 +529,8 @@ elements.requestForm.addEventListener("submit", (event) => {
 
 elements.homeTab.addEventListener("click", () => setActiveTab("home"));
 elements.addTab.addEventListener("click", startAdd);
+[elements.requestDate, elements.flightNumber, elements.routeFrom, elements.routeTo, elements.departureTime]
+  .forEach((field) => field.addEventListener("input", clearValidation));
 elements.selectedDate.addEventListener("change", () => setSelectedDate(elements.selectedDate.value));
 elements.requestDate.addEventListener("change", () => {
   if (!elements.editingId.value) elements.selectedDate.value = elements.requestDate.value;

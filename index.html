@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=tabs-2" />
+    <link rel="stylesheet" href="./styles.css?v=validation-1" />
   </head>
   <body>
     <div class="app-shell">
@@ -63,6 +63,8 @@
             </div>
           </div>
 
+          <div class="request-list" id="requestList" aria-live="polite"></div>
+
           <section class="upcoming-panel" aria-label="Upcoming requests">
             <div class="section-heading">
               <h2>Upcoming requests</h2>
@@ -81,7 +83,6 @@
             <div class="global-results" id="globalResults" aria-live="polite"></div>
           </section>
 
-          <div class="request-list" id="requestList" aria-live="polite"></div>
         </section>
 
         <aside class="entry-panel view-panel hidden" id="addView" aria-label="Jumpseat request form">
@@ -90,8 +91,9 @@
             <button class="text-button secondary hidden" id="cancelEditButton" type="button">Cancel edit</button>
           </div>
 
-          <form id="requestForm">
+          <form id="requestForm" novalidate>
             <input id="editingId" type="hidden" />
+            <div class="form-error hidden" id="formError" role="alert"></div>
 
             <div class="field-grid">
               <label>
@@ -113,7 +115,7 @@
               <label>
                 Departure time
                 <span class="zulu-field">
-                  <input id="departureTime" name="departureTime" type="time" />
+                  <input id="departureTime" name="departureTime" type="time" required />
                   <span aria-hidden="true">Z</span>
                 </span>
               </label>
@@ -160,6 +162,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=tabs-2"></script>
+    <script src="./app.js?v=validation-1"></script>
   </body>
 </html>
