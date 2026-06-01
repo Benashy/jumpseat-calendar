@@ -1,4 +1,4 @@
-<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Calendar and aircraft app icon">
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Calendar with front view aircraft app icon">
   <defs>
     <linearGradient id="bg" x1="120" y1="80" x2="900" y2="950" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#123a58"/>
@@ -27,17 +27,17 @@
     <path d="M368 222v86M656 222v86" stroke="#f9f5eb" stroke-width="38" stroke-linecap="round"/>
     <path d="M348 520h328M348 626h328M348 732h216" stroke="#142f46" stroke-width="32" stroke-linecap="round" opacity="0.13"/>
 
-    <g transform="translate(512 642) rotate(-12) translate(-512 -642)">
-      <path d="M250 640c0-25 20-45 45-45h332c63 0 122 28 162 77l21 26H294c-24 0-44-19-44-44v-14Z" fill="#102b43"/>
-      <path d="M614 595l-118-150c-13-17 2-42 23-37l46 10c16 4 30 13 40 26l138 172-129-21Z" fill="#102b43"/>
-      <path d="M540 700 420 832c-9 10-24 13-36 7l-36-18 112-144 80 23Z" fill="#102b43"/>
-      <path d="M289 597l-73-62c-12-10-5-30 11-30h37c18 0 35 6 49 18l88 74H289Z" fill="#102b43"/>
-      <path d="M730 637h57c19 0 36 11 44 28l16 33h-37c-24-30-51-50-80-61Z" fill="#102b43"/>
-      <circle cx="334" cy="647" r="13" fill="#f8f5ed" opacity="0.88"/>
-      <circle cx="390" cy="647" r="13" fill="#f8f5ed" opacity="0.88"/>
-      <circle cx="446" cy="647" r="13" fill="#f8f5ed" opacity="0.88"/>
-      <circle cx="502" cy="647" r="13" fill="#f8f5ed" opacity="0.88"/>
-      <circle cx="558" cy="647" r="13" fill="#f8f5ed" opacity="0.88"/>
+    <g fill="#102b43">
+      <path d="M512 382c17 0 26 13 29 42l14 145c39 10 66 43 75 90l321-42c16-2 31 10 33 26 2 15-9 28-25 31l-324 58c-7 38-22 70-44 91h-158c-22-21-37-53-44-91L65 674c-16-3-27-16-25-31 2-16 17-28 33-26l321 42c9-47 36-80 75-90l14-145c3-29 12-42 29-42Z"/>
+      <path d="M331 751c25-1 46 18 47 43 1 24-18 45-43 46-25 1-46-18-47-43-1-24 18-45 43-46Z"/>
+      <path d="M693 751c25 1 44 22 43 46-1 25-22 44-47 43-25-1-44-22-43-46 1-25 22-44 47-43Z"/>
+      <path d="M480 818h64v54h-64z"/>
+      <path d="M430 858h164v42H430z" rx="12"/>
+      <path d="M203 671h42v48h-42zM779 671h42v48h-42z"/>
+      <path d="M384 657 296 780h-52l100-139 40 16ZM640 657l88 123h52L680 641l-40 16Z"/>
+      <path d="M486 574h52c30 0 55 24 55 55v39H431v-39c0-31 25-55 55-55Z"/>
     </g>
+    <path d="M446 610h132c15 0 29 8 36 21l18 33H392l18-33c7-13 21-21 36-21Z" fill="#f8f5ed" opacity="0.92"/>
+    <path d="M452 618h32l-8 36h-35l11-36ZM496 618h32v36h-38l6-36ZM540 618h32l11 36h-35l-8-36Z" fill="#102b43" opacity="0.9"/>
   </g>
 </svg>
