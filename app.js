@@ -13,8 +13,6 @@ const elements = {
   authForm: document.querySelector("#authForm"),
   authEmail: document.querySelector("#authEmail"),
   authPassword: document.querySelector("#authPassword"),
-  pasteEmailButton: document.querySelector("#pasteEmailButton"),
-  pastePasswordButton: document.querySelector("#pastePasswordButton"),
   authStatus: document.querySelector("#authStatus"),
   authSession: document.querySelector("#authSession"),
   syncStatus: document.querySelector("#syncStatus"),
@@ -215,24 +213,6 @@ function useCredentialBeforeInput(field, event) {
 function strengthenCredentialPaste(field) {
   field.addEventListener("paste", (event) => useCredentialPasteEvent(field, event));
   field.addEventListener("beforeinput", (event) => useCredentialBeforeInput(field, event));
-}
-
-async function pasteCredential(field) {
-  if (!navigator.clipboard?.readText) {
-    field.focus();
-    setAuthStatus("Use the iPhone paste menu for this field. Browser clipboard access is unavailable.", true);
-    return;
-  }
-
-  try {
-    const text = await navigator.clipboard.readText();
-    setCredentialValue(field, text.trim());
-    field.focus();
-    setAuthStatus("Pasted from clipboard.", false, true);
-  } catch {
-    field.focus();
-    setAuthStatus("Paste was blocked by the browser. Tap inside the field and use Paste from the iPhone menu.", true);
-  }
 }
 
 function setOfflineReadOnly(isReadOnly) {
@@ -1161,8 +1141,6 @@ elements.authForm.addEventListener("submit", (event) => {
   event.preventDefault();
   signIn();
 });
-elements.pasteEmailButton.addEventListener("click", () => pasteCredential(elements.authEmail));
-elements.pastePasswordButton.addEventListener("click", () => pasteCredential(elements.authPassword));
 elements.magicLinkButton.addEventListener("click", sendMagicLink);
 elements.refreshCloudButton.addEventListener("click", refreshCloudData);
 elements.homeSignOutButton.addEventListener("click", () => signOut());

@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-14" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-15" />
   </head>
   <body>
     <div class="app-shell">
@@ -29,14 +29,8 @@
         </div>
 
         <form class="auth-form" id="authForm" novalidate>
-          <div class="credential-field">
-            <input id="authEmail" name="email" type="email" placeholder="Email address" autocomplete="username" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next" required />
-            <button class="text-button secondary paste-button" id="pasteEmailButton" type="button">Paste</button>
-          </div>
-          <div class="credential-field">
-            <input id="authPassword" name="password" type="password" placeholder="Password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" />
-            <button class="text-button secondary paste-button" id="pastePasswordButton" type="button">Paste</button>
-          </div>
+          <input id="authEmail" name="email" type="email" placeholder="Email address" autocomplete="username" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next" required />
+          <input id="authPassword" name="password" type="password" placeholder="Password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" />
           <div class="auth-actions">
             <button class="primary-button" id="signInButton" type="submit">Sign in</button>
             <button class="text-button secondary" id="magicLinkButton" type="button">Email magic link</button>
@@ -198,7 +192,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-14"></script>
-    <script src="./app.js?v=cloud-sync-14"></script>
+    <script src="./supabase-config.js?v=cloud-sync-15"></script>
+    <script src="./app.js?v=cloud-sync-15"></script>
   </body>
 </html>

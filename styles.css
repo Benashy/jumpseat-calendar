@@ -117,7 +117,7 @@ h1 {
 
 .auth-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.8fr);
+  grid-template-columns: minmax(260px, 0.75fr) minmax(520px, 1.25fr);
   gap: 14px;
   align-items: center;
   margin-bottom: 18px;
@@ -152,21 +152,6 @@ h1 {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 9px;
-}
-
-.credential-field {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 7px;
-}
-
-.credential-field input {
-  min-width: 0;
-}
-
-.paste-button {
-  min-width: 72px;
-  padding-inline: 12px;
 }
 
 .auth-actions,
