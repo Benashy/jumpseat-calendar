@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-10" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-11" />
   </head>
   <body>
     <div class="app-shell">
@@ -29,12 +29,11 @@
         </div>
 
         <form class="auth-form" id="authForm" novalidate>
-          <input id="authEmail" name="email" type="email" placeholder="Email address" autocomplete="email" required />
-          <input id="authPassword" name="password" type="password" placeholder="Password" autocomplete="current-password" />
+          <input id="authEmail" name="username" type="email" placeholder="Email address" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" required />
+          <input id="authPassword" name="current-password" type="password" placeholder="Password" autocomplete="current-password" autocapitalize="none" spellcheck="false" />
           <div class="auth-actions">
             <button class="primary-button" id="signInButton" type="submit">Sign in</button>
             <button class="text-button secondary" id="magicLinkButton" type="button">Email magic link</button>
-            <button class="text-button secondary" id="signUpButton" type="button">Create account</button>
           </div>
         </form>
 
@@ -195,7 +194,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-10"></script>
-    <script src="./app.js?v=cloud-sync-10"></script>
+    <script src="./supabase-config.js?v=cloud-sync-11"></script>
+    <script src="./app.js?v=cloud-sync-11"></script>
   </body>
 </html>

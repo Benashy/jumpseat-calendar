@@ -1,8 +1,7 @@
 const STORAGE_KEY = "jumpseat-calendar-requests-v1";
-const SESSION_STARTED_KEY = "jumpseat-calendar-session-started-at";
+const MAGIC_LINK_SENT_KEY = "jumpseat-calendar-magic-link-sent-at";
 const MAX_REQUESTS_PER_FLIGHT = 10;
-const SESSION_TIMEOUT_MS = 12 * 60 * 60 * 1000;
-const SESSION_TIMEOUT_MESSAGE = "Signed out after 12 hours. Sign in again to continue.";
+const MAGIC_LINK_COOLDOWN_SECONDS = 60;
 
 const elements = {
   selectedDate: document.querySelector("#selectedDate"),
@@ -20,7 +19,6 @@ const elements = {
   magicLinkButton: document.querySelector("#magicLinkButton"),
   refreshCloudButton: document.querySelector("#refreshCloudButton"),
   homeRefreshCloudButton: document.querySelector("#homeRefreshCloudButton"),
-  signUpButton: document.querySelector("#signUpButton"),
   signOutButton: document.querySelector("#signOutButton"),
   homeSignOutButton: document.querySelector("#homeSignOutButton"),
   appTabs: document.querySelector(".app-tabs"),
@@ -63,10 +61,10 @@ let requests = loadRequests();
 let currentUser = null;
 let cloudReady = false;
 let cloudLoaded = false;
+let cloudUpdatedAt = null;
 let saveTimer = null;
 let magicLinkRetryTimer = null;
 let syncElapsedTimer = null;
-let sessionTimeoutTimer = null;
 let lastCloudSuccess = null;
 let isOfflineReadOnly = false;
 
@@ -162,6 +160,30 @@ function getRetrySeconds(message) {
   return match ? Number(match[1]) : null;
 }
 
+function getMagicLinkCooldownSeconds() {
+  const sentAt = Number(localStorage.getItem(MAGIC_LINK_SENT_KEY));
+  if (!Number.isFinite(sentAt)) return 0;
+
+  const elapsedSeconds = Math.floor((Date.now() - sentAt) / 1000);
+  return Math.max(0, MAGIC_LINK_COOLDOWN_SECONDS - elapsedSeconds);
+}
+
+function rememberMagicLinkSent() {
+  localStorage.setItem(MAGIC_LINK_SENT_KEY, String(Date.now()));
+}
+
+function isRateLimitError(message) {
+  return /rate limit|too many|over_email_send_rate_limit/i.test(message);
+}
+
+function allowCredentialClipboard() {
+  [elements.authEmail, elements.authPassword].forEach((field) => {
+    ["paste", "copy", "cut"].forEach((eventName) => {
+      field.addEventListener(eventName, (event) => event.stopPropagation());
+    });
+  });
+}
+
 function setOfflineReadOnly(isReadOnly) {
   isOfflineReadOnly = isReadOnly;
   document.body.classList.toggle("offline-readonly", isReadOnly);
@@ -178,46 +200,15 @@ function setOfflineReadOnly(isReadOnly) {
   render();
 }
 
-function startOfflineMode() {
+function startOfflineMode(message = "Offline: viewing saved data") {
   requests = sanitizeRequests(loadRequests());
   cloudLoaded = false;
+  cloudUpdatedAt = null;
   elements.authPanel.classList.add("hidden");
   elements.accountPanel.classList.add("hidden");
   setAppVisible(true);
   setOfflineReadOnly(true);
-}
-
-function getSessionStartedAt() {
-  const value = Number(localStorage.getItem(SESSION_STARTED_KEY));
-  return Number.isFinite(value) ? value : null;
-}
-
-function setSessionStartedAt(value = Date.now()) {
-  localStorage.setItem(SESSION_STARTED_KEY, String(value));
-}
-
-function clearSessionTimer() {
-  window.clearTimeout(sessionTimeoutTimer);
-  sessionTimeoutTimer = null;
-}
-
-function scheduleSessionTimeout() {
-  clearSessionTimer();
-
-  if (!currentUser) return;
-
-  const startedAt = getSessionStartedAt() || Date.now();
-  setSessionStartedAt(startedAt);
-  const remaining = SESSION_TIMEOUT_MS - (Date.now() - startedAt);
-
-  if (remaining <= 0) {
-    signOut(SESSION_TIMEOUT_MESSAGE);
-    return;
-  }
-
-  sessionTimeoutTimer = window.setTimeout(() => {
-    signOut(SESSION_TIMEOUT_MESSAGE);
-  }, remaining);
+  setSyncStatus(message, false, true);
 }
 
 function setAppVisible(isVisible) {
@@ -235,11 +226,10 @@ function setSignedInState(user) {
   if (user) {
     setAuthStatus(`Signed in as ${user.email}`);
     setOfflineReadOnly(false);
-    scheduleSessionTimeout();
   } else {
     cloudLoaded = false;
+    cloudUpdatedAt = null;
     lastCloudSuccess = null;
-    clearSessionTimer();
     window.clearInterval(syncElapsedTimer);
     window.clearInterval(magicLinkRetryTimer);
     elements.magicLinkButton.disabled = false;
@@ -366,22 +356,49 @@ async function saveCloudRequests() {
   if (!supabaseClient || !currentUser) return;
 
   setSyncStatus("Saving...");
-  const { error } = await supabaseClient
-    .from("jumpseat_data")
-    .upsert(
-      {
-        user_id: currentUser.id,
-        requests,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id" }
-    );
+  const nextUpdatedAt = new Date().toISOString();
+  const payload = {
+    requests,
+    updated_at: nextUpdatedAt,
+  };
+
+  const query = cloudUpdatedAt
+    ? supabaseClient
+        .from("jumpseat_data")
+        .update(payload)
+        .eq("user_id", currentUser.id)
+        .eq("updated_at", cloudUpdatedAt)
+    : supabaseClient
+        .from("jumpseat_data")
+        .insert({ user_id: currentUser.id, ...payload });
+
+  const { data, error } = await query.select("updated_at").maybeSingle();
 
   if (error) {
+    if (isRateLimitError(error.message || "")) {
+      setSyncStatus("Cloud save rate-limited. Try again shortly.", true);
+      return;
+    }
+
+    if (error.code === "23505") {
+      cloudLoaded = false;
+      setSyncStatus("Cloud changed on another device. Tap Refresh before saving again.", true);
+      window.alert("Cloud data changed on another device. Tap Refresh before making further changes, so this device does not overwrite the newer cloud copy.");
+      return;
+    }
+
     setSyncStatus(`Cloud save failed: ${error.message}`, true);
     return;
   }
 
+  if (!data) {
+    cloudLoaded = false;
+    setSyncStatus("Cloud changed on another device. Tap Refresh before saving again.", true);
+    window.alert("Cloud data changed on another device. Tap Refresh before making further changes, so this device does not overwrite the newer cloud copy.");
+    return;
+  }
+
+  cloudUpdatedAt = data.updated_at || nextUpdatedAt;
   setCloudSuccessStatus("Saved to cloud");
 }
 
@@ -394,21 +411,17 @@ async function loadCloudRequests() {
   }
 
   cloudLoaded = false;
+  cloudUpdatedAt = null;
   setSyncStatus("Loading cloud data...");
 
   const { data, error } = await supabaseClient
     .from("jumpseat_data")
-    .select("requests")
+    .select("requests, updated_at")
     .eq("user_id", currentUser.id)
     .maybeSingle();
 
   if (error) {
-    if (!navigator.onLine) {
-      startOfflineMode();
-      return;
-    }
-
-    setSyncStatus(`Cloud load failed: ${error.message}`, true);
+    startOfflineMode(navigator.onLine ? "Cloud unavailable: viewing saved data" : "Offline: viewing saved data");
     return;
   }
 
@@ -418,11 +431,13 @@ async function loadCloudRequests() {
     requests = sanitizeRequests(data.requests);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
     cloudLoaded = true;
+    cloudUpdatedAt = data.updated_at || null;
     setCloudSuccessStatus("Loaded from cloud");
   } else {
     requests = sanitizeRequests(localRequests);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
     cloudLoaded = true;
+    cloudUpdatedAt = null;
     await saveCloudRequests();
   }
 
@@ -876,17 +891,6 @@ async function handleSession(session) {
   const user = session?.user || null;
   const isSameLoadedUser = user?.id && user.id === currentUser?.id && cloudLoaded;
 
-  if (user) {
-    const startedAt = getSessionStartedAt();
-
-    if (!startedAt) {
-      setSessionStartedAt();
-    } else if (Date.now() - startedAt >= SESSION_TIMEOUT_MS) {
-      await signOut(SESSION_TIMEOUT_MESSAGE);
-      return;
-    }
-  }
-
   setSignedInState(user);
   if (user && !isSameLoadedUser) await loadCloudRequests();
 }
@@ -909,7 +913,6 @@ async function signIn() {
   }
 
   elements.authPassword.value = "";
-  setSessionStartedAt();
   await handleSession(data.session);
 }
 
@@ -918,6 +921,12 @@ async function sendMagicLink() {
 
   if (!email) {
     setAuthStatus("Enter your email address first.", true);
+    return;
+  }
+
+  const cooldownSeconds = getMagicLinkCooldownSeconds();
+  if (cooldownSeconds > 0) {
+    setMagicLinkRetryCountdown(cooldownSeconds);
     return;
   }
 
@@ -932,57 +941,22 @@ async function sendMagicLink() {
   });
 
   if (error) {
-    const retrySeconds = getRetrySeconds(error.message || "");
+    const message = error.message || "";
+    const retrySeconds = getRetrySeconds(message) || (isRateLimitError(message) ? MAGIC_LINK_COOLDOWN_SECONDS : null);
     if (retrySeconds) {
+      rememberMagicLinkSent();
       setMagicLinkRetryCountdown(retrySeconds);
       return;
     }
 
     elements.magicLinkButton.disabled = false;
-    setAuthStatus(error.message || "Magic link could not be sent.", true);
+    setAuthStatus(message || "Magic link could not be sent.", true);
     return;
   }
 
+  rememberMagicLinkSent();
   elements.magicLinkButton.disabled = false;
   setAuthStatus("Magic link sent. Check your email to sign in.", false, true);
-}
-
-async function createAccount() {
-  const email = elements.authEmail.value.trim();
-  const password = elements.authPassword.value;
-
-  if (!email || !password) {
-    setAuthStatus("Enter your email and choose a password.", true);
-    return;
-  }
-
-  if (password.length < 8) {
-    setAuthStatus("Use a password of at least 8 characters.", true);
-    return;
-  }
-
-  setAuthStatus("Creating account...");
-  const { data, error } = await supabaseClient.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: window.location.href.split("#")[0],
-    },
-  });
-
-  if (error) {
-    setAuthStatus(error.message || "Account creation failed.", true);
-    return;
-  }
-
-  elements.authPassword.value = "";
-
-  if (data.session) {
-    setSessionStartedAt();
-    await handleSession(data.session);
-  } else {
-    setAuthStatus("Account created. Check your email to confirm it, then sign in.");
-  }
 }
 
 async function signOut(message = "Sign in to load and save your jumpseat requests online.") {
@@ -992,10 +966,8 @@ async function signOut(message = "Sign in to load and save your jumpseat request
     await supabaseClient.auth.signOut().catch(() => {});
   }
 
-  requests = [];
-  localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(SESSION_STARTED_KEY);
-  render();
+  cloudLoaded = false;
+  cloudUpdatedAt = null;
   setSignedInState(null);
   setAuthStatus(message, false);
 }
@@ -1056,7 +1028,6 @@ async function initCloud() {
   await handleSession(data.session);
 
   supabaseClient.auth.onAuthStateChange((_event, session) => {
-    if (_event === "SIGNED_IN") setSessionStartedAt();
     handleSession(session);
   });
 }
@@ -1139,17 +1110,17 @@ elements.authForm.addEventListener("submit", (event) => {
   event.preventDefault();
   signIn();
 });
-elements.signUpButton.addEventListener("click", createAccount);
 elements.magicLinkButton.addEventListener("click", sendMagicLink);
 elements.refreshCloudButton.addEventListener("click", refreshCloudData);
 elements.homeRefreshCloudButton.addEventListener("click", refreshCloudData);
 elements.signOutButton.addEventListener("click", () => signOut());
 elements.homeSignOutButton.addEventListener("click", () => signOut());
-window.addEventListener("offline", startOfflineMode);
+window.addEventListener("offline", () => startOfflineMode());
 window.addEventListener("online", returnOnline);
 
 setSelectedDate(todayIso());
 clearForm();
+allowCredentialClipboard();
 initCloud();
 
 if ("serviceWorker" in navigator) {

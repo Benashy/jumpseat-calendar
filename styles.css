@@ -276,6 +276,8 @@ textarea {
   color: var(--ink);
   padding: 11px 12px;
   outline: none;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 input[type="date"],

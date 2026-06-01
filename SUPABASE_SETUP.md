@@ -61,14 +61,16 @@ After changing `supabase-config.js`, also update the cache version so GitHub Pag
 
 ## 6. Account Setup
 
-The app currently supports email and password sign-in.
+The app supports email and password sign-in, plus email magic-link sign-in.
 
 Recommended for Ben's single-user setup:
 
-1. Use Create account in the app once.
+1. Create Ben's account in Supabase Auth or temporarily enable signups to create it once.
 2. Confirm the email if Supabase asks for confirmation.
 3. Sign in.
-4. Once confirmed working, disable new public signups in Supabase Auth settings if desired.
+4. Disable new public signups in Supabase Auth settings once the account is working.
+
+The app no longer shows a public Create account button.
 
 ## 7. Test
 
