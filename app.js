@@ -186,6 +186,37 @@ function isRateLimitError(message) {
   return /rate limit|too many|over_email_send_rate_limit/i.test(message);
 }
 
+function setCredentialValue(field, value) {
+  field.value = value;
+  field.dispatchEvent(new Event("input", { bubbles: true }));
+  field.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function useCredentialPasteEvent(field, event) {
+  const text = event.clipboardData?.getData("text/plain") || event.clipboardData?.getData("text");
+  if (!text) return;
+
+  event.preventDefault();
+  setCredentialValue(field, text.trim());
+  setAuthStatus("Pasted from clipboard.", false, true);
+}
+
+function useCredentialBeforeInput(field, event) {
+  if (event.inputType !== "insertFromPaste") return;
+
+  const text = event.dataTransfer?.getData("text/plain") || event.dataTransfer?.getData("text");
+  if (!text) return;
+
+  event.preventDefault();
+  setCredentialValue(field, text.trim());
+  setAuthStatus("Pasted from clipboard.", false, true);
+}
+
+function strengthenCredentialPaste(field) {
+  field.addEventListener("paste", (event) => useCredentialPasteEvent(field, event));
+  field.addEventListener("beforeinput", (event) => useCredentialBeforeInput(field, event));
+}
+
 async function pasteCredential(field) {
   if (!navigator.clipboard?.readText) {
     field.focus();
@@ -195,8 +226,7 @@ async function pasteCredential(field) {
 
   try {
     const text = await navigator.clipboard.readText();
-    field.value = text.trim();
-    field.dispatchEvent(new Event("input", { bubbles: true }));
+    setCredentialValue(field, text.trim());
     field.focus();
     setAuthStatus("Pasted from clipboard.", false, true);
   } catch {
@@ -1141,6 +1171,8 @@ window.addEventListener("online", returnOnline);
 
 setSelectedDate(todayIso());
 clearForm();
+strengthenCredentialPaste(elements.authEmail);
+strengthenCredentialPaste(elements.authPassword);
 initCloud();
 
 if ("serviceWorker" in navigator) {
