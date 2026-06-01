@@ -1,0 +1,43 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Calendar and aircraft app icon">
+  <defs>
+    <linearGradient id="bg" x1="120" y1="80" x2="900" y2="950" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#123a58"/>
+      <stop offset="1" stop-color="#071725"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="240" y1="230" x2="790" y2="830" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f4dfa1"/>
+      <stop offset="0.48" stop-color="#caa75d"/>
+      <stop offset="1" stop-color="#8d672d"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="260" y1="210" x2="760" y2="790" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fffdf6"/>
+      <stop offset="1" stop-color="#d8dde0"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="22" flood-color="#000000" flood-opacity="0.34"/>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" rx="210" fill="url(#bg)"/>
+  <rect x="58" y="58" width="908" height="908" rx="166" fill="none" stroke="#c8a55d" stroke-width="14" opacity="0.72"/>
+
+  <g filter="url(#shadow)">
+    <rect x="244" y="258" width="536" height="552" rx="84" fill="url(#paper)"/>
+    <path d="M244 342c0-46 38-84 84-84h368c46 0 84 38 84 84v82H244v-82Z" fill="url(#gold)"/>
+    <path d="M368 222v86M656 222v86" stroke="#f9f5eb" stroke-width="38" stroke-linecap="round"/>
+    <path d="M348 520h328M348 626h328M348 732h216" stroke="#142f46" stroke-width="32" stroke-linecap="round" opacity="0.13"/>
+
+    <g transform="translate(512 642) rotate(-12) translate(-512 -642)">
+      <path d="M250 640c0-25 20-45 45-45h332c63 0 122 28 162 77l21 26H294c-24 0-44-19-44-44v-14Z" fill="#102b43"/>
+      <path d="M614 595l-118-150c-13-17 2-42 23-37l46 10c16 4 30 13 40 26l138 172-129-21Z" fill="#102b43"/>
+      <path d="M540 700 420 832c-9 10-24 13-36 7l-36-18 112-144 80 23Z" fill="#102b43"/>
+      <path d="M289 597l-73-62c-12-10-5-30 11-30h37c18 0 35 6 49 18l88 74H289Z" fill="#102b43"/>
+      <path d="M730 637h57c19 0 36 11 44 28l16 33h-37c-24-30-51-50-80-61Z" fill="#102b43"/>
+      <circle cx="334" cy="647" r="13" fill="#f8f5ed" opacity="0.88"/>
+      <circle cx="390" cy="647" r="13" fill="#f8f5ed" opacity="0.88"/>
+      <circle cx="446" cy="647" r="13" fill="#f8f5ed" opacity="0.88"/>
+      <circle cx="502" cy="647" r="13" fill="#f8f5ed" opacity="0.88"/>
+      <circle cx="558" cy="647" r="13" fill="#f8f5ed" opacity="0.88"/>
+    </g>
+  </g>
+</svg>

@@ -1,10 +1,10 @@
-const CACHE_NAME = "jumpseat-calendar-v21";
+const CACHE_NAME = "jumpseat-calendar-v22";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=cloud-sync-8",
-  "./supabase-config.js?v=cloud-sync-8",
-  "./app.js?v=cloud-sync-8",
+  "./styles.css?v=cloud-sync-9",
+  "./supabase-config.js?v=cloud-sync-9",
+  "./app.js?v=cloud-sync-9",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

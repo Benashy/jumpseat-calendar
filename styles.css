@@ -179,6 +179,24 @@ h1 {
   color: #1f6841 !important;
 }
 
+.status-warning {
+  color: #8a641e !important;
+}
+
+.offline-banner {
+  margin-bottom: 18px;
+  border: 1px solid rgba(198, 161, 90, 0.42);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(198, 161, 90, 0.18), transparent 48%),
+    #fff9eb;
+  color: #76551b;
+  font-size: 0.9rem;
+  font-weight: 850;
+  line-height: 1.35;
+  padding: 12px 14px;
+}
+
 .tab-button {
   min-height: 46px;
   border: 1px solid rgba(198, 161, 90, 0.24);
@@ -347,6 +365,10 @@ textarea.invalid {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.48;
+}
+
+.offline-readonly .card-actions button {
+  opacity: 0.42;
 }
 
 .secondary {

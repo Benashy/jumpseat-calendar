@@ -1,5 +1,7 @@
 const STORAGE_KEY = "jumpseat-calendar-requests-v1";
+const SESSION_STARTED_KEY = "jumpseat-calendar-session-started-at";
 const MAX_REQUESTS_PER_FLIGHT = 10;
+const SESSION_TIMEOUT_MS = 90 * 60 * 1000;
 
 const elements = {
   selectedDate: document.querySelector("#selectedDate"),
@@ -12,6 +14,7 @@ const elements = {
   authSession: document.querySelector("#authSession"),
   syncStatus: document.querySelector("#syncStatus"),
   homeSyncStatus: document.querySelector("#homeSyncStatus"),
+  offlineBanner: document.querySelector("#offlineBanner"),
   accountPanel: document.querySelector("#accountPanel"),
   magicLinkButton: document.querySelector("#magicLinkButton"),
   refreshCloudButton: document.querySelector("#refreshCloudButton"),
@@ -62,7 +65,9 @@ let cloudLoaded = false;
 let saveTimer = null;
 let magicLinkRetryTimer = null;
 let syncElapsedTimer = null;
+let sessionTimeoutTimer = null;
 let lastCloudSuccess = null;
+let isOfflineReadOnly = false;
 
 const cloudConfig = window.JUMPSEAT_SUPABASE || {};
 const hasCloudConfig = Boolean(
@@ -85,13 +90,15 @@ function isSuccessStatus(message) {
   return message.startsWith("Saved to cloud") || message.startsWith("Loaded from cloud");
 }
 
-function setSyncStatus(message, isError = false) {
+function setSyncStatus(message, isError = false, isWarning = false) {
   elements.syncStatus.textContent = message;
   elements.homeSyncStatus.textContent = message;
   elements.syncStatus.classList.toggle("status-error", isError);
   elements.homeSyncStatus.classList.toggle("status-error", isError);
-  elements.syncStatus.classList.toggle("status-success", !isError && isSuccessStatus(message));
-  elements.homeSyncStatus.classList.toggle("status-success", !isError && isSuccessStatus(message));
+  elements.syncStatus.classList.toggle("status-warning", isWarning);
+  elements.homeSyncStatus.classList.toggle("status-warning", isWarning);
+  elements.syncStatus.classList.toggle("status-success", !isError && !isWarning && isSuccessStatus(message));
+  elements.homeSyncStatus.classList.toggle("status-success", !isError && !isWarning && isSuccessStatus(message));
 }
 
 function formatElapsed(fromDate) {
@@ -154,6 +161,64 @@ function getRetrySeconds(message) {
   return match ? Number(match[1]) : null;
 }
 
+function setOfflineReadOnly(isReadOnly) {
+  isOfflineReadOnly = isReadOnly;
+  document.body.classList.toggle("offline-readonly", isReadOnly);
+  elements.offlineBanner.classList.toggle("hidden", !isReadOnly);
+  elements.addTab.disabled = isReadOnly;
+  elements.refreshCloudButton.disabled = isReadOnly;
+  elements.homeRefreshCloudButton.disabled = isReadOnly;
+
+  if (isReadOnly) {
+    setActiveTab("home");
+    setSyncStatus("Offline: viewing saved data", false, true);
+  }
+
+  render();
+}
+
+function startOfflineMode() {
+  requests = sanitizeRequests(loadRequests());
+  cloudLoaded = false;
+  elements.authPanel.classList.add("hidden");
+  elements.accountPanel.classList.add("hidden");
+  setAppVisible(true);
+  setOfflineReadOnly(true);
+}
+
+function getSessionStartedAt() {
+  const value = Number(localStorage.getItem(SESSION_STARTED_KEY));
+  return Number.isFinite(value) ? value : null;
+}
+
+function setSessionStartedAt(value = Date.now()) {
+  localStorage.setItem(SESSION_STARTED_KEY, String(value));
+}
+
+function clearSessionTimer() {
+  window.clearTimeout(sessionTimeoutTimer);
+  sessionTimeoutTimer = null;
+}
+
+function scheduleSessionTimeout() {
+  clearSessionTimer();
+
+  if (!currentUser) return;
+
+  const startedAt = getSessionStartedAt() || Date.now();
+  setSessionStartedAt(startedAt);
+  const remaining = SESSION_TIMEOUT_MS - (Date.now() - startedAt);
+
+  if (remaining <= 0) {
+    signOut("Signed out after 90 minutes. Sign in again to continue.");
+    return;
+  }
+
+  sessionTimeoutTimer = window.setTimeout(() => {
+    signOut("Signed out after 90 minutes. Sign in again to continue.");
+  }, remaining);
+}
+
 function setAppVisible(isVisible) {
   elements.appTabs.classList.toggle("hidden", !isVisible);
   elements.layout.classList.toggle("hidden", !isVisible);
@@ -168,9 +233,12 @@ function setSignedInState(user) {
 
   if (user) {
     setAuthStatus(`Signed in as ${user.email}`);
+    setOfflineReadOnly(false);
+    scheduleSessionTimeout();
   } else {
     cloudLoaded = false;
     lastCloudSuccess = null;
+    clearSessionTimer();
     window.clearInterval(syncElapsedTimer);
     window.clearInterval(magicLinkRetryTimer);
     elements.magicLinkButton.disabled = false;
@@ -285,7 +353,7 @@ function sanitizeRequests(value) {
 }
 
 function queueCloudSave() {
-  if (!supabaseClient || !currentUser || !cloudLoaded) return;
+  if (isOfflineReadOnly || !supabaseClient || !currentUser || !cloudLoaded) return;
 
   window.clearTimeout(saveTimer);
   saveTimer = window.setTimeout(() => {
@@ -319,6 +387,11 @@ async function saveCloudRequests() {
 async function loadCloudRequests() {
   if (!supabaseClient || !currentUser) return;
 
+  if (!navigator.onLine) {
+    startOfflineMode();
+    return;
+  }
+
   cloudLoaded = false;
   setSyncStatus("Loading cloud data...");
 
@@ -329,6 +402,11 @@ async function loadCloudRequests() {
     .maybeSingle();
 
   if (error) {
+    if (!navigator.onLine) {
+      startOfflineMode();
+      return;
+    }
+
     setSyncStatus(`Cloud load failed: ${error.message}`, true);
     return;
   }
@@ -377,7 +455,7 @@ function updateAddRequestButton() {
   const hasBlankVisibleRequest = staffInputs.some((input) => !input.value.trim());
 
   elements.addSeatButton.classList.toggle("hidden", hasReachedLimit);
-  elements.addSeatButton.disabled = hasReachedLimit || hasBlankVisibleRequest;
+  elements.addSeatButton.disabled = isOfflineReadOnly || hasReachedLimit || hasBlankVisibleRequest;
   elements.addSeatButton.title = hasBlankVisibleRequest ? "Enter the current request name first" : "";
 }
 
@@ -563,6 +641,11 @@ function clearForm(keepDate = true) {
 }
 
 function startAdd() {
+  if (isOfflineReadOnly) {
+    window.alert("Offline mode is view only. Connect to the internet to add requests.");
+    return;
+  }
+
   clearForm();
   setActiveTab("add");
   elements.requestDate.focus();
@@ -728,13 +811,29 @@ function render() {
       notes.remove();
     }
 
-    card.querySelector(".edit-button").addEventListener("click", () => startEdit(request.id));
-    card.querySelector(".delete-button").addEventListener("click", () => deleteRequest(request.id));
+    const editButton = card.querySelector(".edit-button");
+    const deleteButton = card.querySelector(".delete-button");
+
+    if (isOfflineReadOnly) {
+      editButton.disabled = true;
+      deleteButton.disabled = true;
+      editButton.title = "Connect to the internet to edit";
+      deleteButton.title = "Connect to the internet to delete";
+    } else {
+      editButton.addEventListener("click", () => startEdit(request.id));
+      deleteButton.addEventListener("click", () => deleteRequest(request.id));
+    }
+
     elements.requestList.append(card);
   });
 }
 
 function startEdit(id) {
+  if (isOfflineReadOnly) {
+    window.alert("Offline mode is view only. Connect to the internet to edit requests.");
+    return;
+  }
+
   const request = requests.find((item) => item.id === id);
   if (!request) return;
 
@@ -755,6 +854,11 @@ function startEdit(id) {
 }
 
 function deleteRequest(id) {
+  if (isOfflineReadOnly) {
+    window.alert("Offline mode is view only. Connect to the internet to delete requests.");
+    return;
+  }
+
   const request = requests.find((item) => item.id === id);
   if (!request) return;
 
@@ -770,6 +874,17 @@ function deleteRequest(id) {
 async function handleSession(session) {
   const user = session?.user || null;
   const isSameLoadedUser = user?.id && user.id === currentUser?.id && cloudLoaded;
+
+  if (user) {
+    const startedAt = getSessionStartedAt();
+
+    if (!startedAt) {
+      setSessionStartedAt();
+    } else if (Date.now() - startedAt >= SESSION_TIMEOUT_MS) {
+      await signOut("Signed out after 90 minutes. Sign in again to continue.");
+      return;
+    }
+  }
 
   setSignedInState(user);
   if (user && !isSameLoadedUser) await loadCloudRequests();
@@ -793,6 +908,7 @@ async function signIn() {
   }
 
   elements.authPassword.value = "";
+  setSessionStartedAt();
   await handleSession(data.session);
 }
 
@@ -861,21 +977,26 @@ async function createAccount() {
   elements.authPassword.value = "";
 
   if (data.session) {
+    setSessionStartedAt();
     await handleSession(data.session);
   } else {
     setAuthStatus("Account created. Check your email to confirm it, then sign in.");
   }
 }
 
-async function signOut() {
-  if (!supabaseClient) return;
-
+async function signOut(message = "Sign in to load and save your jumpseat requests online.") {
   setSyncStatus("Signing out...");
-  await supabaseClient.auth.signOut();
+
+  if (supabaseClient && navigator.onLine) {
+    await supabaseClient.auth.signOut().catch(() => {});
+  }
+
   requests = [];
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(SESSION_STARTED_KEY);
   render();
   setSignedInState(null);
+  setAuthStatus(message, false);
 }
 
 async function refreshCloudData() {
@@ -883,7 +1004,31 @@ async function refreshCloudData() {
   await loadCloudRequests();
 }
 
+async function returnOnline() {
+  setOfflineReadOnly(false);
+  elements.authPanel.classList.remove("hidden");
+
+  if (!supabaseClient) {
+    setAuthStatus("Cloud saving could not start. Refresh once you are online.", true);
+    return;
+  }
+
+  const { data, error } = await supabaseClient.auth.getSession();
+
+  if (error) {
+    setAuthStatus("Could not check sign-in status.", true);
+    return;
+  }
+
+  await handleSession(data.session);
+}
+
 async function initCloud() {
+  if (!navigator.onLine) {
+    startOfflineMode();
+    return;
+  }
+
   if (!hasCloudConfig) {
     cloudReady = false;
     elements.authPanel.classList.add("hidden");
@@ -910,12 +1055,19 @@ async function initCloud() {
   await handleSession(data.session);
 
   supabaseClient.auth.onAuthStateChange((_event, session) => {
+    if (_event === "SIGNED_IN") setSessionStartedAt();
     handleSession(session);
   });
 }
 
 elements.requestForm.addEventListener("submit", (event) => {
   event.preventDefault();
+
+  if (isOfflineReadOnly) {
+    window.alert("Offline mode is view only. Connect to the internet to save changes.");
+    return;
+  }
+
   if (!validateRequestForm()) return;
 
   const formData = getFormData();
@@ -990,8 +1142,10 @@ elements.signUpButton.addEventListener("click", createAccount);
 elements.magicLinkButton.addEventListener("click", sendMagicLink);
 elements.refreshCloudButton.addEventListener("click", refreshCloudData);
 elements.homeRefreshCloudButton.addEventListener("click", refreshCloudData);
-elements.signOutButton.addEventListener("click", signOut);
-elements.homeSignOutButton.addEventListener("click", signOut);
+elements.signOutButton.addEventListener("click", () => signOut());
+elements.homeSignOutButton.addEventListener("click", () => signOut());
+window.addEventListener("offline", startOfflineMode);
+window.addEventListener("online", returnOnline);
 
 setSelectedDate(todayIso());
 clearForm();
