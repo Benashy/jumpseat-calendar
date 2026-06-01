@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-15" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-16" />
   </head>
   <body>
     <div class="app-shell">
@@ -37,10 +37,6 @@
           </div>
         </form>
 
-        <div class="auth-session hidden" id="authSession">
-          <span id="syncStatus">Cloud ready</span>
-          <button class="text-button secondary" id="refreshCloudButton" type="button">Refresh</button>
-        </div>
       </section>
 
       <section class="offline-banner hidden" id="offlineBanner" aria-live="polite">
@@ -100,8 +96,11 @@
           </section>
 
           <section class="account-panel hidden" id="accountPanel" aria-label="Account">
-            <span id="homeSyncStatus">Cloud saving active</span>
+            <span id="homeSyncStatus">Cloud ready</span>
             <div class="account-actions">
+              <button class="icon-button" id="refreshCloudButton" type="button" title="Refresh cloud data" aria-label="Refresh cloud data">
+                <span aria-hidden="true">↻</span>
+              </button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
           </section>
@@ -192,7 +191,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-15"></script>
-    <script src="./app.js?v=cloud-sync-15"></script>
+    <script src="./supabase-config.js?v=cloud-sync-16"></script>
+    <script src="./app.js?v=cloud-sync-16"></script>
   </body>
 </html>

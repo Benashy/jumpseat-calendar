@@ -140,8 +140,7 @@ h1 {
   font-size: 1.05rem;
 }
 
-.auth-copy p,
-.auth-session span {
+.auth-copy p {
   color: var(--muted);
   font-size: 0.86rem;
   font-weight: 750;
@@ -154,8 +153,7 @@ h1 {
   gap: 9px;
 }
 
-.auth-actions,
-.auth-session {
+.auth-actions {
   display: flex;
   gap: 9px;
   align-items: center;
@@ -165,10 +163,6 @@ h1 {
   grid-column: 1 / -1;
   justify-content: flex-end;
   flex-wrap: wrap;
-}
-
-.auth-session {
-  justify-content: flex-end;
 }
 
 .status-error {
@@ -455,12 +449,19 @@ button:disabled {
   color: var(--muted);
   font-size: 0.84rem;
   font-weight: 800;
+  line-height: 1.35;
 }
 
 .account-actions {
   display: flex;
   gap: 9px;
   align-items: center;
+}
+
+.account-actions .icon-button {
+  width: 42px;
+  min-height: 42px;
+  font-size: 1.2rem;
 }
 
 .upcoming-panel {
@@ -920,7 +921,6 @@ form label {
   }
 
   .auth-actions,
-  .auth-session,
   .account-panel,
   .account-actions {
     align-items: stretch;

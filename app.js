@@ -14,8 +14,6 @@ const elements = {
   authEmail: document.querySelector("#authEmail"),
   authPassword: document.querySelector("#authPassword"),
   authStatus: document.querySelector("#authStatus"),
-  authSession: document.querySelector("#authSession"),
-  syncStatus: document.querySelector("#syncStatus"),
   homeSyncStatus: document.querySelector("#homeSyncStatus"),
   offlineBanner: document.querySelector("#offlineBanner"),
   accountPanel: document.querySelector("#accountPanel"),
@@ -91,13 +89,9 @@ function isSuccessStatus(message) {
 }
 
 function setSyncStatus(message, isError = false, isWarning = false) {
-  elements.syncStatus.textContent = message;
   elements.homeSyncStatus.textContent = message;
-  elements.syncStatus.classList.toggle("status-error", isError);
   elements.homeSyncStatus.classList.toggle("status-error", isError);
-  elements.syncStatus.classList.toggle("status-warning", isWarning);
   elements.homeSyncStatus.classList.toggle("status-warning", isWarning);
-  elements.syncStatus.classList.toggle("status-success", !isError && !isWarning && isSuccessStatus(message));
   elements.homeSyncStatus.classList.toggle("status-success", !isError && !isWarning && isSuccessStatus(message));
 }
 
@@ -249,7 +243,7 @@ function setAppVisible(isVisible) {
 function setSignedInState(user) {
   currentUser = user;
   elements.authForm.classList.toggle("hidden", Boolean(user));
-  elements.authSession.classList.toggle("hidden", !user);
+  elements.authPanel.classList.toggle("hidden", Boolean(user));
   elements.accountPanel.classList.toggle("hidden", !user);
   setAppVisible(Boolean(user));
 
