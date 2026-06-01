@@ -85,7 +85,7 @@ function setAuthStatus(message, isError = false, isSuccess = false) {
 }
 
 function isSuccessStatus(message) {
-  return message.startsWith("Saved to cloud") || message.startsWith("Loaded from cloud");
+  return message.startsWith("Updated");
 }
 
 function setSyncStatus(message, isError = false, isWarning = false) {
@@ -113,12 +113,11 @@ function updateCloudSuccessStatus() {
   const isStale = elapsedHours >= CLOUD_STALE_HOURS;
   const isAged = elapsedHours >= CLOUD_FRESH_HOURS && !isStale;
 
-  setSyncStatus(`${lastCloudSuccess.label} ${formatElapsed(lastCloudSuccess.at)}`, isStale, isAged);
+  setSyncStatus(`Updated ${formatElapsed(lastCloudSuccess.at)}`, isStale, isAged);
 }
 
-function setCloudSuccessStatus(label) {
+function setCloudSuccessStatus() {
   lastCloudSuccess = {
-    label,
     at: new Date(),
   };
 
@@ -423,7 +422,7 @@ async function saveCloudRequests() {
   }
 
   cloudUpdatedAt = data.updated_at || nextUpdatedAt;
-  setCloudSuccessStatus("Saved to cloud");
+  setCloudSuccessStatus();
 }
 
 async function loadCloudRequests() {
@@ -456,7 +455,7 @@ async function loadCloudRequests() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
     cloudLoaded = true;
     cloudUpdatedAt = data.updated_at || null;
-    setCloudSuccessStatus("Loaded from cloud");
+    setCloudSuccessStatus();
   } else {
     requests = sanitizeRequests(localRequests);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
