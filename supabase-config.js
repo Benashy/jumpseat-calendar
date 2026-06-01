@@ -1,4 +1,4 @@
 window.JUMPSEAT_SUPABASE = {
-  url: "https://YOUR_PROJECT_REF.supabase.co",
-  anonKey: "YOUR_SUPABASE_ANON_KEY",
+  url: "https://kztwizifuhuvbccyycdm.supabase.co",
+  anonKey: "sb_publishable_1c4vY5tHhIeTfL3XQkqOgw_PwTh9l4T",
 };
