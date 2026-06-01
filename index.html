@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-3" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-4" />
   </head>
   <body>
     <div class="app-shell">
@@ -138,15 +138,21 @@
               </label>
               <label>
                 Available jumpseats
-                <input id="availableSeats" name="availableSeats" type="number" min="0" max="99" placeholder="Optional" inputmode="numeric" />
+                <span class="stepper-field">
+                  <input id="availableSeats" name="availableSeats" type="number" min="0" max="99" placeholder="Optional" inputmode="numeric" />
+                  <span class="stepper-controls">
+                    <button id="availableSeatsUp" type="button" tabindex="-1" aria-label="Increase available jumpseats">▲</button>
+                    <button id="availableSeatsDown" type="button" tabindex="-1" aria-label="Decrease available jumpseats">▼</button>
+                  </span>
+                </span>
               </label>
             </div>
 
-            <fieldset>
-              <legend>Requests</legend>
+            <section class="requests-panel" aria-labelledby="requestsHeading">
+              <h3 id="requestsHeading">Requests</h3>
               <div class="staff-fields" id="staffFields"></div>
               <button class="text-button secondary add-request-button" id="addSeatButton" type="button">Add request</button>
-            </fieldset>
+            </section>
 
             <label>
               Notes
@@ -180,7 +186,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-3"></script>
-    <script src="./app.js?v=cloud-sync-3"></script>
+    <script src="./supabase-config.js?v=cloud-sync-4"></script>
+    <script src="./app.js?v=cloud-sync-4"></script>
   </body>
 </html>

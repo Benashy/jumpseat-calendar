@@ -663,7 +663,7 @@ button:disabled {
 }
 
 form,
-fieldset {
+.requests-panel {
   display: grid;
   gap: 13px;
 }
@@ -689,7 +689,7 @@ form label {
   gap: 6px;
 }
 
-fieldset {
+.requests-panel {
   margin: 0;
   border: 1px solid rgba(198, 161, 90, 0.24);
   border-radius: 8px;
@@ -699,19 +699,15 @@ fieldset {
   padding: 12px;
 }
 
-fieldset {
+.requests-panel {
   border-top: 1px solid var(--gold-soft);
 }
 
-legend {
-  float: left;
-  width: 100%;
-  margin: 0 0 8px;
-  padding: 0;
-}
-
-legend + * {
-  clear: both;
+.requests-panel h3 {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  margin: 0;
 }
 
 .staff-fields {
@@ -731,23 +727,26 @@ legend + * {
 }
 
 .zulu-field {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 40px;
+  display: flex;
   align-items: stretch;
 }
 
 .zulu-field input {
   border-bottom-right-radius: 0;
   border-top-right-radius: 0;
+  flex: 1 1 auto;
   height: 44px;
   min-height: 44px;
+  min-width: 0;
 }
 
 .zulu-field span {
-  display: grid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 42px;
   height: 44px;
   min-height: 44px;
-  place-items: center;
   border: 1px solid var(--line);
   border-left: 0;
   border-bottom-right-radius: 7px;
@@ -755,6 +754,42 @@ legend + * {
   background: linear-gradient(180deg, #edf1f2, #dde2e4);
   color: var(--navy);
   font-weight: 900;
+}
+
+.stepper-field {
+  display: flex;
+  align-items: stretch;
+}
+
+.stepper-field input {
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.stepper-controls {
+  display: grid;
+  flex: 0 0 42px;
+  border: 1px solid var(--line);
+  border-left: 0;
+  border-bottom-right-radius: 7px;
+  border-top-right-radius: 7px;
+  overflow: hidden;
+}
+
+.stepper-controls button {
+  border: 0;
+  background: linear-gradient(180deg, #edf1f2, #dde2e4);
+  color: var(--navy);
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0;
+}
+
+.stepper-controls button + button {
+  border-top: 1px solid var(--line);
 }
 
 .zulu-field input.invalid + span {

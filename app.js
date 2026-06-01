@@ -42,6 +42,8 @@ const elements = {
   flightNumber: document.querySelector("#flightNumber"),
   departureTime: document.querySelector("#departureTime"),
   availableSeats: document.querySelector("#availableSeats"),
+  availableSeatsUp: document.querySelector("#availableSeatsUp"),
+  availableSeatsDown: document.querySelector("#availableSeatsDown"),
   routeFrom: document.querySelector("#routeFrom"),
   routeTo: document.querySelector("#routeTo"),
   staffFields: document.querySelector("#staffFields"),
@@ -229,7 +231,7 @@ async function saveCloudRequests() {
     );
 
   if (error) {
-    setSyncStatus("Cloud save failed", true);
+    setSyncStatus(`Cloud save failed: ${error.message}`, true);
     return;
   }
 
@@ -249,7 +251,7 @@ async function loadCloudRequests() {
     .maybeSingle();
 
   if (error) {
-    setSyncStatus("Cloud load failed", true);
+    setSyncStatus(`Cloud load failed: ${error.message}`, true);
     return;
   }
 
@@ -436,6 +438,29 @@ function getFormData() {
     notes: normalizeText(elements.notes.value),
     updatedAt: new Date().toISOString(),
   };
+}
+
+function stepAvailableSeats(delta) {
+  const currentValue = elements.availableSeats.value === "" ? null : Number(elements.availableSeats.value);
+  const currentNumber = Number.isInteger(currentValue) ? currentValue : 0;
+  const nextValue = Math.min(99, Math.max(0, currentNumber + delta));
+  elements.availableSeats.value = String(nextValue);
+  elements.availableSeats.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function focusNextFormControl(currentControl) {
+  const controls = Array.from(
+    elements.requestForm.querySelectorAll("input:not([type='hidden']), textarea, button")
+  ).filter((control) => (
+    control.tabIndex !== -1 &&
+    !control.disabled &&
+    !control.classList.contains("hidden") &&
+    control.offsetParent !== null
+  ));
+  const currentIndex = controls.indexOf(currentControl);
+  const nextControl = controls[currentIndex + 1];
+
+  if (nextControl) nextControl.focus();
 }
 
 function sameFlight(a, b) {
@@ -797,6 +822,13 @@ elements.requestForm.addEventListener("submit", (event) => {
   setActiveTab("home");
 });
 
+elements.requestForm.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" || event.target.tagName !== "INPUT") return;
+
+  event.preventDefault();
+  focusNextFormControl(event.target);
+});
+
 elements.homeTab.addEventListener("click", () => setActiveTab("home"));
 elements.addTab.addEventListener("click", startAdd);
 [elements.requestDate, elements.flightNumber, elements.routeFrom, elements.routeTo, elements.departureTime]
@@ -809,6 +841,8 @@ elements.previousDay.addEventListener("click", () => setSelectedDate(shiftDate(e
 elements.nextDay.addEventListener("click", () => setSelectedDate(shiftDate(elements.selectedDate.value, 1)));
 elements.todayButton.addEventListener("click", () => setSelectedDate(todayIso()));
 elements.globalSearch.addEventListener("input", renderGlobalSearch);
+elements.availableSeatsUp.addEventListener("click", () => stepAvailableSeats(1));
+elements.availableSeatsDown.addEventListener("click", () => stepAvailableSeats(-1));
 elements.cancelEditButton.addEventListener("click", () => {
   clearForm();
   setActiveTab("home");

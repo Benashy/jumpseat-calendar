@@ -6,6 +6,9 @@ create table if not exists public.jumpseat_data (
 
 alter table public.jumpseat_data enable row level security;
 
+grant usage on schema public to authenticated;
+grant select, insert, update on public.jumpseat_data to authenticated;
+
 drop policy if exists "Users can read their own jumpseat data" on public.jumpseat_data;
 drop policy if exists "Users can insert their own jumpseat data" on public.jumpseat_data;
 drop policy if exists "Users can update their own jumpseat data" on public.jumpseat_data;

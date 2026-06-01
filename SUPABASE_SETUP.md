@@ -19,6 +19,8 @@ This app is prepared for Supabase cloud saving, but it will keep working locally
 
 This creates one private data row per signed-in user and enables Row Level Security so each signed-in user can only read and write their own jumpseat data.
 
+If the app shows `Cloud load failed`, run `supabase-schema.sql` again. It is safe to rerun, and it includes the table API grants needed when Supabase's automatic table exposure is switched off.
+
 ## 3. Get The Project Details
 
 1. In Supabase, go to Project Settings.
