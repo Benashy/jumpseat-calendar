@@ -1,7 +1,8 @@
 const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const SESSION_STARTED_KEY = "jumpseat-calendar-session-started-at";
 const MAX_REQUESTS_PER_FLIGHT = 10;
-const SESSION_TIMEOUT_MS = 90 * 60 * 1000;
+const SESSION_TIMEOUT_MS = 12 * 60 * 60 * 1000;
+const SESSION_TIMEOUT_MESSAGE = "Signed out after 12 hours. Sign in again to continue.";
 
 const elements = {
   selectedDate: document.querySelector("#selectedDate"),
@@ -210,12 +211,12 @@ function scheduleSessionTimeout() {
   const remaining = SESSION_TIMEOUT_MS - (Date.now() - startedAt);
 
   if (remaining <= 0) {
-    signOut("Signed out after 90 minutes. Sign in again to continue.");
+    signOut(SESSION_TIMEOUT_MESSAGE);
     return;
   }
 
   sessionTimeoutTimer = window.setTimeout(() => {
-    signOut("Signed out after 90 minutes. Sign in again to continue.");
+    signOut(SESSION_TIMEOUT_MESSAGE);
   }, remaining);
 }
 
@@ -881,7 +882,7 @@ async function handleSession(session) {
     if (!startedAt) {
       setSessionStartedAt();
     } else if (Date.now() - startedAt >= SESSION_TIMEOUT_MS) {
-      await signOut("Signed out after 90 minutes. Sign in again to continue.");
+      await signOut(SESSION_TIMEOUT_MESSAGE);
       return;
     }
   }
