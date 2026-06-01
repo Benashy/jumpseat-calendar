@@ -1,4 +1,4 @@
-const CACHE_NAME = "jumpseat-calendar-v23";
+const CACHE_NAME = "jumpseat-calendar-v24";
 const APP_SHELL = [
   "./",
   "./index.html",
