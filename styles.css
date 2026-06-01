@@ -164,6 +164,7 @@ h1 {
 .auth-actions {
   grid-column: 1 / -1;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .auth-session {
@@ -226,7 +227,9 @@ h1 {
 }
 
 .date-toolbar {
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 42px minmax(220px, 360px) 42px minmax(150px, 1fr);
+  align-items: end;
   margin-bottom: 18px;
 }
 
@@ -246,6 +249,7 @@ legend {
 input,
 textarea {
   width: 100%;
+  min-height: 44px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--field);
@@ -736,12 +740,15 @@ form label {
 }
 
 .zulu-field input {
+  -webkit-appearance: none;
+  appearance: none;
   border-bottom-right-radius: 0;
   border-top-right-radius: 0;
   flex: 1 1 auto;
-  height: 44px;
+  height: 44px !important;
   min-height: 44px;
   min-width: 0;
+  line-height: 1.2;
 }
 
 .zulu-field span {
@@ -751,6 +758,7 @@ form label {
   flex: 0 0 42px;
   height: 44px;
   min-height: 44px;
+  box-sizing: border-box;
   border: 1px solid var(--line);
   border-left: 0;
   border-bottom-right-radius: 7px;
@@ -825,6 +833,22 @@ form label {
   .entry-panel {
     position: static;
   }
+
+  .date-toolbar {
+    grid-template-columns: 42px minmax(0, 1fr) 42px;
+  }
+
+  .date-picker-group {
+    min-width: 0;
+  }
+
+  .date-toolbar > .text-button {
+    grid-column: 1 / -1;
+  }
+
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 560px) {
@@ -838,10 +862,6 @@ form label {
     flex-direction: column;
   }
 
-  .field-grid {
-    grid-template-columns: 1fr;
-  }
-
   .auth-panel,
   .auth-form {
     grid-template-columns: 1fr;
@@ -852,14 +872,6 @@ form label {
   .account-panel {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .date-picker-group {
-    min-width: 100%;
-  }
-
-  .date-toolbar > .text-button {
-    flex: 1;
   }
 
   .upcoming-item {

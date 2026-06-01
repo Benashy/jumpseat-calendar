@@ -13,6 +13,7 @@ const elements = {
   syncStatus: document.querySelector("#syncStatus"),
   homeSyncStatus: document.querySelector("#homeSyncStatus"),
   accountPanel: document.querySelector("#accountPanel"),
+  magicLinkButton: document.querySelector("#magicLinkButton"),
   signUpButton: document.querySelector("#signUpButton"),
   signOutButton: document.querySelector("#signOutButton"),
   homeSignOutButton: document.querySelector("#homeSignOutButton"),
@@ -724,6 +725,30 @@ async function signIn() {
   await handleSession(data.session);
 }
 
+async function sendMagicLink() {
+  const email = elements.authEmail.value.trim();
+
+  if (!email) {
+    setAuthStatus("Enter your email address first.", true);
+    return;
+  }
+
+  setAuthStatus("Sending magic link...");
+  const { error } = await supabaseClient.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: window.location.href.split("#")[0],
+    },
+  });
+
+  if (error) {
+    setAuthStatus(error.message || "Magic link could not be sent.", true);
+    return;
+  }
+
+  setAuthStatus("Magic link sent. Check your email to sign in.");
+}
+
 async function createAccount() {
   const email = elements.authEmail.value.trim();
   const password = elements.authPassword.value;
@@ -876,6 +901,7 @@ elements.authForm.addEventListener("submit", (event) => {
   signIn();
 });
 elements.signUpButton.addEventListener("click", createAccount);
+elements.magicLinkButton.addEventListener("click", sendMagicLink);
 elements.signOutButton.addEventListener("click", signOut);
 elements.homeSignOutButton.addEventListener("click", signOut);
 
