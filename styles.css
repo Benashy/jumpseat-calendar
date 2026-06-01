@@ -230,6 +230,7 @@ h1 {
   display: grid;
   grid-template-columns: 42px minmax(220px, 360px) 42px minmax(150px, 1fr);
   align-items: end;
+  gap: 10px;
   margin-bottom: 18px;
 }
 
@@ -237,6 +238,7 @@ h1 {
   display: grid;
   gap: 5px;
   min-width: 180px;
+  max-width: 100%;
 }
 
 label,
@@ -256,6 +258,21 @@ textarea {
   color: var(--ink);
   padding: 11px 12px;
   outline: none;
+}
+
+input[type="date"],
+input[type="time"],
+input[type="number"],
+.date-picker-group input,
+.field-grid > label {
+  min-width: 0;
+  max-width: 100%;
+}
+
+input[type="date"],
+input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 input:focus,
@@ -414,6 +431,12 @@ button:disabled {
   color: var(--muted);
   font-size: 0.84rem;
   font-weight: 800;
+}
+
+.account-actions {
+  display: flex;
+  gap: 9px;
+  align-items: center;
 }
 
 .upcoming-panel {
@@ -836,6 +859,7 @@ form label {
 
   .date-toolbar {
     grid-template-columns: 42px minmax(0, 1fr) 42px;
+    gap: 8px;
   }
 
   .date-picker-group {
@@ -848,6 +872,10 @@ form label {
 
   .field-grid {
     grid-template-columns: 1fr;
+  }
+
+  input[type="date"] {
+    width: 100%;
   }
 }
 
@@ -869,7 +897,8 @@ form label {
 
   .auth-actions,
   .auth-session,
-  .account-panel {
+  .account-panel,
+  .account-actions {
     align-items: stretch;
     flex-direction: column;
   }

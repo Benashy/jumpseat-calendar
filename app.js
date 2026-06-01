@@ -14,6 +14,8 @@ const elements = {
   homeSyncStatus: document.querySelector("#homeSyncStatus"),
   accountPanel: document.querySelector("#accountPanel"),
   magicLinkButton: document.querySelector("#magicLinkButton"),
+  refreshCloudButton: document.querySelector("#refreshCloudButton"),
+  homeRefreshCloudButton: document.querySelector("#homeRefreshCloudButton"),
   signUpButton: document.querySelector("#signUpButton"),
   signOutButton: document.querySelector("#signOutButton"),
   homeSignOutButton: document.querySelector("#homeSignOutButton"),
@@ -58,6 +60,8 @@ let currentUser = null;
 let cloudReady = false;
 let cloudLoaded = false;
 let saveTimer = null;
+let magicLinkCooldownTimer = null;
+let magicLinkCooldownRemaining = 0;
 
 const cloudConfig = window.JUMPSEAT_SUPABASE || {};
 const hasCloudConfig = Boolean(
@@ -86,6 +90,26 @@ function setSyncStatus(message, isError = false) {
   elements.homeSyncStatus.classList.toggle("status-error", isError);
   elements.syncStatus.classList.toggle("status-success", !isError && isSuccessStatus(message));
   elements.homeSyncStatus.classList.toggle("status-success", !isError && isSuccessStatus(message));
+}
+
+function setMagicLinkCooldown(seconds) {
+  window.clearInterval(magicLinkCooldownTimer);
+  magicLinkCooldownRemaining = seconds;
+  elements.magicLinkButton.disabled = true;
+  elements.magicLinkButton.textContent = `Email sent (${magicLinkCooldownRemaining}s)`;
+
+  magicLinkCooldownTimer = window.setInterval(() => {
+    magicLinkCooldownRemaining -= 1;
+
+    if (magicLinkCooldownRemaining <= 0) {
+      window.clearInterval(magicLinkCooldownTimer);
+      elements.magicLinkButton.disabled = false;
+      elements.magicLinkButton.textContent = "Email magic link";
+      return;
+    }
+
+    elements.magicLinkButton.textContent = `Email sent (${magicLinkCooldownRemaining}s)`;
+  }, 1000);
 }
 
 function setAppVisible(isVisible) {
@@ -728,6 +752,11 @@ async function signIn() {
 async function sendMagicLink() {
   const email = elements.authEmail.value.trim();
 
+  if (magicLinkCooldownRemaining > 0) {
+    setAuthStatus("Magic link already sent. Check your email.", false);
+    return;
+  }
+
   if (!email) {
     setAuthStatus("Enter your email address first.", true);
     return;
@@ -747,6 +776,7 @@ async function sendMagicLink() {
   }
 
   setAuthStatus("Magic link sent. Check your email to sign in.");
+  setMagicLinkCooldown(10);
 }
 
 async function createAccount() {
@@ -795,6 +825,11 @@ async function signOut() {
   localStorage.removeItem(STORAGE_KEY);
   render();
   setSignedInState(null);
+}
+
+async function refreshCloudData() {
+  if (!currentUser) return;
+  await loadCloudRequests();
 }
 
 async function initCloud() {
@@ -902,6 +937,8 @@ elements.authForm.addEventListener("submit", (event) => {
 });
 elements.signUpButton.addEventListener("click", createAccount);
 elements.magicLinkButton.addEventListener("click", sendMagicLink);
+elements.refreshCloudButton.addEventListener("click", refreshCloudData);
+elements.homeRefreshCloudButton.addEventListener("click", refreshCloudData);
 elements.signOutButton.addEventListener("click", signOut);
 elements.homeSignOutButton.addEventListener("click", signOut);
 
