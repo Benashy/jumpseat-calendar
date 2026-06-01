@@ -7,12 +7,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Jumpseat" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="description" content="A local jumpseat request calendar for flight sectors." />
+    <meta name="description" content="A jumpseat request calendar for flight sectors." />
     <title>Ben's Jumpseat Calendar</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=no-backup-2" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-1" />
   </head>
   <body>
     <div class="app-shell">
@@ -21,6 +21,27 @@
           <h1>Ben's Jumpseat Calendar</h1>
         </div>
       </header>
+
+      <section class="auth-panel hidden" id="authPanel" aria-label="Cloud sign in">
+        <div class="auth-copy">
+          <h2>Cloud saving</h2>
+          <p id="authStatus">Sign in to load and save your jumpseat requests online.</p>
+        </div>
+
+        <form class="auth-form" id="authForm" novalidate>
+          <input id="authEmail" type="email" placeholder="Email address" autocomplete="email" required />
+          <input id="authPassword" type="password" placeholder="Password" autocomplete="current-password" required />
+          <div class="auth-actions">
+            <button class="primary-button" id="signInButton" type="submit">Sign in</button>
+            <button class="text-button secondary" id="signUpButton" type="button">Create account</button>
+          </div>
+        </form>
+
+        <div class="auth-session hidden" id="authSession">
+          <span id="syncStatus">Cloud ready</span>
+          <button class="text-button secondary" id="signOutButton" type="button">Sign out</button>
+        </div>
+      </section>
 
       <nav class="app-tabs" aria-label="App sections">
         <button class="tab-button active" id="homeTab" type="button" aria-controls="homeView" aria-selected="true">Home</button>
@@ -153,6 +174,8 @@
       </article>
     </template>
 
-    <script src="./app.js?v=no-backup-2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./supabase-config.js?v=cloud-sync-1"></script>
+    <script src="./app.js?v=cloud-sync-1"></script>
   </body>
 </html>

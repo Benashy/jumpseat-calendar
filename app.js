@@ -4,6 +4,17 @@ const MAX_REQUESTS_PER_FLIGHT = 10;
 const elements = {
   selectedDate: document.querySelector("#selectedDate"),
   requestDate: document.querySelector("#requestDate"),
+  authPanel: document.querySelector("#authPanel"),
+  authForm: document.querySelector("#authForm"),
+  authEmail: document.querySelector("#authEmail"),
+  authPassword: document.querySelector("#authPassword"),
+  authStatus: document.querySelector("#authStatus"),
+  authSession: document.querySelector("#authSession"),
+  syncStatus: document.querySelector("#syncStatus"),
+  signUpButton: document.querySelector("#signUpButton"),
+  signOutButton: document.querySelector("#signOutButton"),
+  appTabs: document.querySelector(".app-tabs"),
+  layout: document.querySelector(".layout"),
   homeTab: document.querySelector("#homeTab"),
   addTab: document.querySelector("#addTab"),
   homeView: document.querySelector("#homeView"),
@@ -37,6 +48,51 @@ const elements = {
 };
 
 let requests = loadRequests();
+let currentUser = null;
+let cloudReady = false;
+let cloudLoaded = false;
+let saveTimer = null;
+
+const cloudConfig = window.JUMPSEAT_SUPABASE || {};
+const hasCloudConfig = Boolean(
+  cloudConfig.url &&
+    cloudConfig.anonKey &&
+    !cloudConfig.url.includes("YOUR_PROJECT_REF") &&
+    !cloudConfig.anonKey.includes("YOUR_SUPABASE_ANON_KEY")
+);
+const supabaseClient = hasCloudConfig && window.supabase
+  ? window.supabase.createClient(cloudConfig.url, cloudConfig.anonKey)
+  : null;
+
+function setAuthStatus(message, isError = false) {
+  elements.authStatus.textContent = message;
+  elements.authStatus.classList.toggle("status-error", isError);
+}
+
+function setSyncStatus(message, isError = false) {
+  elements.syncStatus.textContent = message;
+  elements.syncStatus.classList.toggle("status-error", isError);
+}
+
+function setAppVisible(isVisible) {
+  elements.appTabs.classList.toggle("hidden", !isVisible);
+  elements.layout.classList.toggle("hidden", !isVisible);
+}
+
+function setSignedInState(user) {
+  currentUser = user;
+  elements.authForm.classList.toggle("hidden", Boolean(user));
+  elements.authSession.classList.toggle("hidden", !user);
+  setAppVisible(Boolean(user));
+
+  if (user) {
+    setAuthStatus(`Signed in as ${user.email}.`);
+  } else {
+    cloudLoaded = false;
+    setAuthStatus("Sign in to load and save your jumpseat requests online.");
+    setSyncStatus("Cloud ready");
+  }
+}
 
 function setActiveTab(tabName) {
   const isHome = tabName === "home";
@@ -120,6 +176,92 @@ function loadRequests() {
 
 function saveRequests() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
+  queueCloudSave();
+}
+
+function sanitizeRequests(value) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((request) => request.date && request.flightNumber && Array.isArray(request.staff))
+    .map((request) => ({
+      id: request.id || crypto.randomUUID(),
+      date: request.date,
+      flightNumber: normalizeText(String(request.flightNumber)).toUpperCase(),
+      departureTime: request.departureTime || "",
+      availableSeats: request.availableSeats ?? null,
+      routeFrom: normalizeText(String(request.routeFrom || "")).toUpperCase(),
+      routeTo: normalizeText(String(request.routeTo || "")).toUpperCase(),
+      staff: request.staff.slice(0, MAX_REQUESTS_PER_FLIGHT).map((name) => normalizeText(String(name))).filter(Boolean),
+      notes: normalizeText(String(request.notes || "")),
+      updatedAt: request.updatedAt || new Date().toISOString(),
+    }));
+}
+
+function queueCloudSave() {
+  if (!supabaseClient || !currentUser || !cloudLoaded) return;
+
+  window.clearTimeout(saveTimer);
+  saveTimer = window.setTimeout(() => {
+    saveCloudRequests();
+  }, 350);
+}
+
+async function saveCloudRequests() {
+  if (!supabaseClient || !currentUser) return;
+
+  setSyncStatus("Saving...");
+  const { error } = await supabaseClient
+    .from("jumpseat_data")
+    .upsert(
+      {
+        user_id: currentUser.id,
+        requests,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" }
+    );
+
+  if (error) {
+    setSyncStatus("Cloud save failed", true);
+    return;
+  }
+
+  setSyncStatus("Saved to cloud");
+}
+
+async function loadCloudRequests() {
+  if (!supabaseClient || !currentUser) return;
+
+  cloudLoaded = false;
+  setSyncStatus("Loading cloud data...");
+
+  const { data, error } = await supabaseClient
+    .from("jumpseat_data")
+    .select("requests")
+    .eq("user_id", currentUser.id)
+    .maybeSingle();
+
+  if (error) {
+    setSyncStatus("Cloud load failed", true);
+    return;
+  }
+
+  const localRequests = loadRequests();
+
+  if (Array.isArray(data?.requests)) {
+    requests = sanitizeRequests(data.requests);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
+    cloudLoaded = true;
+    setSyncStatus("Loaded from cloud");
+  } else {
+    requests = sanitizeRequests(localRequests);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
+    cloudLoaded = true;
+    await saveCloudRequests();
+  }
+
+  render();
 }
 
 function normalizeText(value) {
@@ -516,6 +658,114 @@ function deleteRequest(id) {
   render();
 }
 
+async function handleSession(session) {
+  const user = session?.user || null;
+  const isSameLoadedUser = user?.id && user.id === currentUser?.id && cloudLoaded;
+
+  setSignedInState(user);
+  if (user && !isSameLoadedUser) await loadCloudRequests();
+}
+
+async function signIn() {
+  const email = elements.authEmail.value.trim();
+  const password = elements.authPassword.value;
+
+  if (!email || !password) {
+    setAuthStatus("Enter your email and password.", true);
+    return;
+  }
+
+  setAuthStatus("Signing in...");
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    setAuthStatus(error.message || "Sign in failed.", true);
+    return;
+  }
+
+  elements.authPassword.value = "";
+  await handleSession(data.session);
+}
+
+async function createAccount() {
+  const email = elements.authEmail.value.trim();
+  const password = elements.authPassword.value;
+
+  if (!email || !password) {
+    setAuthStatus("Enter your email and choose a password.", true);
+    return;
+  }
+
+  if (password.length < 8) {
+    setAuthStatus("Use a password of at least 8 characters.", true);
+    return;
+  }
+
+  setAuthStatus("Creating account...");
+  const { data, error } = await supabaseClient.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: window.location.href.split("#")[0],
+    },
+  });
+
+  if (error) {
+    setAuthStatus(error.message || "Account creation failed.", true);
+    return;
+  }
+
+  elements.authPassword.value = "";
+
+  if (data.session) {
+    await handleSession(data.session);
+  } else {
+    setAuthStatus("Account created. Check your email to confirm it, then sign in.");
+  }
+}
+
+async function signOut() {
+  if (!supabaseClient) return;
+
+  setSyncStatus("Signing out...");
+  await supabaseClient.auth.signOut();
+  requests = [];
+  localStorage.removeItem(STORAGE_KEY);
+  render();
+  setSignedInState(null);
+}
+
+async function initCloud() {
+  if (!hasCloudConfig) {
+    cloudReady = false;
+    elements.authPanel.classList.add("hidden");
+    setAppVisible(true);
+    return;
+  }
+
+  elements.authPanel.classList.remove("hidden");
+  setAppVisible(false);
+
+  if (!supabaseClient) {
+    setAuthStatus("Cloud saving could not start. Check the Supabase script connection.", true);
+    return;
+  }
+
+  cloudReady = true;
+  const { data, error } = await supabaseClient.auth.getSession();
+
+  if (error) {
+    setAuthStatus("Could not check sign-in status.", true);
+    return;
+  }
+
+  await handleSession(data.session);
+
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    handleSession(session);
+  });
+}
+
 elements.requestForm.addEventListener("submit", (event) => {
   event.preventDefault();
   if (!validateRequestForm()) return;
@@ -575,8 +825,16 @@ elements.addSeatButton.addEventListener("click", () => {
   getStaffInputs().at(-1)?.focus();
 });
 
+elements.authForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  signIn();
+});
+elements.signUpButton.addEventListener("click", createAccount);
+elements.signOutButton.addEventListener("click", signOut);
+
 setSelectedDate(todayIso());
 clearForm();
+initCloud();
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {

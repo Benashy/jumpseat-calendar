@@ -115,6 +115,65 @@ h1 {
   margin-bottom: 18px;
 }
 
+.auth-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.8fr);
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 18px;
+  border: 1px solid rgba(198, 161, 90, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(198, 161, 90, 0.14), transparent 45%),
+    var(--panel);
+  box-shadow: var(--soft-shadow);
+  padding: 16px;
+}
+
+.auth-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.auth-copy h2 {
+  color: var(--navy);
+  font-size: 1.05rem;
+}
+
+.auth-copy p,
+.auth-session span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.auth-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 9px;
+}
+
+.auth-actions,
+.auth-session {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+
+.auth-actions {
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+}
+
+.auth-session {
+  justify-content: flex-end;
+}
+
+.status-error {
+  color: var(--warn) !important;
+}
+
 .tab-button {
   min-height: 46px;
   border: 1px solid rgba(198, 161, 90, 0.24);
@@ -722,6 +781,17 @@ legend + * {
 
   .field-grid {
     grid-template-columns: 1fr;
+  }
+
+  .auth-panel,
+  .auth-form {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-actions,
+  .auth-session {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .date-picker-group {
