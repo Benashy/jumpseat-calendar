@@ -3,6 +3,8 @@ const MAGIC_LINK_SENT_KEY = "jumpseat-calendar-magic-link-sent-at";
 const MAX_REQUESTS_PER_FLIGHT = 10;
 const MAGIC_LINK_COOLDOWN_SECONDS = 75;
 const MAGIC_LINK_RATE_LIMIT_SECONDS = 60 * 60;
+const CLOUD_FRESH_HOURS = 1;
+const CLOUD_STALE_HOURS = 24;
 
 const elements = {
   selectedDate: document.querySelector("#selectedDate"),
@@ -115,7 +117,11 @@ function formatElapsed(fromDate) {
 
 function updateCloudSuccessStatus() {
   if (!lastCloudSuccess) return;
-  setSyncStatus(`${lastCloudSuccess.label} ${formatElapsed(lastCloudSuccess.at)}`);
+  const elapsedHours = (Date.now() - lastCloudSuccess.at.getTime()) / (60 * 60 * 1000);
+  const isStale = elapsedHours >= CLOUD_STALE_HOURS;
+  const isAged = elapsedHours >= CLOUD_FRESH_HOURS && !isStale;
+
+  setSyncStatus(`${lastCloudSuccess.label} ${formatElapsed(lastCloudSuccess.at)}`, isStale, isAged);
 }
 
 function setCloudSuccessStatus(label) {
