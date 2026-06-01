@@ -11,8 +11,11 @@ const elements = {
   authStatus: document.querySelector("#authStatus"),
   authSession: document.querySelector("#authSession"),
   syncStatus: document.querySelector("#syncStatus"),
+  homeSyncStatus: document.querySelector("#homeSyncStatus"),
+  accountPanel: document.querySelector("#accountPanel"),
   signUpButton: document.querySelector("#signUpButton"),
   signOutButton: document.querySelector("#signOutButton"),
+  homeSignOutButton: document.querySelector("#homeSignOutButton"),
   appTabs: document.querySelector(".app-tabs"),
   layout: document.querySelector(".layout"),
   homeTab: document.querySelector("#homeTab"),
@@ -71,7 +74,9 @@ function setAuthStatus(message, isError = false) {
 
 function setSyncStatus(message, isError = false) {
   elements.syncStatus.textContent = message;
+  elements.homeSyncStatus.textContent = message;
   elements.syncStatus.classList.toggle("status-error", isError);
+  elements.homeSyncStatus.classList.toggle("status-error", isError);
 }
 
 function setAppVisible(isVisible) {
@@ -83,6 +88,7 @@ function setSignedInState(user) {
   currentUser = user;
   elements.authForm.classList.toggle("hidden", Boolean(user));
   elements.authSession.classList.toggle("hidden", !user);
+  elements.accountPanel.classList.toggle("hidden", !user);
   setAppVisible(Boolean(user));
 
   if (user) {
@@ -831,6 +837,7 @@ elements.authForm.addEventListener("submit", (event) => {
 });
 elements.signUpButton.addEventListener("click", createAccount);
 elements.signOutButton.addEventListener("click", signOut);
+elements.homeSignOutButton.addEventListener("click", signOut);
 
 setSelectedDate(todayIso());
 clearForm();

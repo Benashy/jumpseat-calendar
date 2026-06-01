@@ -388,6 +388,26 @@ button:disabled {
   padding: 18px 0;
 }
 
+.account-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  border: 1px solid rgba(198, 161, 90, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(198, 161, 90, 0.1), transparent 45%),
+    var(--panel-soft);
+  padding: 12px;
+}
+
+.account-panel span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
 .upcoming-panel {
   border-bottom: 1px solid var(--line);
   padding: 18px 0;
@@ -789,7 +809,8 @@ legend + * {
   }
 
   .auth-actions,
-  .auth-session {
+  .auth-session,
+  .account-panel {
     align-items: stretch;
     flex-direction: column;
   }
