@@ -60,8 +60,9 @@ let currentUser = null;
 let cloudReady = false;
 let cloudLoaded = false;
 let saveTimer = null;
-let magicLinkCooldownTimer = null;
-let magicLinkCooldownRemaining = 0;
+let magicLinkRetryTimer = null;
+let syncElapsedTimer = null;
+let lastCloudSuccess = null;
 
 const cloudConfig = window.JUMPSEAT_SUPABASE || {};
 const hasCloudConfig = Boolean(
@@ -74,13 +75,14 @@ const supabaseClient = hasCloudConfig && window.supabase
   ? window.supabase.createClient(cloudConfig.url, cloudConfig.anonKey)
   : null;
 
-function setAuthStatus(message, isError = false) {
+function setAuthStatus(message, isError = false, isSuccess = false) {
   elements.authStatus.textContent = message;
   elements.authStatus.classList.toggle("status-error", isError);
+  elements.authStatus.classList.toggle("status-success", isSuccess);
 }
 
 function isSuccessStatus(message) {
-  return message === "Saved to cloud" || message === "Loaded from cloud";
+  return message.startsWith("Saved to cloud") || message.startsWith("Loaded from cloud");
 }
 
 function setSyncStatus(message, isError = false) {
@@ -92,24 +94,64 @@ function setSyncStatus(message, isError = false) {
   elements.homeSyncStatus.classList.toggle("status-success", !isError && isSuccessStatus(message));
 }
 
-function setMagicLinkCooldown(seconds) {
-  window.clearInterval(magicLinkCooldownTimer);
-  magicLinkCooldownRemaining = seconds;
+function formatElapsed(fromDate) {
+  const elapsedSeconds = Math.max(0, Math.floor((Date.now() - fromDate.getTime()) / 1000));
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  const hours = Math.floor(elapsedMinutes / 60);
+  const minutes = elapsedMinutes % 60;
+
+  if (elapsedSeconds < 45) return "just now";
+  if (elapsedMinutes < 60) return `${elapsedMinutes} ${pluralize(elapsedMinutes, "min")} ago`;
+  if (minutes === 0) return `${hours} ${pluralize(hours, "hr")} ago`;
+  return `${hours} ${pluralize(hours, "hr")} ${minutes} ${pluralize(minutes, "min")} ago`;
+}
+
+function updateCloudSuccessStatus() {
+  if (!lastCloudSuccess) return;
+  setSyncStatus(`${lastCloudSuccess.label} ${formatElapsed(lastCloudSuccess.at)}`);
+}
+
+function setCloudSuccessStatus(label) {
+  lastCloudSuccess = {
+    label,
+    at: new Date(),
+  };
+
+  updateCloudSuccessStatus();
+  window.clearInterval(syncElapsedTimer);
+  syncElapsedTimer = window.setInterval(updateCloudSuccessStatus, 30000);
+}
+
+function setMagicLinkRetryCountdown(seconds) {
+  let remaining = seconds;
+  window.clearInterval(magicLinkRetryTimer);
   elements.magicLinkButton.disabled = true;
-  elements.magicLinkButton.textContent = `Email sent (${magicLinkCooldownRemaining}s)`;
 
-  magicLinkCooldownTimer = window.setInterval(() => {
-    magicLinkCooldownRemaining -= 1;
+  const updateMessage = () => {
+    setAuthStatus(
+      `For security purposes, you can request another magic link in ${remaining} ${pluralize(remaining, "second")}.`,
+      true
+    );
+  };
 
-    if (magicLinkCooldownRemaining <= 0) {
-      window.clearInterval(magicLinkCooldownTimer);
+  updateMessage();
+  magicLinkRetryTimer = window.setInterval(() => {
+    remaining -= 1;
+
+    if (remaining <= 0) {
+      window.clearInterval(magicLinkRetryTimer);
       elements.magicLinkButton.disabled = false;
-      elements.magicLinkButton.textContent = "Email magic link";
+      setAuthStatus("You can request another magic link now.");
       return;
     }
 
-    elements.magicLinkButton.textContent = `Email sent (${magicLinkCooldownRemaining}s)`;
+    updateMessage();
   }, 1000);
+}
+
+function getRetrySeconds(message) {
+  const match = message.match(/after\s+(\d+)\s+seconds?/i) || message.match(/(\d+)\s+seconds?/i);
+  return match ? Number(match[1]) : null;
 }
 
 function setAppVisible(isVisible) {
@@ -125,9 +167,14 @@ function setSignedInState(user) {
   setAppVisible(Boolean(user));
 
   if (user) {
-    setAuthStatus(`Signed in as ${user.email}.`);
+    setAuthStatus(`Signed in as ${user.email}`);
   } else {
     cloudLoaded = false;
+    lastCloudSuccess = null;
+    window.clearInterval(syncElapsedTimer);
+    window.clearInterval(magicLinkRetryTimer);
+    elements.magicLinkButton.disabled = false;
+    elements.magicLinkButton.textContent = "Email magic link";
     setAuthStatus("Sign in to load and save your jumpseat requests online.");
     setSyncStatus("Cloud ready");
   }
@@ -266,7 +313,7 @@ async function saveCloudRequests() {
     return;
   }
 
-  setSyncStatus("Saved to cloud");
+  setCloudSuccessStatus("Saved to cloud");
 }
 
 async function loadCloudRequests() {
@@ -292,7 +339,7 @@ async function loadCloudRequests() {
     requests = sanitizeRequests(data.requests);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
     cloudLoaded = true;
-    setSyncStatus("Loaded from cloud");
+    setCloudSuccessStatus("Loaded from cloud");
   } else {
     requests = sanitizeRequests(localRequests);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
@@ -752,16 +799,13 @@ async function signIn() {
 async function sendMagicLink() {
   const email = elements.authEmail.value.trim();
 
-  if (magicLinkCooldownRemaining > 0) {
-    setAuthStatus("Magic link already sent. Check your email.", false);
-    return;
-  }
-
   if (!email) {
     setAuthStatus("Enter your email address first.", true);
     return;
   }
 
+  window.clearInterval(magicLinkRetryTimer);
+  elements.magicLinkButton.disabled = true;
   setAuthStatus("Sending magic link...");
   const { error } = await supabaseClient.auth.signInWithOtp({
     email,
@@ -771,12 +815,19 @@ async function sendMagicLink() {
   });
 
   if (error) {
+    const retrySeconds = getRetrySeconds(error.message || "");
+    if (retrySeconds) {
+      setMagicLinkRetryCountdown(retrySeconds);
+      return;
+    }
+
+    elements.magicLinkButton.disabled = false;
     setAuthStatus(error.message || "Magic link could not be sent.", true);
     return;
   }
 
-  setAuthStatus("Magic link sent. Check your email to sign in.");
-  setMagicLinkCooldown(10);
+  elements.magicLinkButton.disabled = false;
+  setAuthStatus("Magic link sent. Check your email to sign in.", false, true);
 }
 
 async function createAccount() {
