@@ -26,7 +26,19 @@ This creates one private data row per signed-in user and enables Row Level Secur
 3. Copy the Project URL.
 4. Copy the public anon key.
 
-## 4. Connect The App
+## 4. Set The App URL In Supabase
+
+In Supabase, go to Authentication, then URL Configuration.
+
+Set the Site URL to:
+
+```text
+https://benashy.github.io/jumpseat-calendar/
+```
+
+Add the same URL to Redirect URLs if Supabase asks for one.
+
+## 5. Connect The App
 
 Open `supabase-config.js` and replace:
 
@@ -39,7 +51,13 @@ with the Project URL and public anon key from Supabase.
 
 The anon key is allowed to be public. Security comes from Supabase Auth and the Row Level Security rules in `supabase-schema.sql`.
 
-## 5. Account Setup
+After changing `supabase-config.js`, also update the cache version so GitHub Pages does not keep serving the old placeholder config:
+
+1. In `index.html`, change every `cloud-sync-1` reference to a new value, for example `cloud-sync-2`.
+2. In `service-worker.js`, change `jumpseat-calendar-v14` to the next version, for example `jumpseat-calendar-v15`.
+3. In `service-worker.js`, change every `cloud-sync-1` reference to the same new value used in `index.html`.
+
+## 6. Account Setup
 
 The app currently supports email and password sign-in.
 
@@ -50,7 +68,7 @@ Recommended for Ben's single-user setup:
 3. Sign in.
 4. Once confirmed working, disable new public signups in Supabase Auth settings if desired.
 
-## 6. Test
+## 7. Test
 
 1. Sign in.
 2. Add a test flight.
@@ -59,4 +77,3 @@ Recommended for Ben's single-user setup:
 5. Open the live site on iPhone.
 6. Sign in with the same account.
 7. Confirm the test flight appears.
-
