@@ -1,10 +1,10 @@
-const CACHE_NAME = "jumpseat-calendar-v17";
+const CACHE_NAME = "jumpseat-calendar-v18";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=cloud-sync-4",
-  "./supabase-config.js?v=cloud-sync-4",
-  "./app.js?v=cloud-sync-4",
+  "./styles.css?v=cloud-sync-5",
+  "./supabase-config.js?v=cloud-sync-5",
+  "./app.js?v=cloud-sync-5",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
@@ -28,9 +28,23 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
+  const request = event.request;
+  const acceptsHtml = request.headers.get("accept")?.includes("text/html");
+
+  if (request.mode === "navigate" || acceptsHtml) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          return response;
+        })
+        .catch(() => caches.match(request).then((cached) => cached || caches.match("./index.html")))
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request);
-    })
+    caches.match(request).then((cached) => cached || fetch(request))
   );
 });

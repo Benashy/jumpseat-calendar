@@ -74,11 +74,17 @@ function setAuthStatus(message, isError = false) {
   elements.authStatus.classList.toggle("status-error", isError);
 }
 
+function isSuccessStatus(message) {
+  return message === "Saved to cloud" || message === "Loaded from cloud";
+}
+
 function setSyncStatus(message, isError = false) {
   elements.syncStatus.textContent = message;
   elements.homeSyncStatus.textContent = message;
   elements.syncStatus.classList.toggle("status-error", isError);
   elements.homeSyncStatus.classList.toggle("status-error", isError);
+  elements.syncStatus.classList.toggle("status-success", !isError && isSuccessStatus(message));
+  elements.homeSyncStatus.classList.toggle("status-success", !isError && isSuccessStatus(message));
 }
 
 function setAppVisible(isVisible) {
