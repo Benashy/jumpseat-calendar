@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-11" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-12" />
   </head>
   <body>
     <div class="app-shell">
@@ -29,8 +29,14 @@
         </div>
 
         <form class="auth-form" id="authForm" novalidate>
-          <input id="authEmail" name="username" type="email" placeholder="Email address" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" required />
-          <input id="authPassword" name="current-password" type="password" placeholder="Password" autocomplete="current-password" autocapitalize="none" spellcheck="false" />
+          <div class="credential-field">
+            <input id="authEmail" name="email" type="email" placeholder="Email address" autocomplete="username" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next" required />
+            <button class="text-button secondary paste-button" id="pasteEmailButton" type="button">Paste</button>
+          </div>
+          <div class="credential-field">
+            <input id="authPassword" name="password" type="password" placeholder="Password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" />
+            <button class="text-button secondary paste-button" id="pastePasswordButton" type="button">Paste</button>
+          </div>
           <div class="auth-actions">
             <button class="primary-button" id="signInButton" type="submit">Sign in</button>
             <button class="text-button secondary" id="magicLinkButton" type="button">Email magic link</button>
@@ -40,7 +46,6 @@
         <div class="auth-session hidden" id="authSession">
           <span id="syncStatus">Cloud ready</span>
           <button class="text-button secondary" id="refreshCloudButton" type="button">Refresh</button>
-          <button class="text-button secondary" id="signOutButton" type="button">Sign out</button>
         </div>
       </section>
 
@@ -103,7 +108,6 @@
           <section class="account-panel hidden" id="accountPanel" aria-label="Account">
             <span id="homeSyncStatus">Cloud saving active</span>
             <div class="account-actions">
-              <button class="text-button secondary" id="homeRefreshCloudButton" type="button">Refresh</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
           </section>
@@ -194,7 +198,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-11"></script>
-    <script src="./app.js?v=cloud-sync-11"></script>
+    <script src="./supabase-config.js?v=cloud-sync-12"></script>
+    <script src="./app.js?v=cloud-sync-12"></script>
   </body>
 </html>

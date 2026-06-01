@@ -154,6 +154,21 @@ h1 {
   gap: 9px;
 }
 
+.credential-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px;
+}
+
+.credential-field input {
+  min-width: 0;
+}
+
+.paste-button {
+  min-width: 72px;
+  padding-inline: 12px;
+}
+
 .auth-actions,
 .auth-session {
   display: flex;

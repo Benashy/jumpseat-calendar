@@ -1,7 +1,8 @@
 const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const MAGIC_LINK_SENT_KEY = "jumpseat-calendar-magic-link-sent-at";
 const MAX_REQUESTS_PER_FLIGHT = 10;
-const MAGIC_LINK_COOLDOWN_SECONDS = 60;
+const MAGIC_LINK_COOLDOWN_SECONDS = 75;
+const MAGIC_LINK_RATE_LIMIT_SECONDS = 60 * 60;
 
 const elements = {
   selectedDate: document.querySelector("#selectedDate"),
@@ -10,6 +11,8 @@ const elements = {
   authForm: document.querySelector("#authForm"),
   authEmail: document.querySelector("#authEmail"),
   authPassword: document.querySelector("#authPassword"),
+  pasteEmailButton: document.querySelector("#pasteEmailButton"),
+  pastePasswordButton: document.querySelector("#pastePasswordButton"),
   authStatus: document.querySelector("#authStatus"),
   authSession: document.querySelector("#authSession"),
   syncStatus: document.querySelector("#syncStatus"),
@@ -18,8 +21,6 @@ const elements = {
   accountPanel: document.querySelector("#accountPanel"),
   magicLinkButton: document.querySelector("#magicLinkButton"),
   refreshCloudButton: document.querySelector("#refreshCloudButton"),
-  homeRefreshCloudButton: document.querySelector("#homeRefreshCloudButton"),
-  signOutButton: document.querySelector("#signOutButton"),
   homeSignOutButton: document.querySelector("#homeSignOutButton"),
   appTabs: document.querySelector(".app-tabs"),
   layout: document.querySelector(".layout"),
@@ -134,10 +135,10 @@ function setMagicLinkRetryCountdown(seconds) {
   elements.magicLinkButton.disabled = true;
 
   const updateMessage = () => {
-    setAuthStatus(
-      `For security purposes, you can request another magic link in ${remaining} ${pluralize(remaining, "second")}.`,
-      true
-    );
+    const timeLabel = remaining >= 60
+      ? `${Math.ceil(remaining / 60)} ${pluralize(Math.ceil(remaining / 60), "minute")}`
+      : `${remaining} ${pluralize(remaining, "second")}`;
+    setAuthStatus(`You can request another magic link in ${timeLabel}. Use password sign-in if you need access now.`, true);
   };
 
   updateMessage();
@@ -156,6 +157,9 @@ function setMagicLinkRetryCountdown(seconds) {
 }
 
 function getRetrySeconds(message) {
+  const minuteMatch = message.match(/after\s+(\d+)\s+minutes?/i) || message.match(/(\d+)\s+minutes?/i);
+  if (minuteMatch) return Number(minuteMatch[1]) * 60;
+
   const match = message.match(/after\s+(\d+)\s+seconds?/i) || message.match(/(\d+)\s+seconds?/i);
   return match ? Number(match[1]) : null;
 }
@@ -176,12 +180,23 @@ function isRateLimitError(message) {
   return /rate limit|too many|over_email_send_rate_limit/i.test(message);
 }
 
-function allowCredentialClipboard() {
-  [elements.authEmail, elements.authPassword].forEach((field) => {
-    ["paste", "copy", "cut"].forEach((eventName) => {
-      field.addEventListener(eventName, (event) => event.stopPropagation());
-    });
-  });
+async function pasteCredential(field) {
+  if (!navigator.clipboard?.readText) {
+    field.focus();
+    setAuthStatus("Use the iPhone paste menu for this field. Browser clipboard access is unavailable.", true);
+    return;
+  }
+
+  try {
+    const text = await navigator.clipboard.readText();
+    field.value = text.trim();
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    field.focus();
+    setAuthStatus("Pasted from clipboard.", false, true);
+  } catch {
+    field.focus();
+    setAuthStatus("Paste was blocked by the browser. Tap inside the field and use Paste from the iPhone menu.", true);
+  }
 }
 
 function setOfflineReadOnly(isReadOnly) {
@@ -190,7 +205,6 @@ function setOfflineReadOnly(isReadOnly) {
   elements.offlineBanner.classList.toggle("hidden", !isReadOnly);
   elements.addTab.disabled = isReadOnly;
   elements.refreshCloudButton.disabled = isReadOnly;
-  elements.homeRefreshCloudButton.disabled = isReadOnly;
 
   if (isReadOnly) {
     setActiveTab("home");
@@ -937,12 +951,13 @@ async function sendMagicLink() {
     email,
     options: {
       emailRedirectTo: window.location.href.split("#")[0],
+      shouldCreateUser: false,
     },
   });
 
   if (error) {
     const message = error.message || "";
-    const retrySeconds = getRetrySeconds(message) || (isRateLimitError(message) ? MAGIC_LINK_COOLDOWN_SECONDS : null);
+    const retrySeconds = getRetrySeconds(message) || (isRateLimitError(message) ? MAGIC_LINK_RATE_LIMIT_SECONDS : null);
     if (retrySeconds) {
       rememberMagicLinkSent();
       setMagicLinkRetryCountdown(retrySeconds);
@@ -1110,17 +1125,16 @@ elements.authForm.addEventListener("submit", (event) => {
   event.preventDefault();
   signIn();
 });
+elements.pasteEmailButton.addEventListener("click", () => pasteCredential(elements.authEmail));
+elements.pastePasswordButton.addEventListener("click", () => pasteCredential(elements.authPassword));
 elements.magicLinkButton.addEventListener("click", sendMagicLink);
 elements.refreshCloudButton.addEventListener("click", refreshCloudData);
-elements.homeRefreshCloudButton.addEventListener("click", refreshCloudData);
-elements.signOutButton.addEventListener("click", () => signOut());
 elements.homeSignOutButton.addEventListener("click", () => signOut());
 window.addEventListener("offline", () => startOfflineMode());
 window.addEventListener("online", returnOnline);
 
 setSelectedDate(todayIso());
 clearForm();
-allowCredentialClipboard();
 initCloud();
 
 if ("serviceWorker" in navigator) {

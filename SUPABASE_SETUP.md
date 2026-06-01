@@ -72,6 +72,13 @@ Recommended for Ben's single-user setup:
 
 The app no longer shows a public Create account button.
 
+Supabase's default magic-link limits are strict during repeated testing:
+
+- One magic link per user roughly every 60 seconds.
+- A project-wide OTP/magic-link limit of 30 per hour by default.
+
+If magic links become frustrating, prefer password sign-in day to day, or review Authentication > Rate Limits in Supabase. Custom SMTP is only worth considering if email delivery or limits become a genuine problem.
+
 ## 7. Test
 
 1. Sign in.
