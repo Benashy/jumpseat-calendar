@@ -60,8 +60,10 @@ const elements = {
   notes: document.querySelector("#notes"),
   template: document.querySelector("#requestTemplate"),
   ftlForm: document.querySelector("#ftlForm"),
-  dutyStartTime: document.querySelector("#dutyStartTime"),
+  dutyStartHours: document.querySelector("#dutyStartHours"),
+  dutyStartMinutes: document.querySelector("#dutyStartMinutes"),
   latestPushback: document.querySelector("#latestPushback"),
+  latestPushbackCountdown: document.querySelector("#latestPushbackCountdown"),
   latestTakeoff: document.querySelector("#latestTakeoff"),
   latestOnChocks: document.querySelector("#latestOnChocks"),
 };
@@ -84,10 +86,8 @@ const ftlDurationControls = {
     defaultMinutes: 0,
   },
   taxiOut: {
-    hours: document.querySelector("#taxiOutHours"),
     minutes: document.querySelector("#taxiOutMinutes"),
-    maxHours: 5,
-    defaultHours: 0,
+    minuteOnly: true,
     defaultMinutes: 15,
   },
   flightTime: {
@@ -98,24 +98,18 @@ const ftlDurationControls = {
     defaultMinutes: 0,
   },
   holding: {
-    hours: document.querySelector("#holdingHours"),
     minutes: document.querySelector("#holdingMinutes"),
-    maxHours: 5,
-    defaultHours: 0,
+    minuteOnly: true,
     defaultMinutes: 15,
   },
   taxiIn: {
-    hours: document.querySelector("#taxiInHours"),
     minutes: document.querySelector("#taxiInMinutes"),
-    maxHours: 5,
-    defaultHours: 0,
+    minuteOnly: true,
     defaultMinutes: 15,
   },
   contingency: {
-    hours: document.querySelector("#contingencyHours"),
     minutes: document.querySelector("#contingencyMinutes"),
-    maxHours: 5,
-    defaultHours: 0,
+    minuteOnly: true,
     defaultMinutes: 0,
   },
 };
@@ -128,6 +122,8 @@ let cloudUpdatedAt = null;
 let saveTimer = null;
 let magicLinkRetryTimer = null;
 let syncElapsedTimer = null;
+let ftlCountdownTimer = null;
+let ftlLatestPushbackMinutes = null;
 let lastCloudSuccess = null;
 let isOfflineReadOnly = false;
 
@@ -386,13 +382,6 @@ function twoDigits(value) {
   return String(value).padStart(2, "0");
 }
 
-function parseClockTime(value) {
-  if (!value) return null;
-  const [hours, minutes] = value.split(":").map(Number);
-  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return null;
-  return (hours * 60) + minutes;
-}
-
 function formatZuluTime(totalMinutes) {
   const dayOffset = Math.floor(totalMinutes / MINUTES_IN_DAY);
   const normalized = ((totalMinutes % MINUTES_IN_DAY) + MINUTES_IN_DAY) % MINUTES_IN_DAY;
@@ -416,6 +405,8 @@ function populateSelect(select, start, end, selectedValue) {
 }
 
 function updateMinuteOptions(control) {
+  if (control.minuteOnly) return;
+
   const currentMinute = Number(control.minutes.value || control.defaultMinutes || 0);
   const selectedHour = Number(control.hours.value || 0);
   const minMinute = selectedHour === 0 ? (control.minMinutesWhenZero || 0) : 0;
@@ -428,6 +419,12 @@ function updateMinuteOptions(control) {
 }
 
 function setupDurationControl(control) {
+  if (control.minuteOnly) {
+    populateSelect(control.minutes, 0, 59, control.defaultMinutes);
+    control.minutes.addEventListener("change", calculateFtl);
+    return;
+  }
+
   populateSelect(control.hours, 0, control.maxHours, control.defaultHours);
   updateMinuteOptions(control);
   control.minutes.value = String(control.defaultMinutes);
@@ -440,18 +437,47 @@ function setupDurationControl(control) {
 }
 
 function getDurationMinutes(control) {
+  if (control.minuteOnly) return Number(control.minutes.value);
   return (Number(control.hours.value) * 60) + Number(control.minutes.value);
 }
 
-function calculateFtl() {
-  const dutyStart = parseClockTime(elements.dutyStartTime.value);
+function getDutyStartMinutes() {
+  return (Number(elements.dutyStartHours.value) * 60) + Number(elements.dutyStartMinutes.value);
+}
 
-  if (dutyStart === null) {
-    elements.latestPushback.textContent = "--:--Z";
-    elements.latestTakeoff.textContent = "--:--Z";
-    elements.latestOnChocks.textContent = "--:--Z";
+function formatDurationFromMinutes(totalMinutes) {
+  const absoluteMinutes = Math.abs(Math.round(totalMinutes));
+  const hours = Math.floor(absoluteMinutes / 60);
+  const minutes = absoluteMinutes % 60;
+
+  if (hours === 0) return `${minutes} ${pluralize(minutes, "min")}`;
+  if (minutes === 0) return `${hours} ${pluralize(hours, "hr")}`;
+  return `${hours} ${pluralize(hours, "hr")} ${minutes} ${pluralize(minutes, "min")}`;
+}
+
+function updateFtlCountdown() {
+  if (ftlLatestPushbackMinutes === null) {
+    elements.latestPushbackCountdown.textContent = "Set duty start";
+    elements.latestPushbackCountdown.classList.remove("status-error", "status-warning", "status-success");
     return;
   }
+
+  const now = new Date();
+  const currentZuluMinutes = (now.getUTCHours() * 60) + now.getUTCMinutes() + (now.getUTCSeconds() / 60);
+  const remainingMinutes = ftlLatestPushbackMinutes - currentZuluMinutes;
+  const isPast = remainingMinutes < 0;
+  const isClose = remainingMinutes >= 0 && remainingMinutes <= 30;
+
+  elements.latestPushbackCountdown.textContent = isPast
+    ? `${formatDurationFromMinutes(remainingMinutes)} ago`
+    : `${formatDurationFromMinutes(remainingMinutes)} remaining`;
+  elements.latestPushbackCountdown.classList.toggle("status-error", isPast);
+  elements.latestPushbackCountdown.classList.toggle("status-warning", isClose);
+  elements.latestPushbackCountdown.classList.toggle("status-success", !isPast && !isClose);
+}
+
+function calculateFtl() {
+  const dutyStart = getDutyStartMinutes();
 
   const latestOnChocks = dutyStart +
     getDurationMinutes(ftlDurationControls.maxFdp) +
@@ -466,12 +492,19 @@ function calculateFtl() {
   elements.latestOnChocks.textContent = formatZuluTime(latestOnChocks);
   elements.latestTakeoff.textContent = formatZuluTime(latestTakeoff);
   elements.latestPushback.textContent = formatZuluTime(latestPushback);
+  ftlLatestPushbackMinutes = latestPushback;
+  updateFtlCountdown();
 }
 
 function setupFtlCalculator() {
+  populateSelect(elements.dutyStartHours, 0, 23, 0);
+  populateSelect(elements.dutyStartMinutes, 0, 59, 0);
   Object.values(ftlDurationControls).forEach(setupDurationControl);
-  elements.dutyStartTime.addEventListener("input", calculateFtl);
+  elements.dutyStartHours.addEventListener("change", calculateFtl);
+  elements.dutyStartMinutes.addEventListener("change", calculateFtl);
   calculateFtl();
+  window.clearInterval(ftlCountdownTimer);
+  ftlCountdownTimer = window.setInterval(updateFtlCountdown, 30000);
 }
 
 function requestSortValue(request) {

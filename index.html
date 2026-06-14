@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-20" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-22" />
   </head>
   <body>
     <div class="app-shell">
@@ -183,6 +183,7 @@
             <div>
               <span>Latest pushback</span>
               <strong id="latestPushback">--:--Z</strong>
+              <small id="latestPushbackCountdown">Enter duty start</small>
             </div>
             <div>
               <span>Latest takeoff</span>
@@ -196,11 +197,13 @@
 
           <form class="ftl-form" id="ftlForm">
             <div class="field-grid">
-              <label>
+              <label class="duration-control">
                 Duty start time
-                <span class="zulu-field">
-                  <input id="dutyStartTime" name="dutyStartTime" type="time" required />
-                  <span aria-hidden="true">Z</span>
+                <span>
+                  <select id="dutyStartHours" aria-label="Duty start hours"></select>
+                  <small>hr</small>
+                  <select id="dutyStartMinutes" aria-label="Duty start minutes"></select>
+                  <small>Z</small>
                 </span>
               </label>
             </div>
@@ -232,11 +235,9 @@
             <section class="duration-section" aria-label="Planned sector timings">
               <h3>Sector timing</h3>
               <div class="duration-grid">
-                <label class="duration-control">
+                <label class="duration-control minute-only">
                   Taxi out
                   <span>
-                    <select id="taxiOutHours" aria-label="Taxi out hours"></select>
-                    <small>hr</small>
                     <select id="taxiOutMinutes" aria-label="Taxi out minutes"></select>
                     <small>min</small>
                   </span>
@@ -250,29 +251,23 @@
                     <small>min</small>
                   </span>
                 </label>
-                <label class="duration-control">
+                <label class="duration-control minute-only">
                   Holding
                   <span>
-                    <select id="holdingHours" aria-label="Holding hours"></select>
-                    <small>hr</small>
                     <select id="holdingMinutes" aria-label="Holding minutes"></select>
                     <small>min</small>
                   </span>
                 </label>
-                <label class="duration-control">
+                <label class="duration-control minute-only">
                   Taxi in
                   <span>
-                    <select id="taxiInHours" aria-label="Taxi in hours"></select>
-                    <small>hr</small>
                     <select id="taxiInMinutes" aria-label="Taxi in minutes"></select>
                     <small>min</small>
                   </span>
                 </label>
-                <label class="duration-control">
+                <label class="duration-control minute-only">
                   Contingency
                   <span>
-                    <select id="contingencyHours" aria-label="Contingency hours"></select>
-                    <small>hr</small>
                     <select id="contingencyMinutes" aria-label="Contingency minutes"></select>
                     <small>min</small>
                   </span>
@@ -303,7 +298,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-20"></script>
-    <script src="./app.js?v=cloud-sync-20"></script>
+    <script src="./supabase-config.js?v=cloud-sync-22"></script>
+    <script src="./app.js?v=cloud-sync-22"></script>
   </body>
 </html>
