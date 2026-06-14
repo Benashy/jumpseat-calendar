@@ -473,6 +473,8 @@ function updateDurationIncompleteState(control) {
   if (control.minuteOnly) return;
   const isIncomplete = Boolean(control.blankDefault && control.hours.value !== "" && control.minutes.value === "");
   control.minutes.classList.toggle("is-incomplete", isIncomplete);
+  control.minutes.setAttribute("aria-invalid", String(isIncomplete));
+  control.hours.closest(".duration-control")?.classList.toggle("has-incomplete-minutes", isIncomplete);
 }
 
 function setupDurationControl(control) {

@@ -693,8 +693,15 @@ button:disabled {
 }
 
 .duration-control select.is-incomplete {
+  background: #fff8f8;
   border-color: var(--danger);
+  outline: 2px solid rgba(180, 64, 64, 0.62);
+  outline-offset: 2px;
   box-shadow: 0 0 0 3px rgba(180, 64, 64, 0.14);
+}
+
+.duration-control.has-incomplete-minutes {
+  border-color: rgba(180, 64, 64, 0.58);
 }
 
 .duration-control small {
