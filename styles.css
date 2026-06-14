@@ -475,6 +475,10 @@ button:disabled {
   margin-top: 7px;
 }
 
+.ftl-results .contingency-note {
+  color: var(--muted);
+}
+
 .ftl-form,
 .duration-section {
   display: grid;

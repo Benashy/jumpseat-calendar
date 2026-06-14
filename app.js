@@ -65,7 +65,9 @@ const elements = {
   dutyStartMinutes: document.querySelector("#dutyStartMinutes"),
   latestPushback: document.querySelector("#latestPushback"),
   latestPushbackCountdown: document.querySelector("#latestPushbackCountdown"),
+  pushbackContingency: document.querySelector("#pushbackContingency"),
   latestTakeoff: document.querySelector("#latestTakeoff"),
+  takeoffContingency: document.querySelector("#takeoffContingency"),
   latestOnChocks: document.querySelector("#latestOnChocks"),
   maxAllowableFdp: document.querySelector("#maxAllowableFdp"),
   sectorLength: document.querySelector("#sectorLength"),
@@ -513,6 +515,7 @@ function calculateFtl() {
     getDurationMinutes(ftlDurationControls.holding) +
     getDurationMinutes(ftlDurationControls.taxiIn) +
     getDurationMinutes(ftlDurationControls.contingency);
+  const contingency = getDurationMinutes(ftlDurationControls.contingency);
 
   const latestOnChocks = dutyStart + maximumAllowableFdp;
   const latestTakeoff = latestOnChocks -
@@ -525,6 +528,8 @@ function calculateFtl() {
   elements.latestOnChocks.textContent = formatZuluTime(latestOnChocks);
   elements.latestTakeoff.textContent = formatZuluTime(latestTakeoff);
   elements.latestPushback.textContent = formatZuluTime(latestPushback);
+  elements.pushbackContingency.textContent = `${formatDurationFromMinutes(contingency)} contingency`;
+  elements.takeoffContingency.textContent = `${formatDurationFromMinutes(contingency)} contingency`;
   elements.maxAllowableFdp.textContent = formatDurationFromMinutes(maximumAllowableFdp);
   elements.sectorLength.textContent = formatDurationFromMinutes(sectorLength);
   ftlLatestPushbackMinutes = latestPushback;

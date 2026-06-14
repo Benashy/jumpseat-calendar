@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-24" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-25" />
   </head>
   <body>
     <div class="app-shell">
@@ -185,10 +185,12 @@
               <span>Latest pushback</span>
               <strong id="latestPushback">--:--Z</strong>
               <small id="latestPushbackCountdown">Enter duty start</small>
+              <small class="contingency-note" id="pushbackContingency">0 min contingency</small>
             </div>
             <div>
               <span>Latest takeoff</span>
               <strong id="latestTakeoff">--:--Z</strong>
+              <small class="contingency-note" id="takeoffContingency">0 min contingency</small>
             </div>
             <div>
               <span>Latest on-chocks</span>
@@ -307,7 +309,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-24"></script>
-    <script src="./app.js?v=cloud-sync-24"></script>
+    <script src="./supabase-config.js?v=cloud-sync-25"></script>
+    <script src="./app.js?v=cloud-sync-25"></script>
   </body>
 </html>
