@@ -1,5 +1,10 @@
 # Ben's OpsDeck To-Do
 
+## Current Status
+
+- Current visible app version: v1.3.
+- Next test check: confirm the red incomplete-minute boxes show correctly for Maximum FDP, Commander's discretion, and Flight time when hours are selected but minutes remain `--`.
+
 ## Next Priorities
 
 - Single-user security tidy-up: confirm Supabase sign-ups are disabled or tightly controlled.
