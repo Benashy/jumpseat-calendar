@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-27" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-28" />
   </head>
   <body>
     <div class="app-shell">
@@ -185,13 +185,15 @@
               <span>Latest pushback</span>
               <strong id="latestPushback">--:--Z</strong>
               <small class="limit-note soft-limit">Soft target</small>
-              <small id="latestPushbackCountdown">Enter duty start</small>
+              <small id="latestPushbackCountdown">Set required inputs</small>
+              <small class="result-discretion-note hidden" id="pushbackDiscretion"></small>
               <small class="contingency-note hidden" id="pushbackContingency"></small>
             </div>
             <div class="ftl-result-card is-hard">
               <span>Latest takeoff</span>
               <strong id="latestTakeoff">--:--Z</strong>
               <small class="limit-note hard-limit">Hard limit</small>
+              <small id="latestTakeoffCountdown">Set required inputs</small>
               <small class="result-discretion-note hidden" id="takeoffDiscretion"></small>
               <small class="contingency-note hidden" id="takeoffContingency"></small>
             </div>
@@ -238,7 +240,7 @@
               </div>
               <div class="calculation-strip">
                 <span>Maximum allowable FDP</span>
-                <strong id="maxAllowableFdp">12 hr 0 min</strong>
+                <strong id="maxAllowableFdp">--</strong>
               </div>
             </section>
 
@@ -285,7 +287,7 @@
               </div>
               <div class="calculation-strip">
                 <span>Anticipated sector length</span>
-                <strong id="sectorLength">0 hr 45 min</strong>
+                <strong id="sectorLength">--</strong>
               </div>
             </section>
           </form>
@@ -312,7 +314,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-27"></script>
-    <script src="./app.js?v=cloud-sync-27"></script>
+    <script src="./supabase-config.js?v=cloud-sync-28"></script>
+    <script src="./app.js?v=cloud-sync-28"></script>
   </body>
 </html>
