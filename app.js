@@ -513,6 +513,12 @@ function hasDurationValue(control) {
   return control.hours.value !== "" && control.minutes.value !== "";
 }
 
+function hasPartialDurationValue(control) {
+  if (control.minuteOnly) return false;
+  return (control.hours.value !== "" && control.minutes.value === "") ||
+    (control.hours.value === "" && control.minutes.value !== "");
+}
+
 function getDurationMinutes(control) {
   if (!hasDurationValue(control)) return 0;
   if (control.minuteOnly) return Number(control.minutes.value);
@@ -643,6 +649,7 @@ function calculateFtl() {
   const hasDutyStart = hasDutyStartValue();
   const hasMaximumFdp = hasDurationValue(ftlDurationControls.maxFdp);
   const hasFlightTime = hasDurationValue(ftlDurationControls.flightTime);
+  const hasPartialDiscretion = hasPartialDurationValue(ftlDurationControls.discretion);
   const dutyStart = hasDutyStart ? getDutyStartMinutes() : 0;
   const maximumFdp = getDurationMinutes(ftlDurationControls.maxFdp);
   const discretion = getDurationMinutes(ftlDurationControls.discretion);
@@ -655,7 +662,7 @@ function calculateFtl() {
     getDurationMinutes(ftlDurationControls.contingency);
   const contingency = getDurationMinutes(ftlDurationControls.contingency);
 
-  if (hasMaximumFdp) {
+  if (hasMaximumFdp && !hasPartialDiscretion) {
     updateMaximumAllowableFdp(maximumAllowableFdp, discretion);
   } else {
     elements.maxAllowableFdp.textContent = "--";
@@ -663,7 +670,7 @@ function calculateFtl() {
 
   elements.sectorLength.textContent = hasFlightTime ? formatDurationWithZeroMinutes(sectorLength) : "--";
 
-  if (!hasDutyStart || !hasMaximumFdp || !hasFlightTime) {
+  if (!hasDutyStart || !hasMaximumFdp || !hasFlightTime || hasPartialDiscretion) {
     resetFtlResults();
     return;
   }

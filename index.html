@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-33" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-34" />
   </head>
   <body>
     <div class="app-shell">
@@ -244,20 +244,20 @@
 
             <section class="duration-section" aria-label="Planned sector timings">
               <h3>Sector timing</h3>
-              <div class="duration-grid">
-                <label class="duration-control minute-only">
-                  <span class="duration-label">Taxi out</span>
-                  <span class="duration-picker">
-                    <select id="taxiOutMinutes" aria-label="Taxi out minutes"></select>
-                    <small>min</small>
-                  </span>
-                </label>
+              <div class="duration-grid sector-duration-grid">
                 <label class="duration-control required-duration">
                   <span class="duration-label">Flight time</span>
                   <span class="duration-picker">
                     <select id="flightTimeHours" aria-label="Flight time hours"></select>
                     <small>hr</small>
                     <select id="flightTimeMinutes" aria-label="Flight time minutes"></select>
+                    <small>min</small>
+                  </span>
+                </label>
+                <label class="duration-control minute-only">
+                  <span class="duration-label">Taxi out</span>
+                  <span class="duration-picker">
+                    <select id="taxiOutMinutes" aria-label="Taxi out minutes"></select>
                     <small>min</small>
                   </span>
                 </label>
@@ -322,7 +322,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-33"></script>
-    <script src="./app.js?v=cloud-sync-33"></script>
+    <script src="./supabase-config.js?v=cloud-sync-34"></script>
+    <script src="./app.js?v=cloud-sync-34"></script>
   </body>
 </html>
