@@ -1,4 +1,4 @@
-const CACHE_NAME = "jumpseat-calendar-v51";
+const CACHE_NAME = "jumpseat-calendar-v52";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,9 +6,9 @@ const APP_SHELL = [
   "./supabase-config.js?v=cloud-sync-37",
   "./app.js?v=cloud-sync-37",
   "./manifest.webmanifest?v=cloud-sync-37",
-  "./icons/icon-192.png?v=od-1",
-  "./icons/icon-512.png?v=od-1",
-  "./icons/apple-touch-icon.png?v=od-1"
+  "./icons/icon-192.png?v=od-2",
+  "./icons/icon-512.png?v=od-2",
+  "./icons/apple-touch-icon.png?v=od-2"
 ];
 
 self.addEventListener("install", (event) => {
