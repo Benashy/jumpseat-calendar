@@ -656,8 +656,14 @@ button:disabled {
   grid-column: 1 / -1;
 }
 
+.sector-duration-grid {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
 .sector-duration-grid .minute-only {
-  min-height: 52px;
+  min-height: 50px;
+  padding: 0 10px;
 }
 
 .duration-control > .duration-picker {
