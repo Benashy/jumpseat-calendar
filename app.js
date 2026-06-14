@@ -472,6 +472,18 @@ function formatDurationFromMinutes(totalMinutes) {
   return `${hours} ${pluralize(hours, "hr")} ${minutes} ${pluralize(minutes, "min")}`;
 }
 
+function formatDurationWithZeroMinutes(totalMinutes) {
+  const absoluteMinutes = Math.abs(Math.round(totalMinutes));
+  const hours = Math.floor(absoluteMinutes / 60);
+  const minutes = absoluteMinutes % 60;
+  return `${hours} ${pluralize(hours, "hr")} ${minutes} ${pluralize(minutes, "min")}`;
+}
+
+function formatContingencyIncluded(totalMinutes) {
+  const minutes = Math.abs(Math.round(totalMinutes));
+  return `${minutes} ${pluralize(minutes, "minute")} contingency included`;
+}
+
 function formatDurationFromSeconds(totalSeconds) {
   const absoluteSeconds = Math.abs(Math.floor(totalSeconds));
   const hours = Math.floor(absoluteSeconds / 3600);
@@ -504,11 +516,26 @@ function updateFtlCountdown() {
   elements.latestPushbackCountdown.classList.toggle("status-success", !isPast && !isClose);
 }
 
+function updateContingencyNote(element, contingency) {
+  element.textContent = formatContingencyIncluded(contingency);
+  element.classList.toggle("is-zero", contingency === 0);
+  element.classList.toggle("is-included", contingency > 0);
+}
+
+function updateMaximumAllowableFdp(maximumAllowableFdp, discretion) {
+  elements.maxAllowableFdp.textContent = formatDurationWithZeroMinutes(maximumAllowableFdp);
+  const discretionNote = document.createElement("span");
+  discretionNote.className = "discretion-note";
+  discretionNote.textContent = `(${formatDurationWithZeroMinutes(discretion)} commander's discretion included)`;
+  elements.maxAllowableFdp.append(discretionNote);
+}
+
 function calculateFtl() {
   const dutyStart = getDutyStartMinutes();
+  const discretion = getDurationMinutes(ftlDurationControls.discretion);
   const maximumAllowableFdp =
     getDurationMinutes(ftlDurationControls.maxFdp) +
-    getDurationMinutes(ftlDurationControls.discretion);
+    discretion;
   const sectorLength =
     getDurationMinutes(ftlDurationControls.taxiOut) +
     getDurationMinutes(ftlDurationControls.flightTime) +
@@ -528,10 +555,10 @@ function calculateFtl() {
   elements.latestOnChocks.textContent = formatZuluTime(latestOnChocks);
   elements.latestTakeoff.textContent = formatZuluTime(latestTakeoff);
   elements.latestPushback.textContent = formatZuluTime(latestPushback);
-  elements.pushbackContingency.textContent = `${formatDurationFromMinutes(contingency)} contingency`;
-  elements.takeoffContingency.textContent = `${formatDurationFromMinutes(contingency)} contingency`;
-  elements.maxAllowableFdp.textContent = formatDurationFromMinutes(maximumAllowableFdp);
-  elements.sectorLength.textContent = formatDurationFromMinutes(sectorLength);
+  updateContingencyNote(elements.pushbackContingency, contingency);
+  updateContingencyNote(elements.takeoffContingency, contingency);
+  updateMaximumAllowableFdp(maximumAllowableFdp, discretion);
+  elements.sectorLength.textContent = formatDurationWithZeroMinutes(sectorLength);
   ftlLatestPushbackMinutes = latestPushback;
   updateFtlCountdown();
 }

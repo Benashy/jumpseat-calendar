@@ -479,6 +479,14 @@ button:disabled {
   color: var(--muted);
 }
 
+.ftl-results .contingency-note.is-zero {
+  color: var(--muted);
+}
+
+.ftl-results .contingency-note.is-included {
+  color: #1f6841;
+}
+
 .ftl-form,
 .duration-section {
   display: grid;
@@ -519,6 +527,15 @@ button:disabled {
 .calculation-strip strong {
   color: var(--navy);
   font-size: 1rem;
+  line-height: 1.25;
+  text-align: right;
+}
+
+.calculation-strip .discretion-note {
+  color: var(--warn);
+  font-size: 0.76rem;
+  font-weight: 850;
+  margin-left: 6px;
 }
 
 .duration-grid {
