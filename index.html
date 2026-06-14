@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-32" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-33" />
   </head>
   <body>
     <div class="app-shell">
@@ -211,12 +211,15 @@
               <h3>FDP limit</h3>
               <div class="duration-grid">
                 <label class="duration-control required-duration native-time-control">
-                  Duty start time (Zulu)
-                  <input class="native-time-input" id="dutyStartTime" type="time" aria-label="Duty start time Zulu" />
+                  <span class="duration-label">Duty start time (Zulu)</span>
+                  <span class="time-input-shell is-empty" id="dutyStartShell">
+                    <input class="native-time-input" id="dutyStartTime" type="time" aria-label="Duty start time Zulu" />
+                    <span class="time-placeholder" aria-hidden="true">Select time</span>
+                  </span>
                 </label>
                 <label class="duration-control required-duration">
-                  Maximum FDP
-                  <span>
+                  <span class="duration-label">Maximum FDP</span>
+                  <span class="duration-picker">
                     <select id="maxFdpHours" aria-label="Maximum FDP hours"></select>
                     <small>hr</small>
                     <select id="maxFdpMinutes" aria-label="Maximum FDP minutes"></select>
@@ -224,8 +227,8 @@
                   </span>
                 </label>
                 <label class="duration-control">
-                  Commander's discretion
-                  <span>
+                  <span class="duration-label">Commander's discretion</span>
+                  <span class="duration-picker">
                     <select id="discretionHours" aria-label="Commander's discretion hours"></select>
                     <small>hr</small>
                     <select id="discretionMinutes" aria-label="Commander's discretion minutes"></select>
@@ -243,15 +246,15 @@
               <h3>Sector timing</h3>
               <div class="duration-grid">
                 <label class="duration-control minute-only">
-                  Taxi out
-                  <span>
+                  <span class="duration-label">Taxi out</span>
+                  <span class="duration-picker">
                     <select id="taxiOutMinutes" aria-label="Taxi out minutes"></select>
                     <small>min</small>
                   </span>
                 </label>
                 <label class="duration-control required-duration">
-                  Flight time
-                  <span>
+                  <span class="duration-label">Flight time</span>
+                  <span class="duration-picker">
                     <select id="flightTimeHours" aria-label="Flight time hours"></select>
                     <small>hr</small>
                     <select id="flightTimeMinutes" aria-label="Flight time minutes"></select>
@@ -259,22 +262,22 @@
                   </span>
                 </label>
                 <label class="duration-control minute-only">
-                  Holding
-                  <span>
+                  <span class="duration-label">Holding</span>
+                  <span class="duration-picker">
                     <select id="holdingMinutes" aria-label="Holding minutes"></select>
                     <small>min</small>
                   </span>
                 </label>
                 <label class="duration-control minute-only">
-                  Taxi in
-                  <span>
+                  <span class="duration-label">Taxi in</span>
+                  <span class="duration-picker">
                     <select id="taxiInMinutes" aria-label="Taxi in minutes"></select>
                     <small>min</small>
                   </span>
                 </label>
                 <label class="duration-control minute-only">
-                  Contingency
-                  <span>
+                  <span class="duration-label">Contingency</span>
+                  <span class="duration-picker">
                     <select id="contingencyMinutes" aria-label="Contingency minutes"></select>
                     <small>min</small>
                   </span>
@@ -286,6 +289,16 @@
               </div>
             </section>
           </form>
+
+          <section class="account-panel hidden" id="ftlAccountPanel" aria-label="Account">
+            <span id="ftlSyncStatus">Cloud ready</span>
+            <div class="account-actions">
+              <button class="icon-button" id="ftlRefreshCloudButton" type="button" title="Refresh cloud data" aria-label="Refresh cloud data">
+                <span aria-hidden="true">↻</span>
+              </button>
+              <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
+            </div>
+          </section>
         </section>
       </main>
     </div>
@@ -309,7 +322,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-32"></script>
-    <script src="./app.js?v=cloud-sync-32"></script>
+    <script src="./supabase-config.js?v=cloud-sync-33"></script>
+    <script src="./app.js?v=cloud-sync-33"></script>
   </body>
 </html>

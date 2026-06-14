@@ -16,11 +16,15 @@ const elements = {
   authPassword: document.querySelector("#authPassword"),
   authStatus: document.querySelector("#authStatus"),
   homeSyncStatus: document.querySelector("#homeSyncStatus"),
+  ftlSyncStatus: document.querySelector("#ftlSyncStatus"),
   offlineBanner: document.querySelector("#offlineBanner"),
   accountPanel: document.querySelector("#accountPanel"),
+  ftlAccountPanel: document.querySelector("#ftlAccountPanel"),
   magicLinkButton: document.querySelector("#magicLinkButton"),
   refreshCloudButton: document.querySelector("#refreshCloudButton"),
+  ftlRefreshCloudButton: document.querySelector("#ftlRefreshCloudButton"),
   homeSignOutButton: document.querySelector("#homeSignOutButton"),
+  ftlSignOutButton: document.querySelector("#ftlSignOutButton"),
   toolMenu: document.querySelector(".tool-menu"),
   appTabs: document.querySelector(".app-tabs"),
   layout: document.querySelector(".layout"),
@@ -62,6 +66,7 @@ const elements = {
   ftlForm: document.querySelector("#ftlForm"),
   clearFtlButton: document.querySelector("#clearFtlButton"),
   dutyStartTime: document.querySelector("#dutyStartTime"),
+  dutyStartShell: document.querySelector("#dutyStartShell"),
   latestPushback: document.querySelector("#latestPushback"),
   latestPushbackCountdown: document.querySelector("#latestPushbackCountdown"),
   pushbackDiscretion: document.querySelector("#pushbackDiscretion"),
@@ -164,10 +169,12 @@ function isSuccessStatus(message) {
 }
 
 function setSyncStatus(message, isError = false, isWarning = false) {
-  elements.homeSyncStatus.textContent = message;
-  elements.homeSyncStatus.classList.toggle("status-error", isError);
-  elements.homeSyncStatus.classList.toggle("status-warning", isWarning);
-  elements.homeSyncStatus.classList.toggle("status-success", !isError && !isWarning && isSuccessStatus(message));
+  [elements.homeSyncStatus, elements.ftlSyncStatus].forEach((statusElement) => {
+    statusElement.textContent = message;
+    statusElement.classList.toggle("status-error", isError);
+    statusElement.classList.toggle("status-warning", isWarning);
+    statusElement.classList.toggle("status-success", !isError && !isWarning && isSuccessStatus(message));
+  });
 }
 
 function formatElapsed(fromDate) {
@@ -289,6 +296,7 @@ function setOfflineReadOnly(isReadOnly) {
   elements.offlineBanner.classList.toggle("hidden", !isReadOnly);
   elements.addTab.disabled = isReadOnly;
   elements.refreshCloudButton.disabled = isReadOnly;
+  elements.ftlRefreshCloudButton.disabled = isReadOnly;
 
   if (isReadOnly) {
     setActiveTab("home");
@@ -304,6 +312,7 @@ function startOfflineMode(message = "Offline: viewing saved data") {
   cloudUpdatedAt = null;
   elements.authPanel.classList.add("hidden");
   elements.accountPanel.classList.add("hidden");
+  elements.ftlAccountPanel.classList.add("hidden");
   setAppVisible(true);
   setOfflineReadOnly(true);
   setSyncStatus(message, false, true);
@@ -320,6 +329,7 @@ function setSignedInState(user) {
   elements.authForm.classList.toggle("hidden", Boolean(user));
   elements.authPanel.classList.toggle("hidden", Boolean(user));
   elements.accountPanel.classList.toggle("hidden", !user);
+  elements.ftlAccountPanel.classList.toggle("hidden", !user);
   setAppVisible(Boolean(user));
 
   if (user) {
@@ -443,6 +453,13 @@ function updateMinuteOptions(control) {
   const maxMinute = selectedHour === control.maxHours && control.maxMinutesAtMaxHour !== undefined
     ? control.maxMinutesAtMaxHour
     : 59;
+  const isForcedMaximumMinute = selectedHour === control.maxHours && control.maxMinutesAtMaxHour !== undefined;
+
+  if (control.blankDefault && control.minutes.value === "" && !isForcedMaximumMinute) {
+    populateSelect(control.minutes, minMinute, maxMinute, "", { includeBlank: true, step: minuteStep });
+    return;
+  }
+
   const steppedMinute = Math.round(currentMinute / minuteStep) * minuteStep;
   const nextMinute = Math.min(maxMinute, Math.max(minMinute, steppedMinute));
 
@@ -504,6 +521,10 @@ function getDurationMinutes(control) {
 
 function hasDutyStartValue() {
   return elements.dutyStartTime.value !== "";
+}
+
+function updateDutyStartEmptyState() {
+  elements.dutyStartShell.classList.toggle("is-empty", elements.dutyStartTime.value === "");
 }
 
 function getDutyStartMinutes() {
@@ -668,8 +689,15 @@ function calculateFtl() {
 
 function setupFtlCalculator() {
   Object.values(ftlDurationControls).forEach(setupDurationControl);
-  elements.dutyStartTime.addEventListener("input", calculateFtl);
-  elements.dutyStartTime.addEventListener("change", calculateFtl);
+  elements.dutyStartTime.addEventListener("input", () => {
+    updateDutyStartEmptyState();
+    calculateFtl();
+  });
+  elements.dutyStartTime.addEventListener("change", () => {
+    updateDutyStartEmptyState();
+    calculateFtl();
+  });
+  updateDutyStartEmptyState();
   calculateFtl();
   window.clearInterval(ftlCountdownTimer);
   ftlCountdownTimer = window.setInterval(updateFtlCountdown, 1000);
@@ -677,6 +705,7 @@ function setupFtlCalculator() {
 
 function clearFtlCalculator() {
   elements.dutyStartTime.value = "";
+  updateDutyStartEmptyState();
 
   Object.values(ftlDurationControls).forEach((control) => {
     setDurationControl(control, control.defaultHours ?? 0, control.defaultMinutes ?? 0);
@@ -1528,7 +1557,9 @@ elements.authForm.addEventListener("submit", (event) => {
 });
 elements.magicLinkButton.addEventListener("click", sendMagicLink);
 elements.refreshCloudButton.addEventListener("click", refreshCloudData);
+elements.ftlRefreshCloudButton.addEventListener("click", refreshCloudData);
 elements.homeSignOutButton.addEventListener("click", () => signOut());
+elements.ftlSignOutButton.addEventListener("click", () => signOut());
 window.addEventListener("offline", () => startOfflineMode());
 window.addEventListener("online", returnOnline);
 
