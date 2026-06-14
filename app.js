@@ -60,6 +60,7 @@ const elements = {
   notes: document.querySelector("#notes"),
   template: document.querySelector("#requestTemplate"),
   ftlForm: document.querySelector("#ftlForm"),
+  clearFtlButton: document.querySelector("#clearFtlButton"),
   dutyStartHours: document.querySelector("#dutyStartHours"),
   dutyStartMinutes: document.querySelector("#dutyStartMinutes"),
   latestPushback: document.querySelector("#latestPushback"),
@@ -439,6 +440,17 @@ function setupDurationControl(control) {
   control.minutes.addEventListener("change", calculateFtl);
 }
 
+function setDurationControl(control, hours, minutes) {
+  if (control.minuteOnly) {
+    control.minutes.value = String(minutes);
+    return;
+  }
+
+  control.hours.value = String(hours);
+  updateMinuteOptions(control);
+  control.minutes.value = String(minutes);
+}
+
 function getDurationMinutes(control) {
   if (control.minuteOnly) return Number(control.minutes.value);
   return (Number(control.hours.value) * 60) + Number(control.minutes.value);
@@ -528,6 +540,17 @@ function setupFtlCalculator() {
   calculateFtl();
   window.clearInterval(ftlCountdownTimer);
   ftlCountdownTimer = window.setInterval(updateFtlCountdown, 1000);
+}
+
+function clearFtlCalculator() {
+  elements.dutyStartHours.value = "0";
+  elements.dutyStartMinutes.value = "0";
+
+  Object.values(ftlDurationControls).forEach((control) => {
+    setDurationControl(control, control.defaultHours || 0, control.defaultMinutes || 0);
+  });
+
+  calculateFtl();
 }
 
 function requestSortValue(request) {
@@ -1330,6 +1353,7 @@ elements.requestForm.addEventListener("keydown", (event) => {
 
 elements.jumpseatToolTab.addEventListener("click", () => setActiveTool("jumpseat"));
 elements.ftlToolTab.addEventListener("click", () => setActiveTool("ftl"));
+elements.clearFtlButton.addEventListener("click", clearFtlCalculator);
 elements.homeTab.addEventListener("click", () => setActiveTab("home"));
 elements.addTab.addEventListener("click", startAdd);
 [elements.requestDate, elements.flightNumber, elements.routeFrom, elements.routeTo, elements.departureTime]
