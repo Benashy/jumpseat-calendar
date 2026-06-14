@@ -721,6 +721,16 @@ button:disabled {
   line-height: 1.35;
 }
 
+.app-version {
+  color: rgba(17, 47, 67, 0.52);
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .account-actions {
   display: flex;
   gap: 9px;
