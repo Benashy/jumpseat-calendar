@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-22" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-23" />
   </head>
   <body>
     <div class="app-shell">
@@ -198,12 +198,12 @@
           <form class="ftl-form" id="ftlForm">
             <div class="field-grid">
               <label class="duration-control">
-                Duty start time
+                Duty start time Zulu
                 <span>
                   <select id="dutyStartHours" aria-label="Duty start hours"></select>
                   <small>hr</small>
                   <select id="dutyStartMinutes" aria-label="Duty start minutes"></select>
-                  <small>Z</small>
+                  <small>min</small>
                 </span>
               </label>
             </div>
@@ -229,6 +229,10 @@
                     <small>min</small>
                   </span>
                 </label>
+              </div>
+              <div class="calculation-strip">
+                <span>Maximum allowable FDP</span>
+                <strong id="maxAllowableFdp">12 hr</strong>
               </div>
             </section>
 
@@ -273,6 +277,10 @@
                   </span>
                 </label>
               </div>
+              <div class="calculation-strip">
+                <span>Anticipated sector length</span>
+                <strong id="sectorLength">45 min</strong>
+              </div>
             </section>
           </form>
         </section>
@@ -298,7 +306,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-22"></script>
-    <script src="./app.js?v=cloud-sync-22"></script>
+    <script src="./supabase-config.js?v=cloud-sync-23"></script>
+    <script src="./app.js?v=cloud-sync-23"></script>
   </body>
 </html>

@@ -66,6 +66,8 @@ const elements = {
   latestPushbackCountdown: document.querySelector("#latestPushbackCountdown"),
   latestTakeoff: document.querySelector("#latestTakeoff"),
   latestOnChocks: document.querySelector("#latestOnChocks"),
+  maxAllowableFdp: document.querySelector("#maxAllowableFdp"),
+  sectorLength: document.querySelector("#sectorLength"),
 };
 
 const ftlDurationControls = {
@@ -93,7 +95,8 @@ const ftlDurationControls = {
   flightTime: {
     hours: document.querySelector("#flightTimeHours"),
     minutes: document.querySelector("#flightTimeMinutes"),
-    maxHours: 23,
+    maxHours: 18,
+    maxMinutesAtMaxHour: 0,
     defaultHours: 0,
     defaultMinutes: 0,
   },
@@ -455,6 +458,17 @@ function formatDurationFromMinutes(totalMinutes) {
   return `${hours} ${pluralize(hours, "hr")} ${minutes} ${pluralize(minutes, "min")}`;
 }
 
+function formatDurationFromSeconds(totalSeconds) {
+  const absoluteSeconds = Math.abs(Math.floor(totalSeconds));
+  const hours = Math.floor(absoluteSeconds / 3600);
+  const minutes = Math.floor((absoluteSeconds % 3600) / 60);
+  const seconds = absoluteSeconds % 60;
+
+  if (hours === 0 && minutes === 0) return `${seconds} ${pluralize(seconds, "sec")}`;
+  if (hours === 0) return `${minutes} ${pluralize(minutes, "min")} ${seconds} ${pluralize(seconds, "sec")}`;
+  return `${hours} ${pluralize(hours, "hr")} ${minutes} ${pluralize(minutes, "min")} ${seconds} ${pluralize(seconds, "sec")}`;
+}
+
 function updateFtlCountdown() {
   if (ftlLatestPushbackMinutes === null) {
     elements.latestPushbackCountdown.textContent = "Set duty start";
@@ -463,14 +477,14 @@ function updateFtlCountdown() {
   }
 
   const now = new Date();
-  const currentZuluMinutes = (now.getUTCHours() * 60) + now.getUTCMinutes() + (now.getUTCSeconds() / 60);
-  const remainingMinutes = ftlLatestPushbackMinutes - currentZuluMinutes;
-  const isPast = remainingMinutes < 0;
-  const isClose = remainingMinutes >= 0 && remainingMinutes <= 30;
+  const currentZuluSeconds = (now.getUTCHours() * 3600) + (now.getUTCMinutes() * 60) + now.getUTCSeconds();
+  const remainingSeconds = (ftlLatestPushbackMinutes * 60) - currentZuluSeconds;
+  const isPast = remainingSeconds < 0;
+  const isClose = remainingSeconds >= 0 && remainingSeconds <= (30 * 60);
 
   elements.latestPushbackCountdown.textContent = isPast
-    ? `${formatDurationFromMinutes(remainingMinutes)} ago`
-    : `${formatDurationFromMinutes(remainingMinutes)} remaining`;
+    ? `${formatDurationFromSeconds(remainingSeconds)} ago`
+    : `${formatDurationFromSeconds(remainingSeconds)} remaining`;
   elements.latestPushbackCountdown.classList.toggle("status-error", isPast);
   elements.latestPushbackCountdown.classList.toggle("status-warning", isClose);
   elements.latestPushbackCountdown.classList.toggle("status-success", !isPast && !isClose);
@@ -478,10 +492,17 @@ function updateFtlCountdown() {
 
 function calculateFtl() {
   const dutyStart = getDutyStartMinutes();
-
-  const latestOnChocks = dutyStart +
+  const maximumAllowableFdp =
     getDurationMinutes(ftlDurationControls.maxFdp) +
     getDurationMinutes(ftlDurationControls.discretion);
+  const sectorLength =
+    getDurationMinutes(ftlDurationControls.taxiOut) +
+    getDurationMinutes(ftlDurationControls.flightTime) +
+    getDurationMinutes(ftlDurationControls.holding) +
+    getDurationMinutes(ftlDurationControls.taxiIn) +
+    getDurationMinutes(ftlDurationControls.contingency);
+
+  const latestOnChocks = dutyStart + maximumAllowableFdp;
   const latestTakeoff = latestOnChocks -
     getDurationMinutes(ftlDurationControls.flightTime) -
     getDurationMinutes(ftlDurationControls.holding) -
@@ -492,6 +513,8 @@ function calculateFtl() {
   elements.latestOnChocks.textContent = formatZuluTime(latestOnChocks);
   elements.latestTakeoff.textContent = formatZuluTime(latestTakeoff);
   elements.latestPushback.textContent = formatZuluTime(latestPushback);
+  elements.maxAllowableFdp.textContent = formatDurationFromMinutes(maximumAllowableFdp);
+  elements.sectorLength.textContent = formatDurationFromMinutes(sectorLength);
   ftlLatestPushbackMinutes = latestPushback;
   updateFtlCountdown();
 }
@@ -504,7 +527,7 @@ function setupFtlCalculator() {
   elements.dutyStartMinutes.addEventListener("change", calculateFtl);
   calculateFtl();
   window.clearInterval(ftlCountdownTimer);
-  ftlCountdownTimer = window.setInterval(updateFtlCountdown, 30000);
+  ftlCountdownTimer = window.setInterval(updateFtlCountdown, 1000);
 }
 
 function requestSortValue(request) {
