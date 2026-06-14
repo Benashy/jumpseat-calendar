@@ -589,6 +589,18 @@ button:disabled {
   gap: 6px;
 }
 
+.native-time-control {
+  align-content: start;
+  justify-items: start;
+}
+
+.native-time-input {
+  -webkit-appearance: auto;
+  appearance: auto;
+  min-height: 40px;
+  width: min(190px, 100%);
+}
+
 .duration-control.required-duration {
   border: 1px solid rgba(198, 161, 90, 0.48);
   border-radius: 8px;
@@ -598,25 +610,27 @@ button:disabled {
 
 .duration-control > span {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(72px, 92px) auto minmax(72px, 92px) auto;
   gap: 7px;
   align-items: center;
+  justify-content: start;
 }
 
 .duration-control.minute-only > span {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(78px, 96px) auto;
 }
 
 .duration-control select {
   width: 100%;
-  min-height: 44px;
+  min-height: 40px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--field);
   color: var(--ink);
   font: inherit;
   font-weight: 800;
-  padding: 10px;
+  padding: 8px;
+  text-align: center;
 }
 
 .duration-control small {
@@ -1106,6 +1120,10 @@ form label {
     grid-template-columns: 1fr;
   }
 
+  .ftl-form .duration-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   input[type="date"] {
     width: 100%;
   }
@@ -1150,5 +1168,9 @@ form label {
 
   .staff-controls {
     justify-content: flex-end;
+  }
+
+  .ftl-form .duration-grid {
+    grid-template-columns: 1fr;
   }
 }

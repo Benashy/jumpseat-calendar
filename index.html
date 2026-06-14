@@ -7,12 +7,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Flight Tools" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="description" content="Flight deck tools for jumpseat requests and FTL calculations." />
+    <meta name="description" content="Flight deck tools for jumpseat requests and latest takeoff time calculations." />
     <title>Ben's Flight Tools</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-30" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-31" />
   </head>
   <body>
     <div class="app-shell">
@@ -44,7 +44,7 @@
 
       <nav class="tool-menu" aria-label="Flight tools">
         <button class="tool-button active" id="jumpseatToolTab" type="button" aria-controls="homeView" aria-selected="true">Jumpseat Calendar</button>
-        <button class="tool-button" id="ftlToolTab" type="button" aria-controls="ftlView" aria-selected="false">FTL Calculator</button>
+        <button class="tool-button" id="ftlToolTab" type="button" aria-controls="ftlView" aria-selected="false">LTOT Calculator</button>
       </nav>
 
       <nav class="app-tabs" aria-label="App sections">
@@ -174,13 +174,13 @@
           </form>
         </aside>
 
-        <section class="ftl-panel view-panel hidden" id="ftlView" aria-label="FTL calculator">
+        <section class="ftl-panel view-panel hidden" id="ftlView" aria-label="LTOT calculator">
           <div class="form-heading">
             <div>
-              <h2>Ben's FTL Calculator</h2>
+              <h2>Ben's LTOT Calculator</h2>
               <p class="ftl-context">All times Zulu</p>
             </div>
-            <button class="text-button secondary" id="clearFtlButton" type="button" aria-label="Reset FTL calculator">Reset</button>
+            <button class="text-button secondary" id="clearFtlButton" type="button" aria-label="Reset LTOT calculator">Reset</button>
           </div>
 
           <section class="ftl-results" aria-label="Calculated latest times">
@@ -208,19 +208,14 @@
 
           <form class="ftl-form" id="ftlForm">
             <div class="field-grid">
-              <label class="duration-control required-duration">
-                Duty start time Zulu
-                <span>
-                  <select id="dutyStartHours" aria-label="Duty start hours"></select>
-                  <small>hr</small>
-                  <select id="dutyStartMinutes" aria-label="Duty start minutes"></select>
-                  <small>min</small>
-                </span>
+              <label class="duration-control required-duration native-time-control">
+                Duty start time (Zulu)
+                <input class="native-time-input" id="dutyStartTime" type="time" aria-label="Duty start time Zulu" />
               </label>
             </div>
 
-            <section class="duration-section" aria-label="Duty limits">
-              <h3>Duty limit</h3>
+            <section class="duration-section" aria-label="FDP limit">
+              <h3>FDP limit</h3>
               <div class="duration-grid">
                 <label class="duration-control required-duration">
                   Maximum FDP
@@ -317,7 +312,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-30"></script>
-    <script src="./app.js?v=cloud-sync-30"></script>
+    <script src="./supabase-config.js?v=cloud-sync-31"></script>
+    <script src="./app.js?v=cloud-sync-31"></script>
   </body>
 </html>

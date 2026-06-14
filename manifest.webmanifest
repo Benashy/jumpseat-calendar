@@ -1,7 +1,7 @@
 {
   "name": "Ben's Flight Tools",
   "short_name": "Flight Tools",
-  "description": "Flight deck tools for jumpseat requests and FTL calculations.",
+  "description": "Flight deck tools for jumpseat requests and latest takeoff time calculations.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

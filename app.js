@@ -61,8 +61,7 @@ const elements = {
   template: document.querySelector("#requestTemplate"),
   ftlForm: document.querySelector("#ftlForm"),
   clearFtlButton: document.querySelector("#clearFtlButton"),
-  dutyStartHours: document.querySelector("#dutyStartHours"),
-  dutyStartMinutes: document.querySelector("#dutyStartMinutes"),
+  dutyStartTime: document.querySelector("#dutyStartTime"),
   latestPushback: document.querySelector("#latestPushback"),
   latestPushbackCountdown: document.querySelector("#latestPushbackCountdown"),
   pushbackDiscretion: document.querySelector("#pushbackDiscretion"),
@@ -504,23 +503,12 @@ function getDurationMinutes(control) {
 }
 
 function hasDutyStartValue() {
-  return elements.dutyStartHours.value !== "" && elements.dutyStartMinutes.value !== "";
-}
-
-function updateDutyStartSelection(changedField) {
-  const otherField = changedField === elements.dutyStartHours
-    ? elements.dutyStartMinutes
-    : elements.dutyStartHours;
-
-  if (changedField.value !== "" && otherField.value === "") {
-    otherField.value = "0";
-  }
-
-  calculateFtl();
+  return elements.dutyStartTime.value !== "";
 }
 
 function getDutyStartMinutes() {
-  return (Number(elements.dutyStartHours.value) * 60) + Number(elements.dutyStartMinutes.value);
+  const [hours, minutes] = elements.dutyStartTime.value.split(":").map(Number);
+  return (hours * 60) + minutes;
 }
 
 function formatDurationFromMinutes(totalMinutes) {
@@ -675,19 +663,16 @@ function calculateFtl() {
 }
 
 function setupFtlCalculator() {
-  populateSelect(elements.dutyStartHours, 0, 23, "", { includeBlank: true });
-  populateSelect(elements.dutyStartMinutes, 0, 59, "", { includeBlank: true });
   Object.values(ftlDurationControls).forEach(setupDurationControl);
-  elements.dutyStartHours.addEventListener("change", () => updateDutyStartSelection(elements.dutyStartHours));
-  elements.dutyStartMinutes.addEventListener("change", () => updateDutyStartSelection(elements.dutyStartMinutes));
+  elements.dutyStartTime.addEventListener("input", calculateFtl);
+  elements.dutyStartTime.addEventListener("change", calculateFtl);
   calculateFtl();
   window.clearInterval(ftlCountdownTimer);
   ftlCountdownTimer = window.setInterval(updateFtlCountdown, 1000);
 }
 
 function clearFtlCalculator() {
-  elements.dutyStartHours.value = "";
-  elements.dutyStartMinutes.value = "";
+  elements.dutyStartTime.value = "";
 
   Object.values(ftlDurationControls).forEach((control) => {
     setDurationControl(control, control.defaultHours ?? 0, control.defaultMinutes ?? 0);
