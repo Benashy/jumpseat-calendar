@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-31" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-32" />
   </head>
   <body>
     <div class="app-shell">
@@ -207,16 +207,13 @@
           </section>
 
           <form class="ftl-form" id="ftlForm">
-            <div class="field-grid">
-              <label class="duration-control required-duration native-time-control">
-                Duty start time (Zulu)
-                <input class="native-time-input" id="dutyStartTime" type="time" aria-label="Duty start time Zulu" />
-              </label>
-            </div>
-
             <section class="duration-section" aria-label="FDP limit">
               <h3>FDP limit</h3>
               <div class="duration-grid">
+                <label class="duration-control required-duration native-time-control">
+                  Duty start time (Zulu)
+                  <input class="native-time-input" id="dutyStartTime" type="time" aria-label="Duty start time Zulu" />
+                </label>
                 <label class="duration-control required-duration">
                   Maximum FDP
                   <span>
@@ -312,7 +309,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-31"></script>
-    <script src="./app.js?v=cloud-sync-31"></script>
+    <script src="./supabase-config.js?v=cloud-sync-32"></script>
+    <script src="./app.js?v=cloud-sync-32"></script>
   </body>
 </html>

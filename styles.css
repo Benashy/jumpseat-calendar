@@ -471,6 +471,13 @@ button:disabled {
   background: linear-gradient(180deg, #fffefa, #f7f1e7);
 }
 
+.ftl-result-card.is-overdue {
+  border-color: rgba(182, 66, 46, 0.82);
+  box-shadow:
+    0 0 0 2px rgba(182, 66, 46, 0.1),
+    var(--soft-shadow);
+}
+
 .ftl-results span {
   display: block;
   color: var(--muted);
@@ -541,6 +548,7 @@ button:disabled {
 .duration-section h3 {
   color: var(--navy);
   font-size: 0.95rem;
+  margin-bottom: 1px;
 }
 
 .calculation-strip {
@@ -581,17 +589,18 @@ button:disabled {
 .duration-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 13px;
+  gap: 9px 12px;
 }
 
 .duration-control {
   display: grid;
+  grid-template-columns: minmax(108px, 1fr) max-content;
   gap: 6px;
+  align-items: center;
 }
 
 .native-time-control {
   align-content: start;
-  justify-items: start;
 }
 
 .native-time-input {
@@ -599,6 +608,7 @@ button:disabled {
   appearance: auto;
   min-height: 40px;
   width: min(190px, 100%);
+  justify-self: end;
 }
 
 .duration-control.required-duration {
@@ -614,6 +624,7 @@ button:disabled {
   gap: 7px;
   align-items: center;
   justify-content: start;
+  justify-self: end;
 }
 
 .duration-control.minute-only > span {
@@ -1172,5 +1183,14 @@ form label {
 
   .ftl-form .duration-grid {
     grid-template-columns: 1fr;
+  }
+
+  .duration-control {
+    grid-template-columns: 1fr;
+  }
+
+  .duration-control > span,
+  .native-time-input {
+    justify-self: start;
   }
 }

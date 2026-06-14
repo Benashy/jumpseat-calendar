@@ -549,9 +549,12 @@ function formatDurationFromSeconds(totalSeconds) {
 }
 
 function updateCountdownElement(element, targetMinutes) {
+  const card = element.closest(".ftl-result-card");
+
   if (targetMinutes === null) {
     element.textContent = "Set required inputs";
     element.classList.remove("status-error", "status-warning", "status-success");
+    card?.classList.remove("is-overdue");
     return;
   }
 
@@ -567,6 +570,7 @@ function updateCountdownElement(element, targetMinutes) {
   element.classList.toggle("status-error", isPast);
   element.classList.toggle("status-warning", isClose);
   element.classList.toggle("status-success", !isPast && !isClose);
+  card?.classList.toggle("is-overdue", isPast);
 }
 
 function updateFtlCountdown() {
