@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-29" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-30" />
   </head>
   <body>
     <div class="app-shell">
@@ -176,7 +176,10 @@
 
         <section class="ftl-panel view-panel hidden" id="ftlView" aria-label="FTL calculator">
           <div class="form-heading">
-            <h2>Ben's FTL Calculator</h2>
+            <div>
+              <h2>Ben's FTL Calculator</h2>
+              <p class="ftl-context">All times Zulu</p>
+            </div>
             <button class="text-button secondary" id="clearFtlButton" type="button" aria-label="Reset FTL calculator">Reset</button>
           </div>
 
@@ -205,7 +208,7 @@
 
           <form class="ftl-form" id="ftlForm">
             <div class="field-grid">
-              <label class="duration-control">
+              <label class="duration-control required-duration">
                 Duty start time Zulu
                 <span>
                   <select id="dutyStartHours" aria-label="Duty start hours"></select>
@@ -219,7 +222,7 @@
             <section class="duration-section" aria-label="Duty limits">
               <h3>Duty limit</h3>
               <div class="duration-grid">
-                <label class="duration-control">
+                <label class="duration-control required-duration">
                   Maximum FDP
                   <span>
                     <select id="maxFdpHours" aria-label="Maximum FDP hours"></select>
@@ -254,7 +257,7 @@
                     <small>min</small>
                   </span>
                 </label>
-                <label class="duration-control">
+                <label class="duration-control required-duration">
                   Flight time
                   <span>
                     <select id="flightTimeHours" aria-label="Flight time hours"></select>
@@ -314,7 +317,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-29"></script>
-    <script src="./app.js?v=cloud-sync-29"></script>
+    <script src="./supabase-config.js?v=cloud-sync-30"></script>
+    <script src="./app.js?v=cloud-sync-30"></script>
   </body>
 </html>
