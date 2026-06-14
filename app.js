@@ -5,6 +5,7 @@ const MAGIC_LINK_COOLDOWN_SECONDS = 75;
 const MAGIC_LINK_RATE_LIMIT_SECONDS = 60 * 60;
 const CLOUD_FRESH_HOURS = 1;
 const CLOUD_STALE_HOURS = 24;
+const MINUTES_IN_DAY = 24 * 60;
 
 const elements = {
   selectedDate: document.querySelector("#selectedDate"),
@@ -20,12 +21,16 @@ const elements = {
   magicLinkButton: document.querySelector("#magicLinkButton"),
   refreshCloudButton: document.querySelector("#refreshCloudButton"),
   homeSignOutButton: document.querySelector("#homeSignOutButton"),
+  toolMenu: document.querySelector(".tool-menu"),
   appTabs: document.querySelector(".app-tabs"),
   layout: document.querySelector(".layout"),
+  jumpseatToolTab: document.querySelector("#jumpseatToolTab"),
+  ftlToolTab: document.querySelector("#ftlToolTab"),
   homeTab: document.querySelector("#homeTab"),
   addTab: document.querySelector("#addTab"),
   homeView: document.querySelector("#homeView"),
   addView: document.querySelector("#addView"),
+  ftlView: document.querySelector("#ftlView"),
   previousDay: document.querySelector("#previousDay"),
   nextDay: document.querySelector("#nextDay"),
   todayButton: document.querySelector("#todayButton"),
@@ -54,6 +59,65 @@ const elements = {
   addSeatButton: document.querySelector("#addSeatButton"),
   notes: document.querySelector("#notes"),
   template: document.querySelector("#requestTemplate"),
+  ftlForm: document.querySelector("#ftlForm"),
+  dutyStartTime: document.querySelector("#dutyStartTime"),
+  latestPushback: document.querySelector("#latestPushback"),
+  latestTakeoff: document.querySelector("#latestTakeoff"),
+  latestOnChocks: document.querySelector("#latestOnChocks"),
+};
+
+const ftlDurationControls = {
+  maxFdp: {
+    hours: document.querySelector("#maxFdpHours"),
+    minutes: document.querySelector("#maxFdpMinutes"),
+    maxHours: 23,
+    minMinutesWhenZero: 1,
+    defaultHours: 12,
+    defaultMinutes: 0,
+  },
+  discretion: {
+    hours: document.querySelector("#discretionHours"),
+    minutes: document.querySelector("#discretionMinutes"),
+    maxHours: 2,
+    maxMinutesAtMaxHour: 0,
+    defaultHours: 0,
+    defaultMinutes: 0,
+  },
+  taxiOut: {
+    hours: document.querySelector("#taxiOutHours"),
+    minutes: document.querySelector("#taxiOutMinutes"),
+    maxHours: 5,
+    defaultHours: 0,
+    defaultMinutes: 15,
+  },
+  flightTime: {
+    hours: document.querySelector("#flightTimeHours"),
+    minutes: document.querySelector("#flightTimeMinutes"),
+    maxHours: 23,
+    defaultHours: 0,
+    defaultMinutes: 0,
+  },
+  holding: {
+    hours: document.querySelector("#holdingHours"),
+    minutes: document.querySelector("#holdingMinutes"),
+    maxHours: 5,
+    defaultHours: 0,
+    defaultMinutes: 15,
+  },
+  taxiIn: {
+    hours: document.querySelector("#taxiInHours"),
+    minutes: document.querySelector("#taxiInMinutes"),
+    maxHours: 5,
+    defaultHours: 0,
+    defaultMinutes: 15,
+  },
+  contingency: {
+    hours: document.querySelector("#contingencyHours"),
+    minutes: document.querySelector("#contingencyMinutes"),
+    maxHours: 5,
+    defaultHours: 0,
+    defaultMinutes: 0,
+  },
 };
 
 let requests = loadRequests();
@@ -235,6 +299,7 @@ function startOfflineMode(message = "Offline: viewing saved data") {
 }
 
 function setAppVisible(isVisible) {
+  elements.toolMenu.classList.toggle("hidden", !isVisible);
   elements.appTabs.classList.toggle("hidden", !isVisible);
   elements.layout.classList.toggle("hidden", !isVisible);
 }
@@ -266,10 +331,31 @@ function setActiveTab(tabName) {
   const isHome = tabName === "home";
   elements.homeView.classList.toggle("hidden", !isHome);
   elements.addView.classList.toggle("hidden", isHome);
+  elements.ftlView.classList.add("hidden");
+  elements.appTabs.classList.remove("hidden");
+  elements.jumpseatToolTab.classList.add("active");
+  elements.ftlToolTab.classList.remove("active");
+  elements.jumpseatToolTab.setAttribute("aria-selected", "true");
+  elements.ftlToolTab.setAttribute("aria-selected", "false");
   elements.homeTab.classList.toggle("active", isHome);
   elements.addTab.classList.toggle("active", !isHome);
   elements.homeTab.setAttribute("aria-selected", String(isHome));
   elements.addTab.setAttribute("aria-selected", String(!isHome));
+}
+
+function setActiveTool(toolName) {
+  const isFtl = toolName === "ftl";
+
+  elements.appTabs.classList.toggle("hidden", isFtl);
+  elements.homeView.classList.toggle("hidden", isFtl);
+  elements.addView.classList.add("hidden");
+  elements.ftlView.classList.toggle("hidden", !isFtl);
+  elements.jumpseatToolTab.classList.toggle("active", !isFtl);
+  elements.ftlToolTab.classList.toggle("active", isFtl);
+  elements.jumpseatToolTab.setAttribute("aria-selected", String(!isFtl));
+  elements.ftlToolTab.setAttribute("aria-selected", String(isFtl));
+
+  if (!isFtl) setActiveTab("home");
 }
 
 function todayIso() {
@@ -294,6 +380,98 @@ function pluralize(count, singular, plural = `${singular}s`) {
 
 function formatDepartureTime(time) {
   return time ? `${time}Z` : "Time not set";
+}
+
+function twoDigits(value) {
+  return String(value).padStart(2, "0");
+}
+
+function parseClockTime(value) {
+  if (!value) return null;
+  const [hours, minutes] = value.split(":").map(Number);
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return null;
+  return (hours * 60) + minutes;
+}
+
+function formatZuluTime(totalMinutes) {
+  const dayOffset = Math.floor(totalMinutes / MINUTES_IN_DAY);
+  const normalized = ((totalMinutes % MINUTES_IN_DAY) + MINUTES_IN_DAY) % MINUTES_IN_DAY;
+  const hours = Math.floor(normalized / 60);
+  const minutes = normalized % 60;
+  const suffix = dayOffset > 0 ? ` +${dayOffset}` : dayOffset < 0 ? ` ${dayOffset}` : "";
+
+  return `${twoDigits(hours)}:${twoDigits(minutes)}Z${suffix}`;
+}
+
+function populateSelect(select, start, end, selectedValue) {
+  select.innerHTML = "";
+
+  for (let value = start; value <= end; value += 1) {
+    const option = document.createElement("option");
+    option.value = String(value);
+    option.textContent = twoDigits(value);
+    option.selected = value === selectedValue;
+    select.append(option);
+  }
+}
+
+function updateMinuteOptions(control) {
+  const currentMinute = Number(control.minutes.value || control.defaultMinutes || 0);
+  const selectedHour = Number(control.hours.value || 0);
+  const minMinute = selectedHour === 0 ? (control.minMinutesWhenZero || 0) : 0;
+  const maxMinute = selectedHour === control.maxHours && control.maxMinutesAtMaxHour !== undefined
+    ? control.maxMinutesAtMaxHour
+    : 59;
+  const nextMinute = Math.min(maxMinute, Math.max(minMinute, currentMinute));
+
+  populateSelect(control.minutes, minMinute, maxMinute, nextMinute);
+}
+
+function setupDurationControl(control) {
+  populateSelect(control.hours, 0, control.maxHours, control.defaultHours);
+  updateMinuteOptions(control);
+  control.minutes.value = String(control.defaultMinutes);
+  updateMinuteOptions(control);
+  control.hours.addEventListener("change", () => {
+    updateMinuteOptions(control);
+    calculateFtl();
+  });
+  control.minutes.addEventListener("change", calculateFtl);
+}
+
+function getDurationMinutes(control) {
+  return (Number(control.hours.value) * 60) + Number(control.minutes.value);
+}
+
+function calculateFtl() {
+  const dutyStart = parseClockTime(elements.dutyStartTime.value);
+
+  if (dutyStart === null) {
+    elements.latestPushback.textContent = "--:--Z";
+    elements.latestTakeoff.textContent = "--:--Z";
+    elements.latestOnChocks.textContent = "--:--Z";
+    return;
+  }
+
+  const latestOnChocks = dutyStart +
+    getDurationMinutes(ftlDurationControls.maxFdp) +
+    getDurationMinutes(ftlDurationControls.discretion);
+  const latestTakeoff = latestOnChocks -
+    getDurationMinutes(ftlDurationControls.flightTime) -
+    getDurationMinutes(ftlDurationControls.holding) -
+    getDurationMinutes(ftlDurationControls.taxiIn) -
+    getDurationMinutes(ftlDurationControls.contingency);
+  const latestPushback = latestTakeoff - getDurationMinutes(ftlDurationControls.taxiOut);
+
+  elements.latestOnChocks.textContent = formatZuluTime(latestOnChocks);
+  elements.latestTakeoff.textContent = formatZuluTime(latestTakeoff);
+  elements.latestPushback.textContent = formatZuluTime(latestPushback);
+}
+
+function setupFtlCalculator() {
+  Object.values(ftlDurationControls).forEach(setupDurationControl);
+  elements.dutyStartTime.addEventListener("input", calculateFtl);
+  calculateFtl();
 }
 
 function requestSortValue(request) {
@@ -1094,6 +1272,8 @@ elements.requestForm.addEventListener("keydown", (event) => {
   focusNextFormControl(event.target);
 });
 
+elements.jumpseatToolTab.addEventListener("click", () => setActiveTool("jumpseat"));
+elements.ftlToolTab.addEventListener("click", () => setActiveTool("ftl"));
 elements.homeTab.addEventListener("click", () => setActiveTab("home"));
 elements.addTab.addEventListener("click", startAdd);
 [elements.requestDate, elements.flightNumber, elements.routeFrom, elements.routeTo, elements.departureTime]
@@ -1142,6 +1322,7 @@ window.addEventListener("online", returnOnline);
 
 setSelectedDate(todayIso());
 clearForm();
+setupFtlCalculator();
 strengthenCredentialPaste(elements.authEmail);
 strengthenCredentialPaste(elements.authPassword);
 initCloud();

@@ -1,7 +1,7 @@
 {
-  "name": "Ben's Jumpseat Calendar",
-  "short_name": "Jumpseat",
-  "description": "A local jumpseat request calendar for flight sectors.",
+  "name": "Ben's Flight Tools",
+  "short_name": "Flight Tools",
+  "description": "Flight deck tools for jumpseat requests and FTL calculations.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

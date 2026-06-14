@@ -5,20 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#17344a" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Jumpseat" />
+    <meta name="apple-mobile-web-app-title" content="Flight Tools" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="description" content="A jumpseat request calendar for flight sectors." />
-    <title>Ben's Jumpseat Calendar</title>
+    <meta name="description" content="Flight deck tools for jumpseat requests and FTL calculations." />
+    <title>Ben's Flight Tools</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-19" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-20" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <h1>Ben's Jumpseat Calendar</h1>
+          <h1>Ben's Flight Tools</h1>
         </div>
       </header>
 
@@ -41,6 +41,11 @@
       <section class="offline-banner hidden" id="offlineBanner" aria-live="polite">
         Offline mode: viewing saved data. Connect to the internet to add, edit or delete requests.
       </section>
+
+      <nav class="tool-menu" aria-label="Flight tools">
+        <button class="tool-button active" id="jumpseatToolTab" type="button" aria-controls="homeView" aria-selected="true">Jumpseat Calendar</button>
+        <button class="tool-button" id="ftlToolTab" type="button" aria-controls="ftlView" aria-selected="false">FTL Calculator</button>
+      </nav>
 
       <nav class="app-tabs" aria-label="App sections">
         <button class="tab-button active" id="homeTab" type="button" aria-controls="homeView" aria-selected="true">Home</button>
@@ -168,6 +173,114 @@
             </div>
           </form>
         </aside>
+
+        <section class="ftl-panel view-panel hidden" id="ftlView" aria-label="FTL calculator">
+          <div class="form-heading">
+            <h2>Ben's FTL Calculator</h2>
+          </div>
+
+          <section class="ftl-results" aria-label="Calculated latest times">
+            <div>
+              <span>Latest pushback</span>
+              <strong id="latestPushback">--:--Z</strong>
+            </div>
+            <div>
+              <span>Latest takeoff</span>
+              <strong id="latestTakeoff">--:--Z</strong>
+            </div>
+            <div>
+              <span>Latest on-chocks</span>
+              <strong id="latestOnChocks">--:--Z</strong>
+            </div>
+          </section>
+
+          <form class="ftl-form" id="ftlForm">
+            <div class="field-grid">
+              <label>
+                Duty start time
+                <span class="zulu-field">
+                  <input id="dutyStartTime" name="dutyStartTime" type="time" required />
+                  <span aria-hidden="true">Z</span>
+                </span>
+              </label>
+            </div>
+
+            <section class="duration-section" aria-label="Duty limits">
+              <h3>Duty limit</h3>
+              <div class="duration-grid">
+                <label class="duration-control">
+                  Maximum FDP
+                  <span>
+                    <select id="maxFdpHours" aria-label="Maximum FDP hours"></select>
+                    <small>hr</small>
+                    <select id="maxFdpMinutes" aria-label="Maximum FDP minutes"></select>
+                    <small>min</small>
+                  </span>
+                </label>
+                <label class="duration-control">
+                  Commander's discretion
+                  <span>
+                    <select id="discretionHours" aria-label="Commander's discretion hours"></select>
+                    <small>hr</small>
+                    <select id="discretionMinutes" aria-label="Commander's discretion minutes"></select>
+                    <small>min</small>
+                  </span>
+                </label>
+              </div>
+            </section>
+
+            <section class="duration-section" aria-label="Planned sector timings">
+              <h3>Sector timing</h3>
+              <div class="duration-grid">
+                <label class="duration-control">
+                  Taxi out
+                  <span>
+                    <select id="taxiOutHours" aria-label="Taxi out hours"></select>
+                    <small>hr</small>
+                    <select id="taxiOutMinutes" aria-label="Taxi out minutes"></select>
+                    <small>min</small>
+                  </span>
+                </label>
+                <label class="duration-control">
+                  Flight time
+                  <span>
+                    <select id="flightTimeHours" aria-label="Flight time hours"></select>
+                    <small>hr</small>
+                    <select id="flightTimeMinutes" aria-label="Flight time minutes"></select>
+                    <small>min</small>
+                  </span>
+                </label>
+                <label class="duration-control">
+                  Holding
+                  <span>
+                    <select id="holdingHours" aria-label="Holding hours"></select>
+                    <small>hr</small>
+                    <select id="holdingMinutes" aria-label="Holding minutes"></select>
+                    <small>min</small>
+                  </span>
+                </label>
+                <label class="duration-control">
+                  Taxi in
+                  <span>
+                    <select id="taxiInHours" aria-label="Taxi in hours"></select>
+                    <small>hr</small>
+                    <select id="taxiInMinutes" aria-label="Taxi in minutes"></select>
+                    <small>min</small>
+                  </span>
+                </label>
+                <label class="duration-control">
+                  Contingency
+                  <span>
+                    <select id="contingencyHours" aria-label="Contingency hours"></select>
+                    <small>hr</small>
+                    <select id="contingencyMinutes" aria-label="Contingency minutes"></select>
+                    <small>min</small>
+                  </span>
+                </label>
+              </div>
+            </section>
+          </form>
+        </section>
       </main>
     </div>
 
@@ -190,7 +303,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-19"></script>
-    <script src="./app.js?v=cloud-sync-19"></script>
+    <script src="./supabase-config.js?v=cloud-sync-20"></script>
+    <script src="./app.js?v=cloud-sync-20"></script>
   </body>
 </html>
