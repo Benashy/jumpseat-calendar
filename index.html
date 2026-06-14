@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-26" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-27" />
   </head>
   <body>
     <div class="app-shell">
@@ -177,22 +177,25 @@
         <section class="ftl-panel view-panel hidden" id="ftlView" aria-label="FTL calculator">
           <div class="form-heading">
             <h2>Ben's FTL Calculator</h2>
-            <button class="text-button secondary" id="clearFtlButton" type="button">Reset</button>
+            <button class="text-button secondary" id="clearFtlButton" type="button" aria-label="Reset FTL calculator">Reset</button>
           </div>
 
           <section class="ftl-results" aria-label="Calculated latest times">
-            <div>
+            <div class="ftl-result-card is-soft">
               <span>Latest pushback</span>
               <strong id="latestPushback">--:--Z</strong>
+              <small class="limit-note soft-limit">Soft target</small>
               <small id="latestPushbackCountdown">Enter duty start</small>
-              <small class="contingency-note is-zero" id="pushbackContingency">0 minutes contingency included</small>
+              <small class="contingency-note hidden" id="pushbackContingency"></small>
             </div>
-            <div>
+            <div class="ftl-result-card is-hard">
               <span>Latest takeoff</span>
               <strong id="latestTakeoff">--:--Z</strong>
-              <small class="contingency-note is-zero" id="takeoffContingency">0 minutes contingency included</small>
+              <small class="limit-note hard-limit">Hard limit</small>
+              <small class="result-discretion-note hidden" id="takeoffDiscretion"></small>
+              <small class="contingency-note hidden" id="takeoffContingency"></small>
             </div>
-            <div>
+            <div class="ftl-result-card is-reference">
               <span>Latest on-chocks</span>
               <strong id="latestOnChocks">--:--Z</strong>
             </div>
@@ -309,7 +312,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-26"></script>
-    <script src="./app.js?v=cloud-sync-26"></script>
+    <script src="./supabase-config.js?v=cloud-sync-27"></script>
+    <script src="./app.js?v=cloud-sync-27"></script>
   </body>
 </html>

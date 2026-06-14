@@ -67,6 +67,7 @@ const elements = {
   latestPushbackCountdown: document.querySelector("#latestPushbackCountdown"),
   pushbackContingency: document.querySelector("#pushbackContingency"),
   latestTakeoff: document.querySelector("#latestTakeoff"),
+  takeoffDiscretion: document.querySelector("#takeoffDiscretion"),
   takeoffContingency: document.querySelector("#takeoffContingency"),
   latestOnChocks: document.querySelector("#latestOnChocks"),
   maxAllowableFdp: document.querySelector("#maxAllowableFdp"),
@@ -476,12 +477,16 @@ function formatDurationWithZeroMinutes(totalMinutes) {
   const absoluteMinutes = Math.abs(Math.round(totalMinutes));
   const hours = Math.floor(absoluteMinutes / 60);
   const minutes = absoluteMinutes % 60;
-  return `${hours} ${pluralize(hours, "hr")} ${minutes} ${pluralize(minutes, "min")}`;
+  return `${hours} hr ${minutes} min`;
 }
 
 function formatContingencyIncluded(totalMinutes) {
   const minutes = Math.abs(Math.round(totalMinutes));
   return `${minutes} ${pluralize(minutes, "minute")} contingency included`;
+}
+
+function formatCommanderDiscretion(totalMinutes) {
+  return `${formatDurationWithZeroMinutes(totalMinutes)} Commander's discretion included`;
 }
 
 function formatDurationFromSeconds(totalSeconds) {
@@ -517,8 +522,9 @@ function updateFtlCountdown() {
 }
 
 function updateContingencyNote(element, contingency) {
-  element.textContent = formatContingencyIncluded(contingency);
-  element.classList.toggle("is-zero", contingency === 0);
+  const hasContingency = contingency > 0;
+  element.textContent = hasContingency ? formatContingencyIncluded(contingency) : "";
+  element.classList.toggle("hidden", !hasContingency);
   element.classList.toggle("is-included", contingency > 0);
 }
 
@@ -526,8 +532,15 @@ function updateMaximumAllowableFdp(maximumAllowableFdp, discretion) {
   elements.maxAllowableFdp.textContent = formatDurationWithZeroMinutes(maximumAllowableFdp);
   const discretionNote = document.createElement("span");
   discretionNote.className = "discretion-note";
-  discretionNote.textContent = `(${formatDurationWithZeroMinutes(discretion)} commander's discretion included)`;
+  discretionNote.classList.toggle("is-active", discretion > 0);
+  discretionNote.textContent = `(${formatCommanderDiscretion(discretion)})`;
   elements.maxAllowableFdp.append(discretionNote);
+}
+
+function updateTakeoffDiscretion(discretion) {
+  const hasDiscretion = discretion > 0;
+  elements.takeoffDiscretion.textContent = hasDiscretion ? formatCommanderDiscretion(discretion) : "";
+  elements.takeoffDiscretion.classList.toggle("hidden", !hasDiscretion);
 }
 
 function calculateFtl() {
@@ -558,6 +571,7 @@ function calculateFtl() {
   updateContingencyNote(elements.pushbackContingency, contingency);
   updateContingencyNote(elements.takeoffContingency, contingency);
   updateMaximumAllowableFdp(maximumAllowableFdp, discretion);
+  updateTakeoffDiscretion(discretion);
   elements.sectorLength.textContent = formatDurationWithZeroMinutes(sectorLength);
   ftlLatestPushbackMinutes = latestPushback;
   updateFtlCountdown();
