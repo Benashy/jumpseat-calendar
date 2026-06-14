@@ -444,6 +444,7 @@ function updateMinuteOptions(control) {
 
   if (control.blankDefault && control.hours.value === "") {
     populateSelect(control.minutes, 0, 59, "", { includeBlank: true, step: minuteStep });
+    updateDurationIncompleteState(control);
     return;
   }
 
@@ -457,6 +458,7 @@ function updateMinuteOptions(control) {
 
   if (control.blankDefault && control.minutes.value === "" && !isForcedMaximumMinute) {
     populateSelect(control.minutes, minMinute, maxMinute, "", { includeBlank: true, step: minuteStep });
+    updateDurationIncompleteState(control);
     return;
   }
 
@@ -464,6 +466,13 @@ function updateMinuteOptions(control) {
   const nextMinute = Math.min(maxMinute, Math.max(minMinute, steppedMinute));
 
   populateSelect(control.minutes, minMinute, maxMinute, nextMinute, { step: minuteStep });
+  updateDurationIncompleteState(control);
+}
+
+function updateDurationIncompleteState(control) {
+  if (control.minuteOnly) return;
+  const isIncomplete = Boolean(control.blankDefault && control.hours.value !== "" && control.minutes.value === "");
+  control.minutes.classList.toggle("is-incomplete", isIncomplete);
 }
 
 function setupDurationControl(control) {

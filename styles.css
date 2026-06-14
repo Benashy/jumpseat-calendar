@@ -692,6 +692,11 @@ button:disabled {
   text-align: center;
 }
 
+.duration-control select.is-incomplete {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(180, 64, 64, 0.14);
+}
+
 .duration-control small {
   color: var(--muted);
   font-size: 0.75rem;
