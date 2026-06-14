@@ -80,8 +80,10 @@ const ftlDurationControls = {
   maxFdp: {
     hours: document.querySelector("#maxFdpHours"),
     minutes: document.querySelector("#maxFdpMinutes"),
-    maxHours: 23,
-    minMinutesWhenZero: 1,
+    minHours: 9,
+    maxHours: 18,
+    maxMinutesAtMaxHour: 0,
+    minuteStep: 5,
     defaultHours: "",
     defaultMinutes: "",
     blankDefault: true,
@@ -103,7 +105,7 @@ const ftlDurationControls = {
   flightTime: {
     hours: document.querySelector("#flightTimeHours"),
     minutes: document.querySelector("#flightTimeMinutes"),
-    maxHours: 18,
+    maxHours: 8,
     minMinutesWhenZero: 1,
     maxMinutesAtMaxHour: 0,
     defaultHours: "",
@@ -408,6 +410,7 @@ function formatZuluTime(totalMinutes) {
 
 function populateSelect(select, start, end, selectedValue, options = {}) {
   select.innerHTML = "";
+  const step = options.step || 1;
 
   if (options.includeBlank) {
     const blankOption = document.createElement("option");
@@ -417,7 +420,7 @@ function populateSelect(select, start, end, selectedValue, options = {}) {
     select.append(blankOption);
   }
 
-  for (let value = start; value <= end; value += 1) {
+  for (let value = start; value <= end; value += step) {
     const option = document.createElement("option");
     option.value = String(value);
     option.textContent = twoDigits(value);
@@ -428,9 +431,10 @@ function populateSelect(select, start, end, selectedValue, options = {}) {
 
 function updateMinuteOptions(control) {
   if (control.minuteOnly) return;
+  const minuteStep = control.minuteStep || 1;
 
   if (control.blankDefault && control.hours.value === "") {
-    populateSelect(control.minutes, 0, 59, "", { includeBlank: true });
+    populateSelect(control.minutes, 0, 59, "", { includeBlank: true, step: minuteStep });
     return;
   }
 
@@ -440,9 +444,10 @@ function updateMinuteOptions(control) {
   const maxMinute = selectedHour === control.maxHours && control.maxMinutesAtMaxHour !== undefined
     ? control.maxMinutesAtMaxHour
     : 59;
-  const nextMinute = Math.min(maxMinute, Math.max(minMinute, currentMinute));
+  const steppedMinute = Math.round(currentMinute / minuteStep) * minuteStep;
+  const nextMinute = Math.min(maxMinute, Math.max(minMinute, steppedMinute));
 
-  populateSelect(control.minutes, minMinute, maxMinute, nextMinute);
+  populateSelect(control.minutes, minMinute, maxMinute, nextMinute, { step: minuteStep });
 }
 
 function setupDurationControl(control) {
@@ -452,7 +457,7 @@ function setupDurationControl(control) {
     return;
   }
 
-  populateSelect(control.hours, 0, control.maxHours, control.defaultHours, { includeBlank: Boolean(control.blankDefault) });
+  populateSelect(control.hours, control.minHours || 0, control.maxHours, control.defaultHours, { includeBlank: Boolean(control.blankDefault) });
   updateMinuteOptions(control);
   if (!control.blankDefault) control.minutes.value = String(control.defaultMinutes);
   updateMinuteOptions(control);
@@ -460,7 +465,14 @@ function setupDurationControl(control) {
     updateMinuteOptions(control);
     calculateFtl();
   });
-  control.minutes.addEventListener("change", calculateFtl);
+  control.minutes.addEventListener("change", () => {
+    if (control.blankDefault && control.minutes.value !== "" && control.hours.value === "" && !control.minHours) {
+      control.hours.value = "0";
+      updateMinuteOptions(control);
+    }
+
+    calculateFtl();
+  });
 }
 
 function setDurationControl(control, hours, minutes) {
@@ -583,9 +595,10 @@ function updateContingencyNote(element, contingency) {
 
 function updateMaximumAllowableFdp(maximumAllowableFdp, discretion) {
   elements.maxAllowableFdp.textContent = formatDurationWithZeroMinutes(maximumAllowableFdp);
+  if (discretion <= 0) return;
+
   const discretionNote = document.createElement("span");
-  discretionNote.className = "discretion-note";
-  discretionNote.classList.toggle("is-active", discretion > 0);
+  discretionNote.className = "discretion-note is-active";
   discretionNote.textContent = `(${formatCommanderDiscretion(discretion)})`;
   elements.maxAllowableFdp.append(discretionNote);
 }
