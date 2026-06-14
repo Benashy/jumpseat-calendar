@@ -1,6 +1,6 @@
 {
-  "name": "Ben's Flight Tools",
-  "short_name": "Flight Tools",
+  "name": "Ben's OpsDeck",
+  "short_name": "OpsDeck",
   "description": "Flight deck tools for jumpseat requests and latest takeoff time calculations.",
   "start_url": "./index.html",
   "scope": "./",
