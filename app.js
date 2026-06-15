@@ -85,7 +85,7 @@ const ftlDurationControls = {
     hours: document.querySelector("#maxFdpHours"),
     minutes: document.querySelector("#maxFdpMinutes"),
     minHours: 9,
-    maxHours: 18,
+    maxHours: 14,
     maxMinutesAtMaxHour: 0,
     minuteStep: 5,
     defaultHours: "",
@@ -498,6 +498,7 @@ function setupDurationControl(control) {
       updateMinuteOptions(control);
     }
 
+    updateDurationIncompleteState(control);
     calculateFtl();
   });
 }

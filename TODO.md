@@ -2,8 +2,8 @@
 
 ## Current Status
 
-- Current visible app version: v1.3.
-- Next test check: confirm the red incomplete-minute boxes show correctly for Maximum FDP, Commander's discretion, and Flight time when hours are selected but minutes remain `--`.
+- Current visible app version: v1.4.
+- Next test check: confirm the red incomplete-minute boxes show for Maximum FDP, Commander's discretion, and Flight time when hours are selected but minutes remain `--`, then disappear once minutes are selected.
 
 ## Next Priorities
 
