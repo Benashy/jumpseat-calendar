@@ -460,7 +460,8 @@ button:disabled {
 }
 
 .ftl-result-card.is-soft {
-  border-color: rgba(23, 58, 86, 0.28);
+  border-color: rgba(196, 143, 43, 0.58);
+  background: linear-gradient(180deg, #fff8e7, #f5e5bd);
 }
 
 .ftl-result-card.is-hard {
@@ -517,8 +518,8 @@ button:disabled {
 }
 
 .ftl-results .soft-limit {
-  background: rgba(23, 58, 86, 0.1);
-  color: var(--accent);
+  background: rgba(196, 143, 43, 0.18);
+  color: #87621d;
 }
 
 .ftl-results .hard-limit {
@@ -528,6 +529,40 @@ button:disabled {
 
 .ftl-results .result-discretion-note {
   color: var(--warn);
+}
+
+.guidance-panel {
+  border: 1px solid rgba(198, 161, 90, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(198, 161, 90, 0.1), transparent 52%),
+    var(--panel-soft);
+  margin-top: 14px;
+  padding: 0;
+}
+
+.guidance-panel summary {
+  color: var(--navy);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 900;
+  list-style-position: inside;
+  padding: 12px;
+}
+
+.guidance-content {
+  border-top: 1px solid rgba(198, 161, 90, 0.22);
+  color: var(--muted);
+  display: grid;
+  gap: 10px;
+  font-size: 0.85rem;
+  font-weight: 750;
+  line-height: 1.45;
+  padding: 0 12px 12px;
+}
+
+.guidance-content p {
+  margin: 0;
 }
 
 .ftl-form,
