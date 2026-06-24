@@ -7,6 +7,7 @@ const CLOUD_FRESH_HOURS = 1;
 const CLOUD_STALE_HOURS = 24;
 const MINUTES_IN_DAY = 24 * 60;
 
+// Shared DOM handles and app state.
 const elements = {
   selectedDate: document.querySelector("#selectedDate"),
   requestDate: document.querySelector("#requestDate"),
@@ -147,6 +148,7 @@ let ftlLatestTakeoffMinutes = null;
 let lastCloudSuccess = null;
 let isOfflineReadOnly = false;
 
+// Cloud setup and shared status helpers.
 const cloudConfig = window.JUMPSEAT_SUPABASE || {};
 const hasCloudConfig = Boolean(
   cloudConfig.url &&
@@ -353,6 +355,9 @@ function setActiveTab(tabName) {
   elements.homeView.classList.toggle("hidden", !isHome);
   elements.addView.classList.toggle("hidden", isHome);
   elements.ftlView.classList.add("hidden");
+  elements.homeView.setAttribute("aria-hidden", String(!isHome));
+  elements.addView.setAttribute("aria-hidden", String(isHome));
+  elements.ftlView.setAttribute("aria-hidden", "true");
   elements.appTabs.classList.remove("hidden");
   elements.jumpseatToolTab.classList.add("active");
   elements.ftlToolTab.classList.remove("active");
@@ -371,6 +376,9 @@ function setActiveTool(toolName) {
   elements.homeView.classList.toggle("hidden", isFtl);
   elements.addView.classList.add("hidden");
   elements.ftlView.classList.toggle("hidden", !isFtl);
+  elements.homeView.setAttribute("aria-hidden", String(isFtl));
+  elements.addView.setAttribute("aria-hidden", "true");
+  elements.ftlView.setAttribute("aria-hidden", String(!isFtl));
   elements.jumpseatToolTab.classList.toggle("active", !isFtl);
   elements.ftlToolTab.classList.toggle("active", isFtl);
   elements.jumpseatToolTab.setAttribute("aria-selected", String(!isFtl));
@@ -813,6 +821,13 @@ function queueCloudSave() {
   }, 350);
 }
 
+function handleCloudConflict() {
+  cloudLoaded = false;
+  window.clearTimeout(saveTimer);
+  setSyncStatus("Cloud changed on another device. Tap Refresh before saving again.", true);
+  window.alert("Cloud data changed on another device. Tap Refresh before making further changes, so this device does not overwrite the newer cloud copy.");
+}
+
 async function saveCloudRequests() {
   if (!supabaseClient || !currentUser) return;
 
@@ -842,9 +857,7 @@ async function saveCloudRequests() {
     }
 
     if (error.code === "23505") {
-      cloudLoaded = false;
-      setSyncStatus("Cloud changed on another device. Tap Refresh before saving again.", true);
-      window.alert("Cloud data changed on another device. Tap Refresh before making further changes, so this device does not overwrite the newer cloud copy.");
+      handleCloudConflict();
       return;
     }
 
@@ -853,9 +866,7 @@ async function saveCloudRequests() {
   }
 
   if (!data) {
-    cloudLoaded = false;
-    setSyncStatus("Cloud changed on another device. Tap Refresh before saving again.", true);
-    window.alert("Cloud data changed on another device. Tap Refresh before making further changes, so this device does not overwrite the newer cloud copy.");
+    handleCloudConflict();
     return;
   }
 
