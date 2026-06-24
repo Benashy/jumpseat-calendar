@@ -465,7 +465,8 @@ button:disabled {
 }
 
 .ftl-result-card.is-hard {
-  border-color: rgba(182, 66, 46, 0.28);
+  border-color: rgba(182, 66, 46, 0.58);
+  background: linear-gradient(180deg, #fff1ee, #f3d4cc);
 }
 
 .ftl-result-card.is-reference {
@@ -523,7 +524,7 @@ button:disabled {
 }
 
 .ftl-results .hard-limit {
-  background: rgba(182, 66, 46, 0.1);
+  background: rgba(182, 66, 46, 0.16);
   color: var(--warn);
 }
 
@@ -556,7 +557,7 @@ button:disabled {
   display: grid;
   gap: 14px;
   font-size: 0.85rem;
-  font-weight: 750;
+  font-weight: 500;
   line-height: 1.45;
   padding: 0 12px 12px;
 }
@@ -569,6 +570,7 @@ button:disabled {
 .guidance-content h3 {
   color: var(--navy);
   font-size: 0.86rem;
+  font-weight: 900;
   margin: 0;
 }
 
