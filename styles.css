@@ -574,7 +574,6 @@ button:disabled {
 }
 
 .guidance-content strong {
-  color: var(--navy);
   font-weight: 900;
 }
 
