@@ -554,15 +554,33 @@ button:disabled {
   border-top: 1px solid rgba(198, 161, 90, 0.22);
   color: var(--muted);
   display: grid;
-  gap: 10px;
+  gap: 14px;
   font-size: 0.85rem;
   font-weight: 750;
   line-height: 1.45;
   padding: 0 12px 12px;
 }
 
+.guidance-content section {
+  display: grid;
+  gap: 8px;
+}
+
+.guidance-content h3 {
+  color: var(--navy);
+  font-size: 0.86rem;
+  margin: 0;
+}
+
 .guidance-content p {
   margin: 0;
+}
+
+.guidance-content ol {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 20px;
 }
 
 .ftl-form,

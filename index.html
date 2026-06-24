@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="Flight deck tools for jumpseat requests and latest takeoff time calculations." />
     <title>Ben's OpsDeck</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-42" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-43" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-42" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-43" />
   </head>
   <body>
     <div class="app-shell">
@@ -107,7 +107,7 @@
               </button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v1.5</small>
+            <small class="app-version">v1.6</small>
           </section>
 
         </section>
@@ -294,7 +294,25 @@
           <details class="guidance-panel">
             <summary>Guidance</summary>
             <div class="guidance-content">
-              <p>Manual guidance references to be added.</p>
+              <section>
+                <h3>OMA 7.11.1</h3>
+                <p>The Latest Time of Pushback is a soft limit; if exceeded, then all reasonable efforts should be made to depart before the Latest Time of Take-off.</p>
+                <p>The Latest Time of Take-off is a hard limit; if it is likely to be exceeded, a return to stand or an alternative plan, such as an intermediate diversion, must be implemented.</p>
+              </section>
+              <section>
+                <h3>OMA 8.28.18</h3>
+                <p>When calculating an LTOT, it is important to ensure the calculation uses realistic and achievable timings. Should any delay occur after an LTOT has been calculated and agreed with Global Ops, the flight can continue provided one or more of the following factors are met:</p>
+                <ol>
+                  <li>The delay has resulted in a reduction in the flight time e.g. change to a more favourable runway, new routing and the new flight time results in an on chocks time less than max FDP.</li>
+                  <li>The delay is less than 5 minutes, and there is a realistic possibility the routing would enable this delay to be eradicated.</li>
+                  <li>The original LTOT plan had extra contingency for unforeseen circumstances and that contingency accounts for all or part of the delay.</li>
+                </ol>
+                <p>If any of the above factors are encountered, the revised LTOT must still be realistic and achieve the latest on chocks time. Furthermore, once airborne and during a low workload situation the crew should contact Global Ops via ACARS informing them of the adjusted timings. If during the flight, the ‘on chocks’ time is projected to exceed the maximum allowable FDP, then all options must be explored to mitigate this exceedance. This may include diverting to an airfield where an on-chocks time is within the maximum allowable FDP.</p>
+              </section>
+              <section>
+                <h3>My interpretation</h3>
+                <p>Before departure, there must be a realistic and achievable plan that ensures the flight will remain within the maximum FDP. If unforeseen circumstances after departure mean an FDP exceedance becomes likely, the commander must take all reasonable steps to mitigate it and make a justified operational decision based on the circumstances, which may or may not include diversion.</p>
+              </section>
             </div>
           </details>
 
@@ -306,7 +324,7 @@
               </button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v1.5</small>
+            <small class="app-version">v1.6</small>
           </section>
         </section>
       </main>
@@ -331,7 +349,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-42"></script>
-    <script src="./app.js?v=cloud-sync-42"></script>
+    <script src="./supabase-config.js?v=cloud-sync-43"></script>
+    <script src="./app.js?v=cloud-sync-43"></script>
   </body>
 </html>
