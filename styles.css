@@ -459,18 +459,6 @@ button:disabled {
   padding: 14px;
 }
 
-.ftl-result-card.is-soft {
-  border-color: rgba(198, 161, 90, 0.26);
-}
-
-.ftl-result-card.is-hard {
-  border-color: rgba(198, 161, 90, 0.26);
-}
-
-.ftl-result-card.is-reference {
-  background: linear-gradient(180deg, #fffefa, #f7f1e7);
-}
-
 .ftl-result-card.is-warning {
   border-color: rgba(196, 143, 43, 0.72);
   background: linear-gradient(180deg, #fff8e7, #f5e5bd);
@@ -583,6 +571,11 @@ button:disabled {
 
 .guidance-content p {
   margin: 0;
+}
+
+.guidance-content strong {
+  color: var(--navy);
+  font-weight: 900;
 }
 
 .guidance-content ol {
