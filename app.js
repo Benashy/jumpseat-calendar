@@ -593,7 +593,7 @@ function updateCountdownElement(element, targetMinutes) {
   if (targetMinutes === null) {
     element.textContent = "Set required inputs";
     element.classList.remove("status-error", "status-warning", "status-success");
-    card?.classList.remove("is-overdue");
+    card?.classList.remove("is-warning", "is-overdue");
     return;
   }
 
@@ -609,6 +609,7 @@ function updateCountdownElement(element, targetMinutes) {
   element.classList.toggle("status-error", isPast);
   element.classList.toggle("status-warning", isClose);
   element.classList.toggle("status-success", !isPast && !isClose);
+  card?.classList.toggle("is-warning", isClose);
   card?.classList.toggle("is-overdue", isPast);
 }
 
