@@ -20,6 +20,7 @@
   --gold-soft: rgba(198, 161, 90, 0.22);
   --taupe: #8c7763;
   --taupe-soft: rgba(140, 119, 99, 0.12);
+  --good: #2f7a46;
   --warn: #b6422e;
   --shadow: 0 24px 58px rgba(20, 31, 38, 0.16);
   --soft-shadow: 0 12px 32px rgba(30, 38, 43, 0.09);
@@ -1038,11 +1039,27 @@ button:disabled {
 }
 
 .name-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   border-radius: 7px;
   background: linear-gradient(180deg, #edf1f2, #dde2e4);
   color: var(--navy);
   padding: 7px 10px;
   font-weight: 750;
+}
+
+.baid-badge {
+  flex: 0 0 auto;
+  border: 1px solid rgba(62, 122, 79, 0.28);
+  border-radius: 999px;
+  background: #e7f4e9;
+  color: var(--good);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  padding: 3px 7px;
 }
 
 .notes-text {
@@ -1131,6 +1148,36 @@ form label {
 
 .staff-row.has-controls {
   grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.staff-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.baid-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: linear-gradient(180deg, #fcfbf7, #f3efe6);
+  color: var(--navy);
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 0 10px;
+}
+
+.baid-toggle input {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  margin: 0;
+  accent-color: var(--good);
 }
 
 .zulu-field {
@@ -1299,6 +1346,10 @@ form label {
   .staff-row,
   .staff-row.has-controls {
     grid-template-columns: 1fr;
+  }
+
+  .baid-toggle {
+    justify-self: start;
   }
 
   .staff-controls {

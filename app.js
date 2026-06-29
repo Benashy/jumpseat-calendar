@@ -793,6 +793,31 @@ function saveRequests() {
   queueCloudSave();
 }
 
+function normalizeStaffEntry(entry) {
+  if (typeof entry === "string") {
+    const name = normalizeText(entry);
+    return name ? { name, baid: false } : null;
+  }
+
+  if (!entry || typeof entry !== "object") return null;
+
+  const name = normalizeText(String(entry.name || ""));
+  if (!name) return null;
+
+  return {
+    name,
+    baid: Boolean(entry.baid),
+  };
+}
+
+function staffName(entry) {
+  return typeof entry === "string" ? normalizeText(entry) : normalizeText(String(entry?.name || ""));
+}
+
+function staffHasBaid(entry) {
+  return typeof entry === "object" && Boolean(entry?.baid);
+}
+
 function sanitizeRequests(value) {
   if (!Array.isArray(value)) return [];
 
@@ -806,7 +831,7 @@ function sanitizeRequests(value) {
       availableSeats: request.availableSeats ?? null,
       routeFrom: normalizeText(String(request.routeFrom || "")).toUpperCase(),
       routeTo: normalizeText(String(request.routeTo || "")).toUpperCase(),
-      staff: request.staff.slice(0, MAX_REQUESTS_PER_FLIGHT).map((name) => normalizeText(String(name))).filter(Boolean),
+      staff: request.staff.slice(0, MAX_REQUESTS_PER_FLIGHT).map(normalizeStaffEntry).filter(Boolean),
       notes: normalizeText(String(request.notes || "")),
       updatedAt: request.updatedAt || new Date().toISOString(),
     }));
@@ -924,6 +949,10 @@ function getStaffInputs() {
   return Array.from(elements.staffFields.querySelectorAll(".staff-input"));
 }
 
+function getStaffBaidInputs() {
+  return Array.from(elements.staffFields.querySelectorAll(".staff-baid"));
+}
+
 function clearValidation() {
   elements.formError.classList.add("hidden");
   elements.formError.textContent = "";
@@ -981,7 +1010,11 @@ function validateRequestForm() {
 }
 
 function getStaffValues() {
-  return getStaffInputs().map((input) => input.value);
+  const baidInputs = getStaffBaidInputs();
+  return getStaffInputs().map((input, index) => ({
+    name: input.value,
+    baid: Boolean(baidInputs[index]?.checked),
+  }));
 }
 
 function moveStaffField(fromIndex, toIndex) {
@@ -993,30 +1026,46 @@ function moveStaffField(fromIndex, toIndex) {
 }
 
 function renderStaffFields(values = [""]) {
-  const visibleValues = values.length ? values.slice(0, MAX_REQUESTS_PER_FLIGHT) : [""];
+  const visibleValues = values.length
+    ? values.slice(0, MAX_REQUESTS_PER_FLIGHT).map((value) => normalizeStaffEntry(value) || { name: "", baid: false })
+    : [{ name: "", baid: false }];
   elements.staffFields.innerHTML = "";
 
   visibleValues.forEach((value, index) => {
     const row = document.createElement("div");
+    const entry = document.createElement("div");
     const label = document.createElement("label");
     const input = document.createElement("input");
+    const baidLabel = document.createElement("label");
+    const baidInput = document.createElement("input");
+    const baidText = document.createElement("span");
 
     row.className = visibleValues.length > 1 || index > 0 ? "staff-row has-controls" : "staff-row";
+    entry.className = "staff-entry";
     label.textContent = `Request ${index + 1}`;
     input.className = "staff-input";
     input.name = `staff${index + 1}`;
     input.type = "text";
     input.placeholder = "Name";
     input.autocomplete = "off";
-    input.value = value;
+    input.value = value.name;
     input.required = true;
     input.addEventListener("input", () => {
       clearValidation();
       updateAddRequestButton();
     });
 
+    baidLabel.className = "baid-toggle";
+    baidInput.className = "staff-baid";
+    baidInput.name = `staffBaid${index + 1}`;
+    baidInput.type = "checkbox";
+    baidInput.checked = value.baid;
+    baidText.textContent = "BAID";
+
     label.append(input);
-    row.append(label);
+    baidLabel.append(baidInput, baidText);
+    entry.append(label, baidLabel);
+    row.append(entry);
 
     if (visibleValues.length > 1 || index > 0) {
       const controls = document.createElement("div");
@@ -1078,7 +1127,7 @@ function getFormData() {
     availableSeats: elements.availableSeats.value === "" ? null : Number(elements.availableSeats.value),
     routeFrom: normalizeText(elements.routeFrom.value).toUpperCase(),
     routeTo: normalizeText(elements.routeTo.value).toUpperCase(),
-    staff: getStaffValues().map(normalizeText).filter(Boolean),
+    staff: getStaffValues().map(normalizeStaffEntry).filter(Boolean),
     notes: normalizeText(elements.notes.value),
     updatedAt: new Date().toISOString(),
   };
@@ -1201,7 +1250,7 @@ function requestMatchesQuery(request, query) {
     request.routeFrom,
     request.routeTo,
     request.notes,
-    ...request.staff,
+    ...request.staff.map((entry) => `${staffName(entry)} ${staffHasBaid(entry) ? "BAID" : ""}`),
   ].join(" ").toLowerCase();
   return haystack.includes(query);
 }
@@ -1244,7 +1293,7 @@ function renderGlobalSearch() {
 
     date.textContent = formatDate(request.date, { day: "numeric", month: "short", year: "numeric" });
     flight.textContent = request.flightNumber;
-    detail.textContent = `${formatDepartureTime(request.departureTime)} · ${request.routeFrom} to ${request.routeTo} · ${request.staff.join(", ")}`;
+    detail.textContent = `${formatDepartureTime(request.departureTime)} · ${request.routeFrom} to ${request.routeTo} · ${request.staff.map(staffName).join(", ")}`;
     count.textContent = availabilityText(request);
 
     match.append(flight, detail);
@@ -1286,9 +1335,20 @@ function render() {
     badge.classList.add(`availability-${availabilityStatus(request)}`);
 
     const nameList = card.querySelector(".name-list");
-    request.staff.forEach((name) => {
+    request.staff.forEach((staffEntry) => {
       const item = document.createElement("li");
-      item.textContent = name;
+      const name = document.createElement("span");
+
+      name.textContent = staffName(staffEntry);
+      item.append(name);
+
+      if (staffHasBaid(staffEntry)) {
+        const baidBadge = document.createElement("span");
+        baidBadge.className = "baid-badge";
+        baidBadge.textContent = "BAID";
+        item.append(baidBadge);
+      }
+
       nameList.append(item);
     });
 
@@ -1568,7 +1628,7 @@ elements.addSeatButton.addEventListener("click", () => {
   const values = getStaffValues();
   if (values.length >= MAX_REQUESTS_PER_FLIGHT) return;
 
-  const blankIndex = values.findIndex((value) => !value.trim());
+  const blankIndex = values.findIndex((value) => !staffName(value));
   if (blankIndex >= 0) {
     const input = getStaffInputs()[blankIndex];
     input.classList.add("invalid");
@@ -1578,7 +1638,7 @@ elements.addSeatButton.addEventListener("click", () => {
     return;
   }
 
-  renderStaffFields([...values, ""]);
+  renderStaffFields([...values, { name: "", baid: false }]);
   getStaffInputs().at(-1)?.focus();
 });
 
