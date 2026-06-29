@@ -1060,7 +1060,7 @@ function renderStaffFields(values = [""]) {
     baidInput.name = `staffBaid${index + 1}`;
     baidInput.type = "checkbox";
     baidInput.checked = value.baid;
-    baidText.textContent = "BAID";
+    baidText.textContent = "BA ID";
 
     label.append(input);
     baidLabel.append(baidInput, baidText);
@@ -1250,7 +1250,7 @@ function requestMatchesQuery(request, query) {
     request.routeFrom,
     request.routeTo,
     request.notes,
-    ...request.staff.map((entry) => `${staffName(entry)} ${staffHasBaid(entry) ? "BAID" : ""}`),
+    ...request.staff.map((entry) => `${staffName(entry)} ${staffHasBaid(entry) ? "BA ID" : ""}`),
   ].join(" ").toLowerCase();
   return haystack.includes(query);
 }
@@ -1345,7 +1345,7 @@ function render() {
       if (staffHasBaid(staffEntry)) {
         const baidBadge = document.createElement("span");
         baidBadge.className = "baid-badge";
-        baidBadge.textContent = "BAID";
+        baidBadge.textContent = "BA ID";
         item.append(baidBadge);
       }
 
