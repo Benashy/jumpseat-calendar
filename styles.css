@@ -749,7 +749,7 @@ button:disabled {
 
 .duration-control select.is-incomplete {
   background: #fff8f8;
-  border-color: var(--danger);
+  border-color: var(--warn);
   outline: 2px solid rgba(180, 64, 64, 0.62);
   outline-offset: 2px;
   box-shadow: 0 0 0 3px rgba(180, 64, 64, 0.14);
@@ -814,6 +814,10 @@ button:disabled {
   width: 42px;
   min-height: 42px;
   font-size: 1.2rem;
+}
+
+.account-actions .text-button {
+  white-space: nowrap;
 }
 
 .upcoming-panel {

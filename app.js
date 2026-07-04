@@ -185,7 +185,7 @@ function formatElapsed(fromDate) {
   const hours = Math.floor(elapsedMinutes / 60);
   const minutes = elapsedMinutes % 60;
 
-  if (elapsedSeconds < 45) return "just now";
+  if (elapsedSeconds < 45) return "now";
   if (elapsedMinutes < 60) return `${elapsedMinutes} ${pluralize(elapsedMinutes, "min")} ago`;
   if (minutes === 0) return `${hours} ${pluralize(hours, "hr")} ago`;
   return `${hours} ${pluralize(hours, "hr")} ${minutes} ${pluralize(minutes, "min")} ago`;
@@ -391,6 +391,15 @@ function todayIso() {
   const now = new Date();
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
   return now.toISOString().slice(0, 10);
+}
+
+function createId() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function isIsoDate(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(`${value}T12:00:00`).getTime());
 }
 
 function formatDate(iso, options) {
@@ -824,7 +833,7 @@ function sanitizeRequests(value) {
   return value
     .filter((request) => request.date && request.flightNumber && Array.isArray(request.staff))
     .map((request) => ({
-      id: request.id || crypto.randomUUID(),
+      id: request.id || createId(),
       date: request.date,
       flightNumber: normalizeText(String(request.flightNumber)).toUpperCase(),
       departureTime: request.departureTime || "",
@@ -1120,7 +1129,7 @@ function removeStaffField(indexToRemove) {
 
 function getFormData() {
   return {
-    id: elements.editingId.value || crypto.randomUUID(),
+    id: elements.editingId.value || createId(),
     date: elements.requestDate.value,
     flightNumber: normalizeText(elements.flightNumber.value).toUpperCase(),
     departureTime: elements.departureTime.value,
@@ -1189,8 +1198,9 @@ function startAdd() {
 }
 
 function setSelectedDate(iso) {
-  elements.selectedDate.value = iso;
-  elements.requestDate.value = iso;
+  const safeDate = isIsoDate(iso) ? iso : todayIso();
+  elements.selectedDate.value = safeDate;
+  elements.requestDate.value = safeDate;
   render();
 }
 
