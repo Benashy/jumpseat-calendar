@@ -665,6 +665,10 @@ function updateResultDiscretionNotes(discretion) {
 
 function resetFtlResults() {
   elements.latestOnChocks.textContent = "--:--Z";
+  resetFinalSectorResults();
+}
+
+function resetFinalSectorResults() {
   elements.latestTakeoff.textContent = "--:--Z";
   elements.latestPushback.textContent = "--:--Z";
   updateContingencyNote(elements.pushbackContingency, 0);
@@ -680,6 +684,7 @@ function calculateFtl() {
   const hasMaximumFdp = hasDurationValue(ftlDurationControls.maxFdp);
   const hasFlightTime = hasDurationValue(ftlDurationControls.flightTime);
   const hasPartialDiscretion = hasPartialDurationValue(ftlDurationControls.discretion);
+  const hasFdpLimit = hasDutyStart && hasMaximumFdp && !hasPartialDiscretion;
   const dutyStart = hasDutyStart ? getDutyStartMinutes() : 0;
   const maximumFdp = getDurationMinutes(ftlDurationControls.maxFdp);
   const discretion = getDurationMinutes(ftlDurationControls.discretion);
@@ -700,12 +705,19 @@ function calculateFtl() {
 
   elements.sectorLength.textContent = hasFlightTime ? formatDurationWithZeroMinutes(sectorLength) : "--";
 
-  if (!hasDutyStart || !hasMaximumFdp || !hasFlightTime || hasPartialDiscretion) {
+  if (!hasFdpLimit) {
     resetFtlResults();
     return;
   }
 
   const latestOnChocks = dutyStart + maximumAllowableFdp;
+  elements.latestOnChocks.textContent = formatZuluTime(latestOnChocks);
+
+  if (!hasFlightTime) {
+    resetFinalSectorResults();
+    return;
+  }
+
   const latestTakeoff = latestOnChocks -
     getDurationMinutes(ftlDurationControls.flightTime) -
     getDurationMinutes(ftlDurationControls.holding) -
@@ -713,7 +725,6 @@ function calculateFtl() {
     getDurationMinutes(ftlDurationControls.contingency);
   const latestPushback = latestTakeoff - getDurationMinutes(ftlDurationControls.taxiOut);
 
-  elements.latestOnChocks.textContent = formatZuluTime(latestOnChocks);
   elements.latestTakeoff.textContent = formatZuluTime(latestTakeoff);
   elements.latestPushback.textContent = formatZuluTime(latestPushback);
   updateContingencyNote(elements.pushbackContingency, contingency);
