@@ -77,6 +77,8 @@ const elements = {
   takeoffDiscretion: document.querySelector("#takeoffDiscretion"),
   takeoffContingency: document.querySelector("#takeoffContingency"),
   latestOnChocks: document.querySelector("#latestOnChocks"),
+  latestOnChocksCountdown: document.querySelector("#latestOnChocksCountdown"),
+  onChocksDiscretion: document.querySelector("#onChocksDiscretion"),
   maxAllowableFdp: document.querySelector("#maxAllowableFdp"),
   sectorLength: document.querySelector("#sectorLength"),
 };
@@ -145,6 +147,7 @@ let syncElapsedTimer = null;
 let ftlCountdownTimer = null;
 let ftlLatestPushbackMinutes = null;
 let ftlLatestTakeoffMinutes = null;
+let ftlLatestOnChocksMinutes = null;
 let lastCloudSuccess = null;
 let isOfflineReadOnly = false;
 
@@ -631,6 +634,7 @@ function updateCountdownElement(element, targetMinutes) {
 }
 
 function updateFtlCountdown() {
+  updateCountdownElement(elements.latestOnChocksCountdown, ftlLatestOnChocksMinutes);
   updateCountdownElement(elements.latestPushbackCountdown, ftlLatestPushbackMinutes);
   updateCountdownElement(elements.latestTakeoffCountdown, ftlLatestTakeoffMinutes);
 }
@@ -665,6 +669,8 @@ function updateResultDiscretionNotes(discretion) {
 
 function resetFtlResults() {
   elements.latestOnChocks.textContent = "--:--Z";
+  ftlLatestOnChocksMinutes = null;
+  updateResultDiscretionNote(elements.onChocksDiscretion, 0);
   resetFinalSectorResults();
 }
 
@@ -712,6 +718,8 @@ function calculateFtl() {
 
   const latestOnChocks = dutyStart + maximumAllowableFdp;
   elements.latestOnChocks.textContent = formatZuluTime(latestOnChocks);
+  updateResultDiscretionNote(elements.onChocksDiscretion, discretion);
+  ftlLatestOnChocksMinutes = latestOnChocks;
 
   if (!hasFlightTime) {
     resetFinalSectorResults();
