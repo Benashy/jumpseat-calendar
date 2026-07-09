@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.8.
+- Current visible app version: v2.9.
 - Latest on-chocks now works as a standalone gross-check tool after Duty start time, Maximum FDP, and optional Commander's discretion are entered.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
