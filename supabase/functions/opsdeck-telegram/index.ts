@@ -189,8 +189,8 @@ function buildReminderMessage(request: JumpseatRequest) {
     ? "not set"
     : String(request.availableSeats);
   const staffLines = staff.map((entry, index) => {
-    const baid = staffHasBaid(entry) ? " · BA ID" : "";
-    return `${index + 1}. ${staffName(entry)}${baid}`;
+    const baid = staffHasBaid(entry) ? "yes" : "no";
+    return `${index + 1}. ${staffName(entry)} (BA ID: ${baid})`;
   });
 
   return [
@@ -206,6 +206,22 @@ function buildReminderMessage(request: JumpseatRequest) {
     `Available jumpseats: ${availableSeats}`,
     hasNotes(request) ? "Notes: see app for notes." : "Notes: no notes.",
   ].join("\n");
+}
+
+function buildSampleReminderMessage() {
+  return buildReminderMessage({
+    date: "2026-07-23",
+    flightNumber: "BA123",
+    departureTime: "14:30",
+    routeFrom: "LHR",
+    routeTo: "JFK",
+    availableSeats: 2,
+    staff: [
+      { name: "Smith", baid: false },
+      { name: "Jones", baid: true },
+    ],
+    notes: "Sample note",
+  });
 }
 
 async function telegramRequest(method: string, payload: Record<string, unknown>) {
@@ -378,6 +394,35 @@ async function sendTest(userId: string) {
 
   if (error) {
     fail(500, "test_update_failed", error.message);
+  }
+
+  return {
+    ok: true,
+    test_sent_at: testSentAt,
+  };
+}
+
+async function sendSampleReminder(userId: string) {
+  const admin = requireServerConfig();
+  const settings = await getTelegramSettings(userId);
+
+  if (!settings?.enabled || !settings.chat_id) {
+    fail(400, "telegram_not_linked", "Link Telegram before sending a sample reminder.");
+  }
+
+  await sendTelegramMessage(settings.chat_id, buildSampleReminderMessage());
+
+  const testSentAt = new Date().toISOString();
+  const { error } = await admin
+    .from("opsdeck_telegram_settings")
+    .update({
+      test_sent_at: testSentAt,
+      updated_at: testSentAt,
+    })
+    .eq("user_id", userId);
+
+  if (error) {
+    fail(500, "sample_update_failed", error.message);
   }
 
   return {
@@ -562,6 +607,10 @@ Deno.serve(async (req: Request) => {
 
     if (action === "send_test") {
       return jsonResponse(await sendTest(user.id));
+    }
+
+    if (action === "send_sample_reminder") {
+      return jsonResponse(await sendSampleReminder(user.id));
     }
 
     fail(400, "unknown_action", "Unknown OpsDeck Telegram action.");

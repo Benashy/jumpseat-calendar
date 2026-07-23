@@ -18,30 +18,31 @@ const elements = {
   authStatus: document.querySelector("#authStatus"),
   homeSyncStatus: document.querySelector("#homeSyncStatus"),
   ftlSyncStatus: document.querySelector("#ftlSyncStatus"),
-  notificationsSyncStatus: document.querySelector("#notificationsSyncStatus"),
+  settingsSyncStatus: document.querySelector("#settingsSyncStatus"),
   offlineBanner: document.querySelector("#offlineBanner"),
   accountPanel: document.querySelector("#accountPanel"),
   ftlAccountPanel: document.querySelector("#ftlAccountPanel"),
-  notificationsAccountPanel: document.querySelector("#notificationsAccountPanel"),
+  settingsAccountPanel: document.querySelector("#settingsAccountPanel"),
   magicLinkButton: document.querySelector("#magicLinkButton"),
   refreshCloudButton: document.querySelector("#refreshCloudButton"),
   ftlRefreshCloudButton: document.querySelector("#ftlRefreshCloudButton"),
-  notificationsRefreshCloudButton: document.querySelector("#notificationsRefreshCloudButton"),
+  settingsRefreshCloudButton: document.querySelector("#settingsRefreshCloudButton"),
+  homeSettingsButton: document.querySelector("#homeSettingsButton"),
+  ftlSettingsButton: document.querySelector("#ftlSettingsButton"),
   homeSignOutButton: document.querySelector("#homeSignOutButton"),
   ftlSignOutButton: document.querySelector("#ftlSignOutButton"),
-  notificationsSignOutButton: document.querySelector("#notificationsSignOutButton"),
+  settingsSignOutButton: document.querySelector("#settingsSignOutButton"),
   toolMenu: document.querySelector(".tool-menu"),
   appTabs: document.querySelector(".app-tabs"),
   layout: document.querySelector(".layout"),
   jumpseatToolTab: document.querySelector("#jumpseatToolTab"),
   ftlToolTab: document.querySelector("#ftlToolTab"),
-  notificationsToolTab: document.querySelector("#notificationsToolTab"),
   homeTab: document.querySelector("#homeTab"),
   addTab: document.querySelector("#addTab"),
   homeView: document.querySelector("#homeView"),
   addView: document.querySelector("#addView"),
   ftlView: document.querySelector("#ftlView"),
-  notificationsView: document.querySelector("#notificationsView"),
+  settingsView: document.querySelector("#settingsView"),
   previousDay: document.querySelector("#previousDay"),
   nextDay: document.querySelector("#nextDay"),
   todayButton: document.querySelector("#todayButton"),
@@ -95,6 +96,7 @@ const elements = {
   generatePairingButton: document.querySelector("#generatePairingButton"),
   checkPairingButton: document.querySelector("#checkPairingButton"),
   sendTelegramTestButton: document.querySelector("#sendTelegramTestButton"),
+  sendSampleReminderButton: document.querySelector("#sendSampleReminderButton"),
 };
 
 const ftlDurationControls = {
@@ -164,6 +166,7 @@ let ftlLatestTakeoffMinutes = null;
 let ftlLatestOnChocksMinutes = null;
 let lastCloudSuccess = null;
 let isOfflineReadOnly = false;
+let telegramLinked = false;
 
 // Cloud setup and shared status helpers.
 const cloudConfig = window.JUMPSEAT_SUPABASE || {};
@@ -188,7 +191,7 @@ function isSuccessStatus(message) {
 }
 
 function setSyncStatus(message, isError = false, isWarning = false) {
-  [elements.homeSyncStatus, elements.ftlSyncStatus, elements.notificationsSyncStatus].forEach((statusElement) => {
+  [elements.homeSyncStatus, elements.ftlSyncStatus, elements.settingsSyncStatus].forEach((statusElement) => {
     statusElement.textContent = message;
     statusElement.classList.toggle("status-error", isError);
     statusElement.classList.toggle("status-warning", isWarning);
@@ -316,10 +319,11 @@ function setOfflineReadOnly(isReadOnly) {
   elements.addTab.disabled = isReadOnly;
   elements.refreshCloudButton.disabled = isReadOnly;
   elements.ftlRefreshCloudButton.disabled = isReadOnly;
-  elements.notificationsRefreshCloudButton.disabled = isReadOnly;
+  elements.settingsRefreshCloudButton.disabled = isReadOnly;
   elements.generatePairingButton.disabled = isReadOnly;
   elements.checkPairingButton.disabled = isReadOnly;
   elements.sendTelegramTestButton.disabled = isReadOnly;
+  elements.sendSampleReminderButton.disabled = isReadOnly;
 
   if (isReadOnly) {
     setActiveTab("home");
@@ -336,7 +340,7 @@ function startOfflineMode(message = "Offline: viewing saved data") {
   elements.authPanel.classList.add("hidden");
   elements.accountPanel.classList.add("hidden");
   elements.ftlAccountPanel.classList.add("hidden");
-  elements.notificationsAccountPanel.classList.add("hidden");
+  elements.settingsAccountPanel.classList.add("hidden");
   setAppVisible(true);
   setOfflineReadOnly(true);
   setSyncStatus(message, false, true);
@@ -354,7 +358,7 @@ function setSignedInState(user) {
   elements.authPanel.classList.toggle("hidden", Boolean(user));
   elements.accountPanel.classList.toggle("hidden", !user);
   elements.ftlAccountPanel.classList.toggle("hidden", !user);
-  elements.notificationsAccountPanel.classList.toggle("hidden", !user);
+  elements.settingsAccountPanel.classList.toggle("hidden", !user);
   setAppVisible(Boolean(user));
 
   if (user) {
@@ -379,18 +383,16 @@ function setActiveTab(tabName) {
   elements.homeView.classList.toggle("hidden", !isHome);
   elements.addView.classList.toggle("hidden", isHome);
   elements.ftlView.classList.add("hidden");
-  elements.notificationsView.classList.add("hidden");
+  elements.settingsView.classList.add("hidden");
   elements.homeView.setAttribute("aria-hidden", String(!isHome));
   elements.addView.setAttribute("aria-hidden", String(isHome));
   elements.ftlView.setAttribute("aria-hidden", "true");
-  elements.notificationsView.setAttribute("aria-hidden", "true");
+  elements.settingsView.setAttribute("aria-hidden", "true");
   elements.appTabs.classList.remove("hidden");
   elements.jumpseatToolTab.classList.add("active");
   elements.ftlToolTab.classList.remove("active");
-  elements.notificationsToolTab.classList.remove("active");
   elements.jumpseatToolTab.setAttribute("aria-selected", "true");
   elements.ftlToolTab.setAttribute("aria-selected", "false");
-  elements.notificationsToolTab.setAttribute("aria-selected", "false");
   elements.homeTab.classList.toggle("active", isHome);
   elements.addTab.classList.toggle("active", !isHome);
   elements.homeTab.setAttribute("aria-selected", String(isHome));
@@ -399,27 +401,40 @@ function setActiveTab(tabName) {
 
 function setActiveTool(toolName) {
   const isFtl = toolName === "ftl";
-  const isNotifications = toolName === "notifications";
-  const isJumpseat = !isFtl && !isNotifications;
+  const isJumpseat = !isFtl;
 
   elements.appTabs.classList.toggle("hidden", !isJumpseat);
   elements.homeView.classList.toggle("hidden", !isJumpseat);
   elements.addView.classList.add("hidden");
   elements.ftlView.classList.toggle("hidden", !isFtl);
-  elements.notificationsView.classList.toggle("hidden", !isNotifications);
+  elements.settingsView.classList.add("hidden");
   elements.homeView.setAttribute("aria-hidden", String(!isJumpseat));
   elements.addView.setAttribute("aria-hidden", "true");
   elements.ftlView.setAttribute("aria-hidden", String(!isFtl));
-  elements.notificationsView.setAttribute("aria-hidden", String(!isNotifications));
+  elements.settingsView.setAttribute("aria-hidden", "true");
   elements.jumpseatToolTab.classList.toggle("active", isJumpseat);
   elements.ftlToolTab.classList.toggle("active", isFtl);
-  elements.notificationsToolTab.classList.toggle("active", isNotifications);
   elements.jumpseatToolTab.setAttribute("aria-selected", String(isJumpseat));
   elements.ftlToolTab.setAttribute("aria-selected", String(isFtl));
-  elements.notificationsToolTab.setAttribute("aria-selected", String(isNotifications));
 
   if (isJumpseat) setActiveTab("home");
-  if (isNotifications) refreshTelegramStatus();
+}
+
+function openSettings() {
+  elements.appTabs.classList.add("hidden");
+  elements.homeView.classList.add("hidden");
+  elements.addView.classList.add("hidden");
+  elements.ftlView.classList.add("hidden");
+  elements.settingsView.classList.remove("hidden");
+  elements.homeView.setAttribute("aria-hidden", "true");
+  elements.addView.setAttribute("aria-hidden", "true");
+  elements.ftlView.setAttribute("aria-hidden", "true");
+  elements.settingsView.setAttribute("aria-hidden", "false");
+  elements.jumpseatToolTab.classList.remove("active");
+  elements.ftlToolTab.classList.remove("active");
+  elements.jumpseatToolTab.setAttribute("aria-selected", "false");
+  elements.ftlToolTab.setAttribute("aria-selected", "false");
+  refreshTelegramStatus();
 }
 
 function todayIso() {
@@ -1579,6 +1594,7 @@ function setTelegramStatus(message, isError = false, isSuccess = false, isWarnin
 }
 
 function resetTelegramPanel() {
+  telegramLinked = false;
   elements.telegramLinkState.textContent = "Not linked";
   elements.telegramBotState.textContent = "Bot token pending";
   elements.telegramPairingExpiry.textContent = "Not started";
@@ -1591,14 +1607,15 @@ function setTelegramBusy(isBusy) {
     elements.generatePairingButton.disabled = true;
     elements.checkPairingButton.disabled = true;
     elements.sendTelegramTestButton.disabled = true;
+    elements.sendSampleReminderButton.disabled = true;
     return;
   }
 
   const botConfigured = elements.telegramBotState.textContent === "Bot token set";
-  const linked = elements.telegramLinkState.textContent.startsWith("Linked");
   elements.generatePairingButton.disabled = isOfflineReadOnly;
   elements.checkPairingButton.disabled = isOfflineReadOnly || !botConfigured;
-  elements.sendTelegramTestButton.disabled = isOfflineReadOnly || !botConfigured || !linked;
+  elements.sendTelegramTestButton.disabled = isOfflineReadOnly || !botConfigured || !telegramLinked;
+  elements.sendSampleReminderButton.disabled = isOfflineReadOnly || !botConfigured || !telegramLinked;
 }
 
 async function invokeTelegramAction(action, body = {}) {
@@ -1634,6 +1651,7 @@ async function invokeTelegramAction(action, body = {}) {
 }
 
 function updateTelegramPanel(data) {
+  telegramLinked = Boolean(data.linked);
   const linkedLabel = data.linked
     ? `Linked to ${data.chat_label || data.username || "Telegram"}`
     : "Not linked";
@@ -1641,6 +1659,7 @@ function updateTelegramPanel(data) {
   elements.telegramBotState.textContent = data.bot_configured ? "Bot token set" : "Bot token pending";
 
   elements.sendTelegramTestButton.disabled = isOfflineReadOnly || !data.linked || !data.bot_configured;
+  elements.sendSampleReminderButton.disabled = isOfflineReadOnly || !data.linked || !data.bot_configured;
   elements.checkPairingButton.disabled = isOfflineReadOnly || !data.bot_configured;
 
   if (!data.bot_configured) {
@@ -1674,6 +1693,7 @@ async function startTelegramPairing() {
 
   try {
     const data = await invokeTelegramAction("start_pairing");
+    telegramLinked = false;
     elements.telegramPairingCode.textContent = data.pairing_code || "OD------";
     elements.telegramPairingExpiry.textContent = data.pairing_minutes
       ? `Expires in ${data.pairing_minutes} min`
@@ -1693,6 +1713,11 @@ async function startTelegramPairing() {
 }
 
 async function checkTelegramPairing() {
+  if (telegramLinked) {
+    setTelegramStatus("Telegram is already linked.", false, true);
+    return;
+  }
+
   setTelegramBusy(true);
   setTelegramStatus("Checking Telegram messages...");
 
@@ -1718,6 +1743,21 @@ async function sendTelegramTest() {
     refreshTelegramStatus();
   } catch (error) {
     setTelegramStatus(error.message || "Telegram test could not be sent.", true);
+  } finally {
+    setTelegramBusy(false);
+  }
+}
+
+async function sendSampleReminder() {
+  setTelegramBusy(true);
+  setTelegramStatus("Sending sample jumpseat reminder...");
+
+  try {
+    await invokeTelegramAction("send_sample_reminder");
+    setTelegramStatus("Sample reminder sent.", false, true);
+    refreshTelegramStatus();
+  } catch (error) {
+    setTelegramStatus(error.message || "Sample reminder could not be sent.", true);
   } finally {
     setTelegramBusy(false);
   }
@@ -1818,7 +1858,6 @@ elements.requestForm.addEventListener("keydown", (event) => {
 
 elements.jumpseatToolTab.addEventListener("click", () => setActiveTool("jumpseat"));
 elements.ftlToolTab.addEventListener("click", () => setActiveTool("ftl"));
-elements.notificationsToolTab.addEventListener("click", () => setActiveTool("notifications"));
 elements.clearFtlButton.addEventListener("click", clearFtlCalculator);
 elements.homeTab.addEventListener("click", () => setActiveTab("home"));
 elements.addTab.addEventListener("click", startAdd);
@@ -1863,13 +1902,16 @@ elements.authForm.addEventListener("submit", (event) => {
 elements.magicLinkButton.addEventListener("click", sendMagicLink);
 elements.refreshCloudButton.addEventListener("click", refreshCloudData);
 elements.ftlRefreshCloudButton.addEventListener("click", refreshCloudData);
-elements.notificationsRefreshCloudButton.addEventListener("click", refreshCloudData);
+elements.settingsRefreshCloudButton.addEventListener("click", refreshCloudData);
+elements.homeSettingsButton.addEventListener("click", openSettings);
+elements.ftlSettingsButton.addEventListener("click", openSettings);
 elements.homeSignOutButton.addEventListener("click", () => signOut());
 elements.ftlSignOutButton.addEventListener("click", () => signOut());
-elements.notificationsSignOutButton.addEventListener("click", () => signOut());
+elements.settingsSignOutButton.addEventListener("click", () => signOut());
 elements.generatePairingButton.addEventListener("click", startTelegramPairing);
 elements.checkPairingButton.addEventListener("click", checkTelegramPairing);
 elements.sendTelegramTestButton.addEventListener("click", sendTelegramTest);
+elements.sendSampleReminderButton.addEventListener("click", sendSampleReminder);
 window.addEventListener("offline", () => startOfflineMode());
 window.addEventListener("online", returnOnline);
 

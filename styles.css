@@ -116,7 +116,7 @@ h1 {
 }
 
 .tool-menu {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-bottom: 10px;
 }
 
@@ -228,7 +228,7 @@ h1 {
 .day-panel,
 .entry-panel,
 .ftl-panel,
-.notifications-panel {
+.settings-panel {
   background: var(--panel);
   border: 1px solid rgba(198, 161, 90, 0.18);
   border-radius: 8px;
@@ -243,13 +243,13 @@ h1 {
 
 .entry-panel,
 .ftl-panel,
-.notifications-panel {
+.settings-panel {
   padding: 20px;
 }
 
 .entry-panel,
 .ftl-panel,
-.notifications-panel {
+.settings-panel {
   background:
     linear-gradient(180deg, rgba(198, 161, 90, 0.06), transparent 28%),
     var(--panel);
@@ -595,9 +595,37 @@ button:disabled {
   padding-left: 20px;
 }
 
+.settings-section,
+.notification-module {
+  display: grid;
+  gap: 13px;
+}
+
+.settings-section {
+  border: 1px solid rgba(198, 161, 90, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(200, 204, 208, 0.12), transparent 36%),
+    var(--panel-soft);
+  padding: 12px;
+}
+
+.settings-heading {
+  margin-bottom: 0;
+}
+
+.compact-heading {
+  margin-bottom: 0;
+}
+
+.compact-heading h3 {
+  color: var(--navy);
+  font-size: 1.05rem;
+}
+
 .notification-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 14px;
 }
@@ -863,6 +891,7 @@ button:disabled {
 .account-panel {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   justify-content: flex-start;
   gap: 10px;
   margin-top: 18px;
@@ -894,8 +923,10 @@ button:disabled {
 
 .account-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 9px;
   align-items: center;
+  justify-content: flex-end;
 }
 
 .account-actions .icon-button {
@@ -1426,7 +1457,7 @@ form label {
   }
 
   .tool-menu {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 
   .account-panel,
