@@ -200,7 +200,7 @@ function buildReminderMessage(request: JumpseatRequest) {
     "OpsDeck jumpseat reminder",
     "",
     `${flightNumber} ${routeFrom}-${routeTo}`,
-    `Departure: ${request.departureTime}Z ${formatBritishDate(request.date)}`,
+    `Departure: ${request.departureTime}Z on ${formatBritishDate(request.date)}`,
     "",
     `Requests (${staff.length})`,
     ...staffLines,
