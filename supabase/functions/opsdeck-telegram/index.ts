@@ -172,12 +172,14 @@ function requestStaff(request: JumpseatRequest) {
     : [];
 }
 
-function hasNotes(request: JumpseatRequest) {
-  return normaliseText(request.notes).length > 0;
-}
-
 function formatOptionalRoute(value: unknown) {
   return normaliseText(value).toUpperCase() || "----";
+}
+
+function formatBritishDate(value: unknown) {
+  if (!isIsoDate(value)) return normaliseText(value) || "date not set";
+  const [year, month, day] = String(value).split("-");
+  return `${day}-${month}-${year}`;
 }
 
 function buildReminderMessage(request: JumpseatRequest) {
@@ -185,6 +187,7 @@ function buildReminderMessage(request: JumpseatRequest) {
   const flightNumber = normaliseFlightNumber(request.flightNumber);
   const routeFrom = formatOptionalRoute(request.routeFrom);
   const routeTo = formatOptionalRoute(request.routeTo);
+  const notes = normaliseText(request.notes);
   const availableSeats = request.availableSeats === null || request.availableSeats === undefined || request.availableSeats === ""
     ? "not set"
     : String(request.availableSeats);
@@ -197,14 +200,13 @@ function buildReminderMessage(request: JumpseatRequest) {
     "OpsDeck jumpseat reminder",
     "",
     `${flightNumber} ${routeFrom}-${routeTo}`,
-    `Departure: ${request.date} ${request.departureTime}Z`,
-    "Reminder: 75 minutes before departure",
+    `Departure: ${request.departureTime}Z ${formatBritishDate(request.date)}`,
     "",
     `Requests (${staff.length})`,
     ...staffLines,
     "",
     `Available jumpseats: ${availableSeats}`,
-    hasNotes(request) ? "Notes: see app for notes." : "Notes: no notes.",
+    notes ? `Notes: ${notes}` : "Notes: no notes.",
   ].join("\n");
 }
 
@@ -444,7 +446,7 @@ async function probe(userId: string) {
     username: settings?.username || null,
     test_sent_at: settings?.test_sent_at || null,
     reminder_offset_minutes: REMINDER_OFFSET_MINUTES,
-    notes_policy: "Messages say whether notes exist, but do not include note text.",
+    notes_policy: "Messages include note text when notes are present.",
   };
 }
 

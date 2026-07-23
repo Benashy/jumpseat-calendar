@@ -10,6 +10,7 @@
 - Telegram setup now lives under Settings, with a realistic sample reminder test message.
 - Supabase Cron is active every 5 minutes, using pg_net with a 30-second timeout.
 - Live Telegram reminder test passed on 23 July 2026: BA123 sent at `09:35:02Z`.
+- Telegram reminder wording now uses British date format, removes the redundant timing line, and includes notes directly when present.
 
 ## Next Priorities
 

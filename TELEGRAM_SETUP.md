@@ -7,7 +7,7 @@
 - OpsDeck Settings screen for pairing Telegram and sending tests.
 - Fixed jumpseat reminder timing: 75 minutes before Zulu departure.
 - One scheduled reminder per saved flight/date.
-- Telegram messages include flight, route, departure, request names, BA ID markers, available jumpseats, and note status only.
+- Telegram messages include flight, route, British-format departure date, request names, BA ID yes/no, available jumpseats, and note text when present.
 
 ## Secrets To Add In Supabase
 
