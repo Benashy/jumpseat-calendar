@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="Flight deck tools for jumpseat requests and latest takeoff time calculations." />
     <title>Ben's OpsDeck</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-56" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-57" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-56" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-57" />
   </head>
   <body>
     <div class="app-shell">
@@ -45,6 +45,7 @@
       <nav class="tool-menu" aria-label="Flight tools" role="tablist">
         <button class="tool-button active" id="jumpseatToolTab" type="button" role="tab" aria-controls="homeView" aria-selected="true">Jumpseat Calendar</button>
         <button class="tool-button" id="ftlToolTab" type="button" role="tab" aria-controls="ftlView" aria-selected="false">LTOT Calculator</button>
+        <button class="tool-button" id="notificationsToolTab" type="button" role="tab" aria-controls="notificationsView" aria-selected="false">Notifications</button>
       </nav>
 
       <nav class="app-tabs" aria-label="App sections" role="tablist">
@@ -107,7 +108,7 @@
               </button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.9</small>
+            <small class="app-version">v2.10</small>
           </section>
 
         </section>
@@ -327,7 +328,60 @@
               </button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.9</small>
+            <small class="app-version">v2.10</small>
+          </section>
+        </section>
+
+        <section class="notifications-panel view-panel hidden" id="notificationsView" role="tabpanel" aria-labelledby="notificationsToolTab" aria-hidden="true">
+          <div class="form-heading">
+            <div>
+              <h2>Telegram reminders</h2>
+              <p class="ftl-context">75 minutes before Zulu departure</p>
+            </div>
+          </div>
+
+          <section class="notification-grid" aria-label="Telegram reminder setup">
+            <article class="notification-card">
+              <span>Telegram</span>
+              <strong id="telegramLinkState">Not linked</strong>
+              <small id="telegramBotState">Bot token pending</small>
+            </article>
+            <article class="notification-card">
+              <span>Reminder timing</span>
+              <strong>75 min</strong>
+              <small>One message per flight</small>
+            </article>
+            <article class="notification-card">
+              <span>Notes</span>
+              <strong>Private</strong>
+              <small>Message shows note status only</small>
+            </article>
+          </section>
+
+          <section class="notification-section" aria-label="Pair Telegram">
+            <div class="section-heading">
+              <h2>Pair Telegram</h2>
+              <span id="telegramPairingExpiry">Not started</span>
+            </div>
+            <div class="pairing-code" id="telegramPairingCode">OD------</div>
+            <p class="notification-copy">Send this code to your OpsDeck Telegram bot, then check pairing.</p>
+            <div class="notification-actions">
+              <button class="primary-button" id="generatePairingButton" type="button">Create pairing code</button>
+              <button class="text-button secondary" id="checkPairingButton" type="button">Check pairing</button>
+              <button class="text-button secondary" id="sendTelegramTestButton" type="button">Send test</button>
+            </div>
+            <p class="telegram-status" id="telegramStatus" aria-live="polite">Telegram reminders are not linked yet.</p>
+          </section>
+
+          <section class="account-panel hidden" id="notificationsAccountPanel" aria-label="Account">
+            <span id="notificationsSyncStatus" aria-live="polite">Cloud ready</span>
+            <div class="account-actions">
+              <button class="icon-button" id="notificationsRefreshCloudButton" type="button" title="Refresh cloud data" aria-label="Refresh cloud data">
+                <span aria-hidden="true">↻</span>
+              </button>
+              <button class="text-button secondary" id="notificationsSignOutButton" type="button">Sign out</button>
+            </div>
+            <small class="app-version">v2.10</small>
           </section>
         </section>
       </main>
@@ -352,7 +406,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-56"></script>
-    <script src="./app.js?v=cloud-sync-56"></script>
+    <script src="./supabase-config.js?v=cloud-sync-57"></script>
+    <script src="./app.js?v=cloud-sync-57"></script>
   </body>
 </html>

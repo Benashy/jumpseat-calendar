@@ -18,24 +18,30 @@ const elements = {
   authStatus: document.querySelector("#authStatus"),
   homeSyncStatus: document.querySelector("#homeSyncStatus"),
   ftlSyncStatus: document.querySelector("#ftlSyncStatus"),
+  notificationsSyncStatus: document.querySelector("#notificationsSyncStatus"),
   offlineBanner: document.querySelector("#offlineBanner"),
   accountPanel: document.querySelector("#accountPanel"),
   ftlAccountPanel: document.querySelector("#ftlAccountPanel"),
+  notificationsAccountPanel: document.querySelector("#notificationsAccountPanel"),
   magicLinkButton: document.querySelector("#magicLinkButton"),
   refreshCloudButton: document.querySelector("#refreshCloudButton"),
   ftlRefreshCloudButton: document.querySelector("#ftlRefreshCloudButton"),
+  notificationsRefreshCloudButton: document.querySelector("#notificationsRefreshCloudButton"),
   homeSignOutButton: document.querySelector("#homeSignOutButton"),
   ftlSignOutButton: document.querySelector("#ftlSignOutButton"),
+  notificationsSignOutButton: document.querySelector("#notificationsSignOutButton"),
   toolMenu: document.querySelector(".tool-menu"),
   appTabs: document.querySelector(".app-tabs"),
   layout: document.querySelector(".layout"),
   jumpseatToolTab: document.querySelector("#jumpseatToolTab"),
   ftlToolTab: document.querySelector("#ftlToolTab"),
+  notificationsToolTab: document.querySelector("#notificationsToolTab"),
   homeTab: document.querySelector("#homeTab"),
   addTab: document.querySelector("#addTab"),
   homeView: document.querySelector("#homeView"),
   addView: document.querySelector("#addView"),
   ftlView: document.querySelector("#ftlView"),
+  notificationsView: document.querySelector("#notificationsView"),
   previousDay: document.querySelector("#previousDay"),
   nextDay: document.querySelector("#nextDay"),
   todayButton: document.querySelector("#todayButton"),
@@ -81,6 +87,14 @@ const elements = {
   onChocksDiscretion: document.querySelector("#onChocksDiscretion"),
   maxAllowableFdp: document.querySelector("#maxAllowableFdp"),
   sectorLength: document.querySelector("#sectorLength"),
+  telegramLinkState: document.querySelector("#telegramLinkState"),
+  telegramBotState: document.querySelector("#telegramBotState"),
+  telegramPairingExpiry: document.querySelector("#telegramPairingExpiry"),
+  telegramPairingCode: document.querySelector("#telegramPairingCode"),
+  telegramStatus: document.querySelector("#telegramStatus"),
+  generatePairingButton: document.querySelector("#generatePairingButton"),
+  checkPairingButton: document.querySelector("#checkPairingButton"),
+  sendTelegramTestButton: document.querySelector("#sendTelegramTestButton"),
 };
 
 const ftlDurationControls = {
@@ -174,7 +188,7 @@ function isSuccessStatus(message) {
 }
 
 function setSyncStatus(message, isError = false, isWarning = false) {
-  [elements.homeSyncStatus, elements.ftlSyncStatus].forEach((statusElement) => {
+  [elements.homeSyncStatus, elements.ftlSyncStatus, elements.notificationsSyncStatus].forEach((statusElement) => {
     statusElement.textContent = message;
     statusElement.classList.toggle("status-error", isError);
     statusElement.classList.toggle("status-warning", isWarning);
@@ -302,6 +316,10 @@ function setOfflineReadOnly(isReadOnly) {
   elements.addTab.disabled = isReadOnly;
   elements.refreshCloudButton.disabled = isReadOnly;
   elements.ftlRefreshCloudButton.disabled = isReadOnly;
+  elements.notificationsRefreshCloudButton.disabled = isReadOnly;
+  elements.generatePairingButton.disabled = isReadOnly;
+  elements.checkPairingButton.disabled = isReadOnly;
+  elements.sendTelegramTestButton.disabled = isReadOnly;
 
   if (isReadOnly) {
     setActiveTab("home");
@@ -318,6 +336,7 @@ function startOfflineMode(message = "Offline: viewing saved data") {
   elements.authPanel.classList.add("hidden");
   elements.accountPanel.classList.add("hidden");
   elements.ftlAccountPanel.classList.add("hidden");
+  elements.notificationsAccountPanel.classList.add("hidden");
   setAppVisible(true);
   setOfflineReadOnly(true);
   setSyncStatus(message, false, true);
@@ -335,6 +354,7 @@ function setSignedInState(user) {
   elements.authPanel.classList.toggle("hidden", Boolean(user));
   elements.accountPanel.classList.toggle("hidden", !user);
   elements.ftlAccountPanel.classList.toggle("hidden", !user);
+  elements.notificationsAccountPanel.classList.toggle("hidden", !user);
   setAppVisible(Boolean(user));
 
   if (user) {
@@ -350,6 +370,7 @@ function setSignedInState(user) {
     elements.magicLinkButton.textContent = "Email magic link";
     setAuthStatus("Sign in to load and save your jumpseat requests online.");
     setSyncStatus("Cloud ready");
+    resetTelegramPanel();
   }
 }
 
@@ -358,14 +379,18 @@ function setActiveTab(tabName) {
   elements.homeView.classList.toggle("hidden", !isHome);
   elements.addView.classList.toggle("hidden", isHome);
   elements.ftlView.classList.add("hidden");
+  elements.notificationsView.classList.add("hidden");
   elements.homeView.setAttribute("aria-hidden", String(!isHome));
   elements.addView.setAttribute("aria-hidden", String(isHome));
   elements.ftlView.setAttribute("aria-hidden", "true");
+  elements.notificationsView.setAttribute("aria-hidden", "true");
   elements.appTabs.classList.remove("hidden");
   elements.jumpseatToolTab.classList.add("active");
   elements.ftlToolTab.classList.remove("active");
+  elements.notificationsToolTab.classList.remove("active");
   elements.jumpseatToolTab.setAttribute("aria-selected", "true");
   elements.ftlToolTab.setAttribute("aria-selected", "false");
+  elements.notificationsToolTab.setAttribute("aria-selected", "false");
   elements.homeTab.classList.toggle("active", isHome);
   elements.addTab.classList.toggle("active", !isHome);
   elements.homeTab.setAttribute("aria-selected", String(isHome));
@@ -374,20 +399,27 @@ function setActiveTab(tabName) {
 
 function setActiveTool(toolName) {
   const isFtl = toolName === "ftl";
+  const isNotifications = toolName === "notifications";
+  const isJumpseat = !isFtl && !isNotifications;
 
-  elements.appTabs.classList.toggle("hidden", isFtl);
-  elements.homeView.classList.toggle("hidden", isFtl);
+  elements.appTabs.classList.toggle("hidden", !isJumpseat);
+  elements.homeView.classList.toggle("hidden", !isJumpseat);
   elements.addView.classList.add("hidden");
   elements.ftlView.classList.toggle("hidden", !isFtl);
-  elements.homeView.setAttribute("aria-hidden", String(isFtl));
+  elements.notificationsView.classList.toggle("hidden", !isNotifications);
+  elements.homeView.setAttribute("aria-hidden", String(!isJumpseat));
   elements.addView.setAttribute("aria-hidden", "true");
   elements.ftlView.setAttribute("aria-hidden", String(!isFtl));
-  elements.jumpseatToolTab.classList.toggle("active", !isFtl);
+  elements.notificationsView.setAttribute("aria-hidden", String(!isNotifications));
+  elements.jumpseatToolTab.classList.toggle("active", isJumpseat);
   elements.ftlToolTab.classList.toggle("active", isFtl);
-  elements.jumpseatToolTab.setAttribute("aria-selected", String(!isFtl));
+  elements.notificationsToolTab.classList.toggle("active", isNotifications);
+  elements.jumpseatToolTab.setAttribute("aria-selected", String(isJumpseat));
   elements.ftlToolTab.setAttribute("aria-selected", String(isFtl));
+  elements.notificationsToolTab.setAttribute("aria-selected", String(isNotifications));
 
-  if (!isFtl) setActiveTab("home");
+  if (isJumpseat) setActiveTab("home");
+  if (isNotifications) refreshTelegramStatus();
 }
 
 function todayIso() {
@@ -1539,6 +1571,158 @@ async function refreshCloudData() {
   await loadCloudRequests();
 }
 
+function setTelegramStatus(message, isError = false, isSuccess = false, isWarning = false) {
+  elements.telegramStatus.textContent = message;
+  elements.telegramStatus.classList.toggle("status-error", isError);
+  elements.telegramStatus.classList.toggle("status-success", isSuccess);
+  elements.telegramStatus.classList.toggle("status-warning", isWarning);
+}
+
+function resetTelegramPanel() {
+  elements.telegramLinkState.textContent = "Not linked";
+  elements.telegramBotState.textContent = "Bot token pending";
+  elements.telegramPairingExpiry.textContent = "Not started";
+  elements.telegramPairingCode.textContent = "OD------";
+  setTelegramStatus("Telegram reminders are not linked yet.");
+}
+
+function setTelegramBusy(isBusy) {
+  if (isBusy) {
+    elements.generatePairingButton.disabled = true;
+    elements.checkPairingButton.disabled = true;
+    elements.sendTelegramTestButton.disabled = true;
+    return;
+  }
+
+  const botConfigured = elements.telegramBotState.textContent === "Bot token set";
+  const linked = elements.telegramLinkState.textContent.startsWith("Linked");
+  elements.generatePairingButton.disabled = isOfflineReadOnly;
+  elements.checkPairingButton.disabled = isOfflineReadOnly || !botConfigured;
+  elements.sendTelegramTestButton.disabled = isOfflineReadOnly || !botConfigured || !linked;
+}
+
+async function invokeTelegramAction(action, body = {}) {
+  if (!supabaseClient || !currentUser || !hasCloudConfig) {
+    throw new Error("Cloud sign-in is required before using Telegram reminders.");
+  }
+
+  if (!navigator.onLine) {
+    throw new Error("Connect to the internet before using Telegram reminders.");
+  }
+
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error || !data.session?.access_token) {
+    throw new Error("Your sign-in session could not be checked. Sign out and back in, then try again.");
+  }
+
+  const response = await fetch(`${cloudConfig.url}/functions/v1/opsdeck-telegram`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": cloudConfig.anonKey,
+      "Authorization": `Bearer ${data.session.access_token}`,
+    },
+    body: JSON.stringify({ action, ...body }),
+  });
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok || payload?.ok === false) {
+    throw new Error(payload?.message || `Telegram request failed (${response.status}).`);
+  }
+
+  return payload;
+}
+
+function updateTelegramPanel(data) {
+  const linkedLabel = data.linked
+    ? `Linked to ${data.chat_label || data.username || "Telegram"}`
+    : "Not linked";
+  elements.telegramLinkState.textContent = linkedLabel;
+  elements.telegramBotState.textContent = data.bot_configured ? "Bot token set" : "Bot token pending";
+
+  elements.sendTelegramTestButton.disabled = isOfflineReadOnly || !data.linked || !data.bot_configured;
+  elements.checkPairingButton.disabled = isOfflineReadOnly || !data.bot_configured;
+
+  if (!data.bot_configured) {
+    setTelegramStatus("Add the Telegram bot token in Supabase secrets before checking pairing.", false, false, true);
+    return;
+  }
+
+  if (data.linked) {
+    setTelegramStatus("Telegram reminders are linked.", false, true);
+    return;
+  }
+
+  setTelegramStatus("Create a pairing code to link Telegram reminders.");
+}
+
+async function refreshTelegramStatus() {
+  if (!currentUser || isOfflineReadOnly) return;
+
+  setTelegramStatus("Checking Telegram reminder setup...");
+  try {
+    const data = await invokeTelegramAction("probe");
+    updateTelegramPanel(data);
+  } catch (error) {
+    setTelegramStatus(error.message || "Telegram setup could not be checked.", true);
+  }
+}
+
+async function startTelegramPairing() {
+  setTelegramBusy(true);
+  setTelegramStatus("Creating pairing code...");
+
+  try {
+    const data = await invokeTelegramAction("start_pairing");
+    elements.telegramPairingCode.textContent = data.pairing_code || "OD------";
+    elements.telegramPairingExpiry.textContent = data.pairing_minutes
+      ? `Expires in ${data.pairing_minutes} min`
+      : "Pairing active";
+    updateTelegramPanel({ ...data, linked: false });
+    setTelegramStatus(data.bot_configured
+      ? "Pairing code created. Send it to the Telegram bot, then check pairing."
+      : "Pairing code created, but the bot token still needs to be added in Supabase.",
+      false,
+      Boolean(data.bot_configured),
+      !data.bot_configured);
+  } catch (error) {
+    setTelegramStatus(error.message || "Pairing code could not be created.", true);
+  } finally {
+    setTelegramBusy(false);
+  }
+}
+
+async function checkTelegramPairing() {
+  setTelegramBusy(true);
+  setTelegramStatus("Checking Telegram messages...");
+
+  try {
+    const data = await invokeTelegramAction("resolve_chat");
+    elements.telegramPairingExpiry.textContent = "Linked";
+    updateTelegramPanel({ ...data, bot_configured: true });
+    setTelegramStatus("Telegram linked. Send a test message next.", false, true);
+  } catch (error) {
+    setTelegramStatus(error.message || "Telegram pairing could not be checked.", true);
+  } finally {
+    setTelegramBusy(false);
+  }
+}
+
+async function sendTelegramTest() {
+  setTelegramBusy(true);
+  setTelegramStatus("Sending Telegram test...");
+
+  try {
+    await invokeTelegramAction("send_test");
+    setTelegramStatus("Telegram test sent.", false, true);
+    refreshTelegramStatus();
+  } catch (error) {
+    setTelegramStatus(error.message || "Telegram test could not be sent.", true);
+  } finally {
+    setTelegramBusy(false);
+  }
+}
+
 async function returnOnline() {
   setOfflineReadOnly(false);
   elements.authPanel.classList.remove("hidden");
@@ -1634,6 +1818,7 @@ elements.requestForm.addEventListener("keydown", (event) => {
 
 elements.jumpseatToolTab.addEventListener("click", () => setActiveTool("jumpseat"));
 elements.ftlToolTab.addEventListener("click", () => setActiveTool("ftl"));
+elements.notificationsToolTab.addEventListener("click", () => setActiveTool("notifications"));
 elements.clearFtlButton.addEventListener("click", clearFtlCalculator);
 elements.homeTab.addEventListener("click", () => setActiveTab("home"));
 elements.addTab.addEventListener("click", startAdd);
@@ -1678,8 +1863,13 @@ elements.authForm.addEventListener("submit", (event) => {
 elements.magicLinkButton.addEventListener("click", sendMagicLink);
 elements.refreshCloudButton.addEventListener("click", refreshCloudData);
 elements.ftlRefreshCloudButton.addEventListener("click", refreshCloudData);
+elements.notificationsRefreshCloudButton.addEventListener("click", refreshCloudData);
 elements.homeSignOutButton.addEventListener("click", () => signOut());
 elements.ftlSignOutButton.addEventListener("click", () => signOut());
+elements.notificationsSignOutButton.addEventListener("click", () => signOut());
+elements.generatePairingButton.addEventListener("click", startTelegramPairing);
+elements.checkPairingButton.addEventListener("click", checkTelegramPairing);
+elements.sendTelegramTestButton.addEventListener("click", sendTelegramTest);
 window.addEventListener("offline", () => startOfflineMode());
 window.addEventListener("online", returnOnline);
 

@@ -112,15 +112,16 @@ h1 {
 .tool-menu,
 .app-tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 
 .tool-menu {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-bottom: 10px;
 }
 
 .app-tabs {
+  grid-template-columns: 1fr 1fr;
   margin-bottom: 18px;
 }
 
@@ -226,7 +227,8 @@ h1 {
 
 .day-panel,
 .entry-panel,
-.ftl-panel {
+.ftl-panel,
+.notifications-panel {
   background: var(--panel);
   border: 1px solid rgba(198, 161, 90, 0.18);
   border-radius: 8px;
@@ -240,12 +242,14 @@ h1 {
 }
 
 .entry-panel,
-.ftl-panel {
+.ftl-panel,
+.notifications-panel {
   padding: 20px;
 }
 
 .entry-panel,
-.ftl-panel {
+.ftl-panel,
+.notifications-panel {
   background:
     linear-gradient(180deg, rgba(198, 161, 90, 0.06), transparent 28%),
     var(--panel);
@@ -589,6 +593,84 @@ button:disabled {
   gap: 7px;
   margin: 0;
   padding-left: 20px;
+}
+
+.notification-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.notification-card,
+.notification-section {
+  border: 1px solid rgba(198, 161, 90, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(200, 204, 208, 0.14), transparent 36%),
+    var(--panel-soft);
+  box-shadow: var(--soft-shadow);
+}
+
+.notification-card {
+  padding: 14px;
+}
+
+.notification-card span {
+  color: var(--muted);
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 850;
+  margin-bottom: 6px;
+}
+
+.notification-card strong {
+  color: var(--navy);
+  display: block;
+  font-size: 1.1rem;
+  line-height: 1.1;
+}
+
+.notification-card small {
+  color: var(--muted);
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 850;
+  line-height: 1.25;
+  margin-top: 7px;
+}
+
+.notification-section {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.pairing-code {
+  border: 1px solid rgba(23, 58, 86, 0.18);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fffefa, #f4ecd9);
+  color: var(--navy);
+  font-size: clamp(1.6rem, 5vw, 2.5rem);
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 18px;
+  text-align: center;
+}
+
+.notification-copy,
+.telegram-status {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.notification-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
 }
 
 .ftl-form,
@@ -1308,7 +1390,8 @@ form label {
   }
 
   .ftl-results,
-  .duration-grid {
+  .duration-grid,
+  .notification-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1340,6 +1423,10 @@ form label {
   .auth-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .tool-menu {
+    grid-template-columns: 1fr;
   }
 
   .account-panel,
