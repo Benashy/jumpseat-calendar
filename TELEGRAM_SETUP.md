@@ -4,7 +4,7 @@
 
 - Supabase tables for private Telegram settings and reminder send history.
 - Supabase Edge Function: `opsdeck-telegram`.
-- OpsDeck Notifications screen for pairing Telegram and sending a test.
+- OpsDeck Settings screen for pairing Telegram and sending tests.
 - Fixed jumpseat reminder timing: 75 minutes before Zulu departure.
 - One scheduled reminder per saved flight/date.
 - Telegram messages include flight, route, departure, request names, BA ID markers, available jumpseats, and note status only.
@@ -33,16 +33,24 @@ Do not add these to GitHub, `app.js`, `supabase-config.js`, localStorage, or any
 ## Pairing Steps
 
 1. Open OpsDeck and sign in.
-2. Open Notifications.
+2. Open Settings.
 3. Create a pairing code.
 4. Open the new Telegram bot.
 5. Send the pairing code to the bot.
 6. Return to OpsDeck and press Check pairing.
-7. Press Send test.
+7. Press Send test or Send sample reminder.
 
 ## Cron
 
-Supabase Cron should call the Edge Function every 5 minutes once secrets and test pairing are confirmed.
+Supabase Cron calls the Edge Function every 5 minutes once secrets and test pairing are confirmed.
+
+Production status checked on 23 July 2026:
+
+- `pg_cron`, `pg_net`, and Supabase Vault are enabled.
+- Job `opsdeck-jumpseat-reminders-every-5-minutes` is active.
+- Schedule is every 5 minutes.
+- HTTP timeout is 30 seconds.
+- A live BA123 test reminder was recorded as sent at `09:35:02Z`.
 
 The scheduled action is:
 
