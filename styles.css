@@ -456,6 +456,54 @@ button:disabled {
   margin: 4px 0 0;
 }
 
+.ftl-status-panel {
+  border: 1px solid rgba(198, 161, 90, 0.26);
+  border-left: 5px solid var(--gold);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(198, 161, 90, 0.16), transparent 45%),
+    #fffefa;
+  box-shadow: var(--soft-shadow);
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+}
+
+.ftl-status-panel strong {
+  color: var(--navy);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.ftl-status-panel span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.ftl-status-panel.is-success {
+  border-left-color: #2f7d4e;
+  background:
+    linear-gradient(90deg, rgba(47, 125, 78, 0.12), transparent 44%),
+    #fffefa;
+}
+
+.ftl-status-panel.is-warning {
+  border-left-color: #c48f2b;
+  background:
+    linear-gradient(90deg, rgba(196, 143, 43, 0.18), transparent 44%),
+    #fffefa;
+}
+
+.ftl-status-panel.is-error {
+  border-left-color: var(--warn);
+  background:
+    linear-gradient(90deg, rgba(182, 66, 46, 0.15), transparent 44%),
+    #fffefa;
+}
+
 .ftl-result-card {
   border: 1px solid rgba(198, 161, 90, 0.26);
   border-radius: 8px;
@@ -1046,9 +1094,7 @@ button:disabled {
 }
 
 .empty-state {
-  display: grid;
-  min-height: 330px;
-  place-items: center;
+  align-items: center;
   border: 1px solid rgba(198, 161, 90, 0.34);
   border-radius: 8px;
   background:
@@ -1056,8 +1102,15 @@ button:disabled {
     #fffefa;
   color: var(--muted);
   box-shadow: inset 0 0 0 1px rgba(200, 204, 208, 0.22);
-  text-align: center;
-  padding: 28px;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 16px;
+  text-align: left;
+}
+
+.empty-state p {
+  margin: 0;
 }
 
 .empty-state strong {
@@ -1065,6 +1118,11 @@ button:disabled {
   margin-bottom: 6px;
   color: var(--ink);
   font-size: 1.1rem;
+}
+
+.empty-state-action {
+  flex: 0 0 auto;
+  min-width: 128px;
 }
 
 .request-card {
@@ -1449,6 +1507,15 @@ form label {
   .auth-panel,
   .auth-form {
     grid-template-columns: 1fr;
+  }
+
+  .empty-state {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .empty-state-action {
+    width: 100%;
   }
 
   .auth-actions {

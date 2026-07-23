@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="Flight deck tools for jumpseat requests and latest takeoff time calculations." />
     <title>Ben's OpsDeck</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-58" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-59" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-58" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-59" />
   </head>
   <body>
     <div class="app-shell">
@@ -43,12 +43,12 @@
       </section>
 
       <nav class="tool-menu" aria-label="Flight tools" role="tablist">
-        <button class="tool-button active" id="jumpseatToolTab" type="button" role="tab" aria-controls="homeView" aria-selected="true">Jumpseat Calendar</button>
+        <button class="tool-button active" id="jumpseatToolTab" type="button" role="tab" aria-controls="homeView" aria-selected="true">Jumpseat</button>
         <button class="tool-button" id="ftlToolTab" type="button" role="tab" aria-controls="ftlView" aria-selected="false">LTOT Calculator</button>
       </nav>
 
-      <nav class="app-tabs" aria-label="App sections" role="tablist">
-        <button class="tab-button active" id="homeTab" type="button" role="tab" aria-controls="homeView" aria-selected="true">Home</button>
+      <nav class="app-tabs" aria-label="Jumpseat sections" role="tablist">
+        <button class="tab-button active" id="homeTab" type="button" role="tab" aria-controls="homeView" aria-selected="true">Today</button>
         <button class="tab-button" id="addTab" type="button" role="tab" aria-controls="addView" aria-selected="false">Add</button>
       </nav>
 
@@ -108,7 +108,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.11</small>
+            <small class="app-version">v2.12</small>
           </section>
 
         </section>
@@ -184,6 +184,11 @@
             </div>
             <button class="text-button secondary" id="clearFtlButton" type="button" aria-label="Reset LTOT calculator">Reset</button>
           </div>
+
+          <section class="ftl-status-panel is-neutral" id="ftlStatusPanel" aria-live="polite">
+            <strong id="ftlStatusLabel">More information required</strong>
+            <span id="ftlMissingInputs">Missing: Duty start, Max FDP.</span>
+          </section>
 
           <section class="ftl-results" aria-label="Calculated latest times">
             <div class="ftl-result-card is-soft">
@@ -329,7 +334,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.11</small>
+            <small class="app-version">v2.12</small>
           </section>
         </section>
 
@@ -394,7 +399,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.11</small>
+            <small class="app-version">v2.12</small>
           </section>
         </section>
       </main>
@@ -419,7 +424,7 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-58"></script>
-    <script src="./app.js?v=cloud-sync-58"></script>
+    <script src="./supabase-config.js?v=cloud-sync-59"></script>
+    <script src="./app.js?v=cloud-sync-59"></script>
   </body>
 </html>
