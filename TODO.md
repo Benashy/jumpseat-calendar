@@ -2,10 +2,10 @@
 
 ## Current Status
 
-- Current visible app version: v2.12.
+- Current visible app version: v2.13.
 - The top navigation has been simplified to `Jumpseat` and `LTOT Calculator`, with Jumpseat sub-tabs now `Today` and `Add`.
-- LTOT now shows an answer/status banner and specific missing-input messages instead of generic required-input wording.
 - Empty Jumpseat days now use a compact message with a direct `Add request` shortcut.
+- LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
 - Latest on-chocks now works as a standalone gross-check tool after Duty start time, Maximum FDP, and optional Commander's discretion are entered.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.

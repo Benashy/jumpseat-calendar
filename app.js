@@ -86,9 +86,6 @@ const elements = {
   latestOnChocks: document.querySelector("#latestOnChocks"),
   latestOnChocksCountdown: document.querySelector("#latestOnChocksCountdown"),
   onChocksDiscretion: document.querySelector("#onChocksDiscretion"),
-  ftlStatusPanel: document.querySelector("#ftlStatusPanel"),
-  ftlStatusLabel: document.querySelector("#ftlStatusLabel"),
-  ftlMissingInputs: document.querySelector("#ftlMissingInputs"),
   maxAllowableFdp: document.querySelector("#maxAllowableFdp"),
   sectorLength: document.querySelector("#sectorLength"),
   telegramLinkState: document.querySelector("#telegramLinkState"),
@@ -657,119 +654,11 @@ function formatDurationFromSeconds(totalSeconds) {
   return `${hours} ${pluralize(hours, "hr")} ${minutes} ${pluralize(minutes, "min")} ${seconds} ${pluralize(seconds, "sec")}`;
 }
 
-function getDurationMissingLabel(control, label) {
-  if (hasDurationValue(control)) return null;
-  if (control.minuteOnly) return control.minutes.value === "" ? label : null;
-
-  const hasHours = control.hours.value !== "";
-  const hasMinutes = control.minutes.value !== "";
-
-  if (hasHours && !hasMinutes) return `${label} minutes`;
-  if (!hasHours && hasMinutes) return `${label} hours`;
-  return label;
-}
-
-function getPartialDurationMissingLabel(control, label) {
-  return hasPartialDurationValue(control) ? getDurationMissingLabel(control, label) : null;
-}
-
-function getFdpMissingInputs() {
-  const missing = [];
-  const maxFdpMissing = getDurationMissingLabel(ftlDurationControls.maxFdp, "Max FDP");
-  const discretionMissing = getPartialDurationMissingLabel(ftlDurationControls.discretion, "Commander's discretion");
-
-  if (!hasDutyStartValue()) missing.push("Duty start");
-  if (maxFdpMissing) missing.push(maxFdpMissing);
-  if (discretionMissing) missing.push(discretionMissing);
-
-  return missing;
-}
-
-function getFinalSectorMissingInputs() {
-  const missing = getFdpMissingInputs();
-  const flightTimeMissing = getDurationMissingLabel(ftlDurationControls.flightTime, "Flight time");
-
-  if (flightTimeMissing) missing.push(flightTimeMissing);
-  return missing;
-}
-
-function formatMissingInputs(missing) {
-  return missing.length ? `Missing: ${missing.join(", ")}.` : "All required inputs set.";
-}
-
-function setFtlStatus(label, detail, state = "neutral") {
-  elements.ftlStatusLabel.textContent = label;
-  elements.ftlMissingInputs.textContent = detail;
-  elements.ftlStatusPanel.classList.remove("is-neutral", "is-success", "is-warning", "is-error");
-  elements.ftlStatusPanel.classList.add(`is-${state}`);
-}
-
-function getCountdownState(targetMinutes) {
-  if (targetMinutes === null) return "missing";
-
-  const now = new Date();
-  const currentZuluSeconds = (now.getUTCHours() * 3600) + (now.getUTCMinutes() * 60) + now.getUTCSeconds();
-  const remainingSeconds = (targetMinutes * 60) - currentZuluSeconds;
-
-  if (remainingSeconds < 0) return "overdue";
-  if (remainingSeconds <= (30 * 60)) return "warning";
-  return "success";
-}
-
-function updateFtlStatus() {
-  const fdpMissing = getFdpMissingInputs();
-  const finalMissing = getFinalSectorMissingInputs();
-  const hasOnChocks = ftlLatestOnChocksMinutes !== null;
-  const hasFinalTimes = ftlLatestPushbackMinutes !== null && ftlLatestTakeoffMinutes !== null;
-
-  if (!hasOnChocks) {
-    setFtlStatus("More information required", formatMissingInputs(fdpMissing), "neutral");
-    return;
-  }
-
-  if (!hasFinalTimes) {
-    const onChocksState = getCountdownState(ftlLatestOnChocksMinutes);
-
-    if (onChocksState === "overdue") {
-      setFtlStatus("FDP limit has passed", "Add final sector timing if latest pushback/takeoff are required.", "error");
-      return;
-    }
-
-    if (onChocksState === "warning") {
-      setFtlStatus("Limited margin to on-chocks", "Add final sector timing if latest pushback/takeoff are required.", "warning");
-      return;
-    }
-
-    setFtlStatus("On-chocks limit available", formatMissingInputs(finalMissing), "success");
-    return;
-  }
-
-  const pushbackState = getCountdownState(ftlLatestPushbackMinutes);
-  const takeoffState = getCountdownState(ftlLatestTakeoffMinutes);
-
-  if (takeoffState === "overdue") {
-    setFtlStatus("Latest takeoff limit passed", "Review the calculation and current OMA/operational requirements.", "error");
-    return;
-  }
-
-  if (pushbackState === "overdue") {
-    setFtlStatus("Latest pushback soft limit passed", "All reasonable efforts should focus on latest takeoff.", "warning");
-    return;
-  }
-
-  if (takeoffState === "warning" || pushbackState === "warning") {
-    setFtlStatus("Limited margin", "Within 30 minutes of a calculated limit.", "warning");
-    return;
-  }
-
-  setFtlStatus("Within calculated times", "Based on the entered Zulu data.", "success");
-}
-
-function updateCountdownElement(element, targetMinutes, missingMessage = "Set required inputs") {
+function updateCountdownElement(element, targetMinutes) {
   const card = element.closest(".ftl-result-card");
 
   if (targetMinutes === null) {
-    element.textContent = missingMessage;
+    element.textContent = "Set required inputs";
     element.classList.remove("status-error", "status-warning", "status-success");
     card?.classList.remove("is-warning", "is-overdue");
     return;
@@ -792,13 +681,9 @@ function updateCountdownElement(element, targetMinutes, missingMessage = "Set re
 }
 
 function updateFtlCountdown() {
-  const fdpMissing = getFdpMissingInputs();
-  const finalMissing = getFinalSectorMissingInputs();
-
-  updateCountdownElement(elements.latestOnChocksCountdown, ftlLatestOnChocksMinutes, formatMissingInputs(fdpMissing));
-  updateCountdownElement(elements.latestPushbackCountdown, ftlLatestPushbackMinutes, formatMissingInputs(finalMissing));
-  updateCountdownElement(elements.latestTakeoffCountdown, ftlLatestTakeoffMinutes, formatMissingInputs(finalMissing));
-  updateFtlStatus();
+  updateCountdownElement(elements.latestOnChocksCountdown, ftlLatestOnChocksMinutes);
+  updateCountdownElement(elements.latestPushbackCountdown, ftlLatestPushbackMinutes);
+  updateCountdownElement(elements.latestTakeoffCountdown, ftlLatestTakeoffMinutes);
 }
 
 function updateContingencyNote(element, contingency) {
