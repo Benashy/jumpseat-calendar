@@ -604,6 +604,18 @@ button:disabled {
   font-weight: 850;
 }
 
+.fdp-reference-steps {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.fdp-reference-steps li::marker {
+  color: var(--gold);
+  font-weight: 900;
+}
+
 .fdp-reference-legend {
   border: 1px solid rgba(17, 47, 67, 0.08);
   border-radius: 7px;
@@ -614,6 +626,14 @@ button:disabled {
   line-height: 1.35;
   margin: 0;
   padding: 9px 10px;
+}
+
+.fdp-reference-legend p {
+  margin: 0;
+}
+
+.fdp-reference-legend p + p {
+  margin-top: 6px;
 }
 
 .fdp-reference-legend strong {
@@ -635,6 +655,10 @@ button:disabled {
   border-spacing: 0;
   color: var(--ink);
   font-size: 0.82rem;
+}
+
+.fdp-state-table {
+  min-width: 780px;
 }
 
 .fdp-reference-table th,
@@ -696,6 +720,11 @@ button:disabled {
 .fdp-state-table td {
   color: var(--navy);
   font-weight: 900;
+}
+
+.fdp-state-table thead th:first-child {
+  width: 210px;
+  white-space: normal;
 }
 
 .fdp-reference-status {

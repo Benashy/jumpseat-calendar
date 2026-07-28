@@ -636,6 +636,20 @@ function updateFdpReferenceSelection() {
 }
 
 function setMaximumFdpFromReference(value, rowLabel, columnLabel, tableLabel, referenceKey) {
+  const isSelected = referenceKey === selectedFdpReferenceKey && currentMaximumFdpTableValue() === value;
+  if (isSelected) {
+    selectedFdpReferenceKey = null;
+    setDurationControl(ftlDurationControls.maxFdp, "", "");
+    updateDurationIncompleteState(ftlDurationControls.maxFdp);
+    calculateFtl();
+
+    if (elements.fdpReferenceStatus) {
+      elements.fdpReferenceStatus.textContent = "Maximum FDP cleared.";
+      elements.fdpReferenceStatus.classList.remove("hidden");
+    }
+    return;
+  }
+
   selectedFdpReferenceKey = referenceKey;
   const { hours, minutes } = durationStringToParts(value);
   setDurationControl(ftlDurationControls.maxFdp, hours, minutes);
