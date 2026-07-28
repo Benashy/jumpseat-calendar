@@ -645,6 +645,9 @@ function setMaximumFdpFromReference(value, rowLabel, columnLabel, tableLabel, re
     setDurationControl(ftlDurationControls.maxFdp, "", "");
     updateDurationIncompleteState(ftlDurationControls.maxFdp);
     calculateFtl();
+    if (document.activeElement?.classList?.contains("fdp-table-button")) {
+      document.activeElement.blur();
+    }
 
     if (elements.fdpReferenceStatus) {
       elements.fdpReferenceStatus.textContent = "Maximum FDP cleared.";

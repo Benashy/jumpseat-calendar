@@ -627,6 +627,18 @@ button:disabled {
   margin-bottom: 5px;
 }
 
+.fdp-workflow-options {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 16px;
+}
+
+.fdp-workflow-options strong {
+  display: inline;
+  margin: 0;
+}
+
 .fdp-section-heading {
   display: flex;
   align-items: center;

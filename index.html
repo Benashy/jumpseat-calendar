@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="Flight deck tools for jumpseat requests and latest takeoff time calculations." />
     <title>Ben's OpsDeck</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-66" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-67" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-66" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-67" />
   </head>
   <body>
     <div class="app-shell">
@@ -108,7 +108,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.19</small>
+            <small class="app-version">v2.20</small>
           </section>
 
         </section>
@@ -307,16 +307,20 @@
                 <h3>FDP lookup workflow</h3>
                 <div class="fdp-workflow">
                   <div>
-                    <strong>1. Normal short-haul</strong>
-                    <p>Within the 2-hour wide time-zone band around London, crew normally remain acclimatised. Use the local report time at the departure airport and select from Table 2.</p>
+                    <strong>1. Within London band</strong>
+                    <p>Within the 2-hour wide time zone band around London, crew normally remain acclimatised. Use the local report time at the departure airport and select from Table 2.</p>
                   </div>
                   <div>
                     <strong>2. Outside the band</strong>
-                    <p>If the duty pattern moves outside that 2-hour wide time-zone band, use Table 1 to establish whether the state is B, D, or X.</p>
+                    <p>If the duty pattern moves outside that 2-hour wide time zone band, use Table 1 to establish whether the crew member is in state B, D, or X.</p>
                   </div>
                   <div>
                     <strong>3. Select the FDP</strong>
-                    <p>B: use Table 2 with departure time-zone local time. D: use Table 2 with next-duty local time. X: use Table 3.</p>
+                    <ul class="fdp-workflow-options">
+                      <li><strong>B</strong>: use Table 2 with London time.</li>
+                      <li><strong>D</strong>: use Table 2 with the departure airport local time.</li>
+                      <li><strong>X</strong>: use Table 3.</li>
+                    </ul>
                   </div>
                 </div>
               </section>
@@ -410,15 +414,15 @@
                 <button class="icon-button" id="bdxInfoCloseButton" type="button" aria-label="Close B, D and X examples">×</button>
               </div>
               <div class="info-modal-content">
-                <p><strong>B</strong> usually means the time-zone change has not been large enough, or the crew member has not been there long enough, to move the body clock away from the departure time zone. Example: after a short stay in New York, the body clock may still effectively be on London time.</p>
+                <p><strong>B</strong> usually means the time-zone change has not been large enough, or the crew member has not been there long enough, to move the body clock away from the departure time zone. Example: after a short stay in New York, the body clock may still effectively be on London time, so London time is used when entering Table 2.</p>
                 <p><strong>D</strong> means the crew member has had time to acclimatise to where the next duty starts. Example: after long enough in New York, use New York local report time with Table 2.</p>
-                <p><strong>X</strong> usually follows a larger time-zone change without enough time to fully acclimatise. The crew member is between time zones, so Table 3 is used.</p>
+                <p><strong>X</strong> usually follows a larger time-zone change without enough time to fully acclimatise. The crew member is between time zones, so Table 3 is used. Table 3 is generally more restrictive.</p>
               </div>
             </div>
           </div>
 
           <details class="guidance-panel">
-            <summary>Guidance</summary>
+            <summary>LTOT Guidance</summary>
             <div class="guidance-content">
               <section>
                 <h3>OMA 7.11.1</h3>
@@ -451,7 +455,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.19</small>
+            <small class="app-version">v2.20</small>
           </section>
         </section>
 
@@ -516,7 +520,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.19</small>
+            <small class="app-version">v2.20</small>
           </section>
         </section>
       </main>
@@ -541,8 +545,8 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-66"></script>
-    <script src="./ltot-core.js?v=cloud-sync-66"></script>
-    <script src="./app.js?v=cloud-sync-66"></script>
+    <script src="./supabase-config.js?v=cloud-sync-67"></script>
+    <script src="./ltot-core.js?v=cloud-sync-67"></script>
+    <script src="./app.js?v=cloud-sync-67"></script>
   </body>
 </html>
