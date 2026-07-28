@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="Flight deck tools for jumpseat requests and latest takeoff time calculations." />
     <title>Ben's OpsDeck</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-67" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-68" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-67" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-68" />
   </head>
   <body>
     <div class="app-shell">
@@ -108,7 +108,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.20</small>
+            <small class="app-version">v2.21</small>
           </section>
 
         </section>
@@ -180,7 +180,7 @@
           <div class="form-heading">
             <div>
               <h2>LTOT Calculator</h2>
-              <p class="ftl-context">All times Zulu</p>
+              <p class="ftl-context">LTOT inputs and outputs are Zulu</p>
             </div>
             <div class="ftl-heading-actions">
               <button class="text-button secondary hidden" id="sendLtotTelegramButton" type="button">Send LTOT</button>
@@ -305,6 +305,7 @@
             <div class="guidance-content fdp-reference-content">
               <section>
                 <h3>FDP lookup workflow</h3>
+                <p class="fdp-time-context"><strong>Time reference:</strong> the LTOT calculator uses Zulu, while FDP table start times use the applicable local or reference report time.</p>
                 <div class="fdp-workflow">
                   <div>
                     <strong>1. Within London band</strong>
@@ -319,7 +320,7 @@
                     <ul class="fdp-workflow-options">
                       <li><strong>B</strong>: use Table 2 with London time.</li>
                       <li><strong>D</strong>: use Table 2 with the departure airport local time.</li>
-                      <li><strong>X</strong>: use Table 3.</li>
+                      <li><strong class="fdp-state-x-label">X</strong>: use Table 3.</li>
                     </ul>
                   </div>
                 </div>
@@ -359,7 +360,7 @@
                     <tr>
                       <th scope="row">4-6 hr</th>
                       <td>B</td>
-                      <td>X</td>
+                      <td class="fdp-state-x-cell">X</td>
                       <td>D</td>
                       <td>D</td>
                       <td>D</td>
@@ -367,17 +368,17 @@
                     <tr>
                       <th scope="row">&gt;6-9 hr</th>
                       <td>B</td>
-                      <td>X</td>
-                      <td>X</td>
+                      <td class="fdp-state-x-cell">X</td>
+                      <td class="fdp-state-x-cell">X</td>
                       <td>D</td>
                       <td>D</td>
                     </tr>
                     <tr>
                       <th scope="row">&gt;9-12 hr</th>
                       <td>B</td>
-                      <td>X</td>
-                      <td>X</td>
-                      <td>X</td>
+                      <td class="fdp-state-x-cell">X</td>
+                      <td class="fdp-state-x-cell">X</td>
+                      <td class="fdp-state-x-cell">X</td>
                       <td>D</td>
                     </tr>
                   </tbody>
@@ -386,7 +387,7 @@
               <div class="fdp-reference-legend">
                 <p><strong>B</strong> means the crew member is acclimatised to the local time of the departure time zone.</p>
                 <p><strong>D</strong> means the crew member is acclimatised to the local time where the crew member starts his or her next duty.</p>
-                <p><strong>X</strong> means the crew member is in an unknown state of acclimatisation. Use Table 3.</p>
+                <p><strong class="fdp-state-x-label">X</strong> means the crew member is in an unknown state of acclimatisation. Use Table 3.</p>
               </div>
 
               <section>
@@ -403,7 +404,7 @@
               </section>
               <div class="fdp-table-scroll fdp-unknown-table" id="fdpTableThreeContainer" aria-label="Table 3 maximum FDP for unknown state of acclimatisation"></div>
 
-              <p class="fdp-reference-status hidden" id="fdpReferenceStatus" aria-live="polite"></p>
+              <p class="fdp-reference-status hidden" id="fdpReferenceStatus" role="status" aria-live="polite"></p>
             </div>
           </details>
 
@@ -416,7 +417,7 @@
               <div class="info-modal-content">
                 <p><strong>B</strong> usually means the time-zone change has not been large enough, or the crew member has not been there long enough, to move the body clock away from the departure time zone. Example: after a short stay in New York, the body clock may still effectively be on London time, so London time is used when entering Table 2.</p>
                 <p><strong>D</strong> means the crew member has had time to acclimatise to where the next duty starts. Example: after long enough in New York, use New York local report time with Table 2.</p>
-                <p><strong>X</strong> usually follows a larger time-zone change without enough time to fully acclimatise. The crew member is between time zones, so Table 3 is used. Table 3 is generally more restrictive.</p>
+                <p><strong class="fdp-state-x-label">X</strong> usually follows a larger time-zone change without enough time to fully acclimatise. The crew member is between time zones, so Table 3 is used. Table 3 is generally more restrictive.</p>
               </div>
             </div>
           </div>
@@ -455,7 +456,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.20</small>
+            <small class="app-version">v2.21</small>
           </section>
         </section>
 
@@ -520,7 +521,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.20</small>
+            <small class="app-version">v2.21</small>
           </section>
         </section>
       </main>
@@ -545,8 +546,8 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-67"></script>
-    <script src="./ltot-core.js?v=cloud-sync-67"></script>
-    <script src="./app.js?v=cloud-sync-67"></script>
+    <script src="./supabase-config.js?v=cloud-sync-68"></script>
+    <script src="./ltot-core.js?v=cloud-sync-68"></script>
+    <script src="./app.js?v=cloud-sync-68"></script>
   </body>
 </html>

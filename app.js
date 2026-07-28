@@ -202,6 +202,7 @@ let saveTimer = null;
 let magicLinkRetryTimer = null;
 let syncElapsedTimer = null;
 let ftlCountdownTimer = null;
+let fdpReferenceStatusTimer = null;
 let ftlLatestPushbackMinutes = null;
 let ftlLatestTakeoffMinutes = null;
 let ftlLatestOnChocksMinutes = null;
@@ -638,6 +639,30 @@ function updateFdpReferenceSelection() {
   });
 }
 
+function showFdpReferenceStatus(message) {
+  if (!elements.fdpReferenceStatus) return;
+
+  window.clearTimeout(fdpReferenceStatusTimer);
+  elements.fdpReferenceStatus.textContent = message;
+  elements.fdpReferenceStatus.classList.remove("hidden");
+  fdpReferenceStatusTimer = window.setTimeout(() => {
+    elements.fdpReferenceStatus.classList.add("hidden");
+  }, 5000);
+}
+
+function returnToMaximumFdpControl() {
+  const maximumFdpControl = ftlDurationControls.maxFdp.hours.closest(".duration-control");
+  if (!maximumFdpControl) return;
+
+  window.setTimeout(() => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    maximumFdpControl.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "center",
+    });
+  }, 50);
+}
+
 function setMaximumFdpFromReference(value, rowLabel, columnLabel, tableLabel, referenceKey) {
   const isSelected = referenceKey === selectedFdpReferenceKey && currentMaximumFdpTableValue() === value;
   if (isSelected) {
@@ -649,10 +674,8 @@ function setMaximumFdpFromReference(value, rowLabel, columnLabel, tableLabel, re
       document.activeElement.blur();
     }
 
-    if (elements.fdpReferenceStatus) {
-      elements.fdpReferenceStatus.textContent = "Maximum FDP cleared.";
-      elements.fdpReferenceStatus.classList.remove("hidden");
-    }
+    showFdpReferenceStatus("Maximum FDP cleared.");
+    returnToMaximumFdpControl();
     return;
   }
 
@@ -662,10 +685,10 @@ function setMaximumFdpFromReference(value, rowLabel, columnLabel, tableLabel, re
   updateDurationIncompleteState(ftlDurationControls.maxFdp);
   calculateFtl();
 
-  if (!elements.fdpReferenceStatus) return;
-  elements.fdpReferenceStatus.textContent =
-    `Maximum FDP set to ${formatDurationWithZeroMinutes(durationStringToMinutes(value))} from ${tableLabel}, ${rowLabel}, ${columnLabel}.`;
-  elements.fdpReferenceStatus.classList.remove("hidden");
+  showFdpReferenceStatus(
+    `Maximum FDP set to ${formatDurationWithZeroMinutes(durationStringToMinutes(value))} from ${tableLabel}, ${rowLabel}, ${columnLabel}.`
+  );
+  returnToMaximumFdpControl();
 }
 
 function renderFdpReferenceTable(container, rows, columns, firstColumnLabel, tableLabel) {
@@ -1043,6 +1066,7 @@ function clearFtlCalculator() {
   elements.dutyStartTime.value = "";
   updateDutyStartEmptyState();
   selectedFdpReferenceKey = null;
+  window.clearTimeout(fdpReferenceStatusTimer);
   elements.fdpReferenceStatus?.classList.add("hidden");
 
   Object.values(ftlDurationControls).forEach((control) => {
