@@ -77,6 +77,9 @@ const elements = {
   fdpTableTwoContainer: document.querySelector("#fdpTableTwoContainer"),
   fdpTableThreeContainer: document.querySelector("#fdpTableThreeContainer"),
   fdpReferenceStatus: document.querySelector("#fdpReferenceStatus"),
+  bdxInfoButton: document.querySelector("#bdxInfoButton"),
+  bdxInfoDialog: document.querySelector("#bdxInfoDialog"),
+  bdxInfoCloseButton: document.querySelector("#bdxInfoCloseButton"),
   dutyStartTime: document.querySelector("#dutyStartTime"),
   dutyStartShell: document.querySelector("#dutyStartShell"),
   latestPushback: document.querySelector("#latestPushback"),
@@ -1044,6 +1047,16 @@ function clearFtlCalculator() {
   });
 
   calculateFtl();
+}
+
+function openBdxInfo() {
+  elements.bdxInfoDialog?.classList.remove("hidden");
+  elements.bdxInfoCloseButton?.focus();
+}
+
+function closeBdxInfo() {
+  elements.bdxInfoDialog?.classList.add("hidden");
+  elements.bdxInfoButton?.focus();
 }
 
 function requestSortValue(request) {
@@ -2128,6 +2141,11 @@ elements.jumpseatToolTab.addEventListener("click", () => setActiveTool("jumpseat
 elements.ftlToolTab.addEventListener("click", () => setActiveTool("ftl"));
 elements.clearFtlButton.addEventListener("click", clearFtlCalculator);
 elements.sendLtotTelegramButton.addEventListener("click", sendLtotTelegramSummary);
+elements.bdxInfoButton?.addEventListener("click", openBdxInfo);
+elements.bdxInfoCloseButton?.addEventListener("click", closeBdxInfo);
+elements.bdxInfoDialog?.addEventListener("click", (event) => {
+  if (event.target === elements.bdxInfoDialog) closeBdxInfo();
+});
 elements.homeTab.addEventListener("click", () => setActiveTab("home"));
 elements.addTab.addEventListener("click", startAdd);
 [elements.requestDate, elements.flightNumber, elements.routeFrom, elements.routeTo, elements.departureTime]
@@ -2183,6 +2201,11 @@ elements.sendTelegramTestButton.addEventListener("click", sendTelegramTest);
 elements.sendSampleReminderButton.addEventListener("click", sendSampleReminder);
 window.addEventListener("offline", () => startOfflineMode());
 window.addEventListener("online", returnOnline);
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !elements.bdxInfoDialog?.classList.contains("hidden")) {
+    closeBdxInfo();
+  }
+});
 
 setSelectedDate(todayIso());
 clearForm();
