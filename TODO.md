@@ -2,14 +2,14 @@
 
 ## Current Status
 
-- Current visible app version: v2.17.
+- Current visible app version: v2.18.
 - The top navigation has been simplified to `Jumpseat` and `LTOT Calculator`, with Jumpseat sub-tabs now `Today` and `Add`.
 - Empty Jumpseat days now use a compact message with a direct `Add request` shortcut.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
 - LTOT calculation logic has been extracted into a shared helper with automated tests for rollover, standalone on-chocks, discretion, contingency, and missing FDP input.
 - A guarded `Send LTOT` Telegram action has been prepared; the button only appears once the deployed Supabase function advertises LTOT summary support.
 - Latest on-chocks now works as a standalone gross-check tool after Duty start time, Maximum FDP, and optional Commander's discretion are entered.
-- LTOT now has app-styled FDP reference tables: Table 1 guides B/D/X acclimatisation state, tappable Table 2 covers acclimatised crew, and tappable Table 3 covers unknown state of acclimatisation.
+- LTOT now has an FDP lookup workflow: normal short-haul use, Table 1 B/D/X state check, tappable Table 2 for acclimatised crew, and tappable Table 3 for unknown state.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.

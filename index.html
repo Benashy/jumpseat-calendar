@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="Flight deck tools for jumpseat requests and latest takeoff time calculations." />
     <title>Ben's OpsDeck</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-64" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-65" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-64" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-65" />
   </head>
   <body>
     <div class="app-shell">
@@ -108,7 +108,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.17</small>
+            <small class="app-version">v2.18</small>
           </section>
 
         </section>
@@ -304,13 +304,26 @@
             <summary>FDP Tables</summary>
             <div class="guidance-content fdp-reference-content">
               <section>
+                <h3>FDP lookup workflow</h3>
+                <div class="fdp-workflow">
+                  <div>
+                    <strong>1. Normal short-haul</strong>
+                    <p>Within the 2-hour wide time-zone band around Home Base, crew normally remain acclimatised. Use the local report time at the departure point and select from Table 2.</p>
+                  </div>
+                  <div>
+                    <strong>2. If less clear</strong>
+                    <p>If the duty pattern moves outside that simple case, use Table 1 to establish whether the state is B, D, or X.</p>
+                  </div>
+                  <div>
+                    <strong>3. Select the FDP</strong>
+                    <p>B or D means use Table 2 with the relevant reference time. X means use Table 3.</p>
+                  </div>
+                </div>
+                <p class="fdp-reference-caution">This is a quick reference only. If the acclimatisation state or limiting FDP is uncertain, confirm with Ops.</p>
+              </section>
+              <section>
                 <h3>OMA 7.2 Table 1 - Acclimatisation state</h3>
-                <p>Use this first if the local time where the next duty starts differs by more than two hours from the previous reference time.</p>
-                <ol class="fdp-reference-steps">
-                  <li>Use Table 1 to establish the acclimatisation state.</li>
-                  <li>If the result is B or D, use Table 2 with the relevant reference time.</li>
-                  <li>If the result is X, use Table 3.</li>
-                </ol>
+                <p>Use this when the local time where the next duty starts differs by more than two hours from the previous reference time, or when the normal short-haul assumption does not clearly apply.</p>
                 <p class="fdp-reference-source">Reference: OMA 7.2 Table 1</p>
               </section>
               <div class="fdp-table-scroll" aria-label="Acclimatisation state table">
@@ -422,7 +435,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.17</small>
+            <small class="app-version">v2.18</small>
           </section>
         </section>
 
@@ -487,7 +500,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.17</small>
+            <small class="app-version">v2.18</small>
           </section>
         </section>
       </main>
@@ -512,8 +525,8 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-64"></script>
-    <script src="./ltot-core.js?v=cloud-sync-64"></script>
-    <script src="./app.js?v=cloud-sync-64"></script>
+    <script src="./supabase-config.js?v=cloud-sync-65"></script>
+    <script src="./ltot-core.js?v=cloud-sync-65"></script>
+    <script src="./app.js?v=cloud-sync-65"></script>
   </body>
 </html>
