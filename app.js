@@ -74,7 +74,8 @@ const elements = {
   clearFtlButton: document.querySelector("#clearFtlButton"),
   sendLtotTelegramButton: document.querySelector("#sendLtotTelegramButton"),
   ftlTelegramStatus: document.querySelector("#ftlTelegramStatus"),
-  fdpTableContainer: document.querySelector("#fdpTableContainer"),
+  fdpTableTwoContainer: document.querySelector("#fdpTableTwoContainer"),
+  fdpTableThreeContainer: document.querySelector("#fdpTableThreeContainer"),
   fdpReferenceStatus: document.querySelector("#fdpReferenceStatus"),
   dutyStartTime: document.querySelector("#dutyStartTime"),
   dutyStartShell: document.querySelector("#dutyStartShell"),
@@ -155,14 +156,14 @@ const ftlDurationControls = {
   },
 };
 
-const FDP_TABLE_COLUMNS = [
+const FDP_TABLE_TWO_COLUMNS = [
   { key: "oneTwo", label: "1-2 sectors" },
   { key: "three", label: "3 sectors" },
   { key: "four", label: "4 sectors" },
   { key: "five", label: "5 sectors" },
 ];
 
-const FDP_TABLE_ROWS = [
+const FDP_TABLE_TWO_ROWS = [
   { start: "0600-1329", oneTwo: "13:00", three: "12:30", four: "12:00", five: "11:30" },
   { start: "1330-1359", oneTwo: "12:45", three: "12:15", four: "11:45", five: "11:15" },
   { start: "1400-1429", oneTwo: "12:30", three: "12:00", four: "11:30", five: "11:00" },
@@ -176,6 +177,17 @@ const FDP_TABLE_ROWS = [
   { start: "0515-0529", oneTwo: "12:15", three: "11:45", four: "11:15", five: "10:45" },
   { start: "0530-0544", oneTwo: "12:30", three: "12:00", four: "11:30", five: "11:00" },
   { start: "0545-0559", oneTwo: "12:45", three: "12:15", four: "11:45", five: "11:15" },
+];
+
+const FDP_TABLE_THREE_COLUMNS = [
+  { key: "oneTwo", label: "1-2 sectors" },
+  { key: "three", label: "3 sectors" },
+  { key: "four", label: "4 sectors" },
+  { key: "five", label: "5 sectors" },
+];
+
+const FDP_TABLE_THREE_ROWS = [
+  { start: "Maximum FDP", oneTwo: "11:00", three: "10:30", four: "10:00", five: "09:30" },
 ];
 
 let requests = loadRequests();
@@ -612,16 +624,18 @@ function currentMaximumFdpTableValue() {
 }
 
 function updateFdpReferenceSelection() {
-  if (!elements.fdpTableContainer) return;
   const selectedValue = currentMaximumFdpTableValue();
-  elements.fdpTableContainer.querySelectorAll(".fdp-table-button").forEach((button) => {
-    const isSelected = button.dataset.key === selectedFdpReferenceKey && button.dataset.value === selectedValue;
-    button.classList.toggle("is-selected", isSelected);
-    button.setAttribute("aria-pressed", String(isSelected));
+  [elements.fdpTableTwoContainer, elements.fdpTableThreeContainer].forEach((container) => {
+    if (!container) return;
+    container.querySelectorAll(".fdp-table-button").forEach((button) => {
+      const isSelected = button.dataset.key === selectedFdpReferenceKey && button.dataset.value === selectedValue;
+      button.classList.toggle("is-selected", isSelected);
+      button.setAttribute("aria-pressed", String(isSelected));
+    });
   });
 }
 
-function setMaximumFdpFromReference(value, rowLabel, columnLabel, referenceKey) {
+function setMaximumFdpFromReference(value, rowLabel, columnLabel, tableLabel, referenceKey) {
   selectedFdpReferenceKey = referenceKey;
   const { hours, minutes } = durationStringToParts(value);
   setDurationControl(ftlDurationControls.maxFdp, hours, minutes);
@@ -630,19 +644,19 @@ function setMaximumFdpFromReference(value, rowLabel, columnLabel, referenceKey) 
 
   if (!elements.fdpReferenceStatus) return;
   elements.fdpReferenceStatus.textContent =
-    `Maximum FDP set to ${formatDurationWithZeroMinutes(durationStringToMinutes(value))} from ${rowLabel}, ${columnLabel}.`;
+    `Maximum FDP set to ${formatDurationWithZeroMinutes(durationStringToMinutes(value))} from ${tableLabel}, ${rowLabel}, ${columnLabel}.`;
   elements.fdpReferenceStatus.classList.remove("hidden");
 }
 
-function renderFdpReferenceTable() {
-  if (!elements.fdpTableContainer) return;
+function renderFdpReferenceTable(container, rows, columns, firstColumnLabel, tableLabel) {
+  if (!container) return;
 
   const table = document.createElement("table");
   table.className = "fdp-reference-table";
 
   const header = document.createElement("thead");
   const headerRow = document.createElement("tr");
-  ["Start of FDP", ...FDP_TABLE_COLUMNS.map((column) => column.label)].forEach((label) => {
+  [firstColumnLabel, ...columns.map((column) => column.label)].forEach((label) => {
     const heading = document.createElement("th");
     heading.scope = "col";
     heading.textContent = label;
@@ -652,16 +666,16 @@ function renderFdpReferenceTable() {
   table.append(header);
 
   const body = document.createElement("tbody");
-  FDP_TABLE_ROWS.forEach((row) => {
+  rows.forEach((row) => {
     const tr = document.createElement("tr");
     const rowHeading = document.createElement("th");
     rowHeading.scope = "row";
     rowHeading.textContent = row.start;
     tr.append(rowHeading);
 
-    FDP_TABLE_COLUMNS.forEach((column) => {
+    columns.forEach((column) => {
       const cell = document.createElement("td");
-      const referenceKey = `${row.start}-${column.key}`;
+      const referenceKey = `${tableLabel}-${row.start}-${column.key}`;
       const button = document.createElement("button");
       button.type = "button";
       button.className = "fdp-table-button";
@@ -670,9 +684,9 @@ function renderFdpReferenceTable() {
       button.dataset.key = referenceKey;
       button.setAttribute(
         "aria-label",
-        `Set Maximum FDP to ${row[column.key]} for ${row.start}, ${column.label}`
+        `Set Maximum FDP to ${row[column.key]} from ${tableLabel}, ${row.start}, ${column.label}`
       );
-      button.addEventListener("click", () => setMaximumFdpFromReference(row[column.key], row.start, column.label, referenceKey));
+      button.addEventListener("click", () => setMaximumFdpFromReference(row[column.key], row.start, column.label, tableLabel, referenceKey));
       cell.append(button);
       tr.append(cell);
     });
@@ -681,7 +695,24 @@ function renderFdpReferenceTable() {
   });
   table.append(body);
 
-  elements.fdpTableContainer.replaceChildren(table);
+  container.replaceChildren(table);
+}
+
+function renderFdpReferenceTables() {
+  renderFdpReferenceTable(
+    elements.fdpTableTwoContainer,
+    FDP_TABLE_TWO_ROWS,
+    FDP_TABLE_TWO_COLUMNS,
+    "Start of FDP",
+    "Table 2"
+  );
+  renderFdpReferenceTable(
+    elements.fdpTableThreeContainer,
+    FDP_TABLE_THREE_ROWS,
+    FDP_TABLE_THREE_COLUMNS,
+    "Unknown state",
+    "Table 3"
+  );
   updateFdpReferenceSelection();
 }
 
@@ -973,7 +1004,7 @@ function calculateFtl() {
 
 function setupFtlCalculator() {
   Object.values(ftlDurationControls).forEach(setupDurationControl);
-  renderFdpReferenceTable();
+  renderFdpReferenceTables();
   elements.dutyStartTime.addEventListener("input", () => {
     updateDutyStartEmptyState();
     calculateFtl();

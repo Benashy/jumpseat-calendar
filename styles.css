@@ -604,6 +604,22 @@ button:disabled {
   font-weight: 850;
 }
 
+.fdp-reference-legend {
+  border: 1px solid rgba(17, 47, 67, 0.08);
+  border-radius: 7px;
+  background: linear-gradient(180deg, #fff, #f2f4f4);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0;
+  padding: 9px 10px;
+}
+
+.fdp-reference-legend strong {
+  color: var(--navy);
+}
+
 .fdp-table-scroll {
   -webkit-overflow-scrolling: touch;
   border: 1px solid rgba(198, 161, 90, 0.22);
@@ -675,6 +691,11 @@ button:disabled {
   border-color: rgba(198, 161, 90, 0.72);
   background: linear-gradient(180deg, #f7eddb, #e9dac0);
   box-shadow: inset 0 0 0 1px rgba(17, 47, 67, 0.08);
+}
+
+.fdp-state-table td {
+  color: var(--navy);
+  font-weight: 900;
 }
 
 .fdp-reference-status {

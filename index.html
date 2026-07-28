@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="Flight deck tools for jumpseat requests and latest takeoff time calculations." />
     <title>Ben's OpsDeck</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-62" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-63" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-62" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-63" />
   </head>
   <body>
     <div class="app-shell">
@@ -108,7 +108,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.15</small>
+            <small class="app-version">v2.16</small>
           </section>
 
         </section>
@@ -301,14 +301,77 @@
           <p class="ftl-telegram-status hidden" id="ftlTelegramStatus" aria-live="polite"></p>
 
           <details class="guidance-panel fdp-reference-panel">
-            <summary>FDP Table - Acclimatised Crew</summary>
+            <summary>FDP Tables</summary>
             <div class="guidance-content fdp-reference-content">
               <section>
-                <h3>OMA 7.7 Table 2</h3>
-                <p>For acclimatised crew. If acclimatisation is uncertain or outside the normal two-hour assumption, check OMA 7.2/Table 1 and the unknown-state tables before using a value.</p>
+                <h3>OMA 7.2 Table 1 - Acclimatisation state</h3>
+                <p>Use this first if the local time where the next duty starts differs by more than two hours from the previous reference time.</p>
+                <p class="fdp-reference-source">Reference: OMA 7.2 Table 1 / ORO.FTL.105(1)</p>
+              </section>
+              <div class="fdp-table-scroll" aria-label="Acclimatisation state table">
+                <table class="fdp-reference-table fdp-state-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Time difference</th>
+                      <th scope="col">&lt;48</th>
+                      <th scope="col">48-71:59</th>
+                      <th scope="col">72-95:59</th>
+                      <th scope="col">96-119:59</th>
+                      <th scope="col">&ge;120</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">&lt;4 hr</th>
+                      <td>B</td>
+                      <td>D</td>
+                      <td>D</td>
+                      <td>D</td>
+                      <td>D</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">&le;6 hr</th>
+                      <td>B</td>
+                      <td>X</td>
+                      <td>D</td>
+                      <td>D</td>
+                      <td>D</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">&le;9 hr</th>
+                      <td>B</td>
+                      <td>X</td>
+                      <td>X</td>
+                      <td>D</td>
+                      <td>D</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">&le;12 hr</th>
+                      <td>B</td>
+                      <td>X</td>
+                      <td>X</td>
+                      <td>X</td>
+                      <td>D</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="fdp-reference-legend"><strong>B</strong> departure time zone. <strong>D</strong> next duty time zone. <strong>X</strong> unknown state, use Table 3.</p>
+
+              <section>
+                <h3>OMA 7.7 Table 2 - Acclimatised crew</h3>
+                <p>Tap an FDP value to load it into Maximum FDP.</p>
                 <p class="fdp-reference-source">Reference: OMA 7.7 Table 2 / ORO.FTL.205(b)(1)</p>
               </section>
-              <div class="fdp-table-scroll" id="fdpTableContainer" aria-label="Maximum FDP table"></div>
+              <div class="fdp-table-scroll" id="fdpTableTwoContainer" aria-label="Table 2 maximum FDP for acclimatised crew"></div>
+
+              <section>
+                <h3>OMA 7.7 Table 3 - Unknown state of acclimatisation</h3>
+                <p>Use when Table 1 gives X. Tap an FDP value to load it into Maximum FDP.</p>
+                <p class="fdp-reference-source">Reference: OMA 7.7 Table 3 / ORO.FTL.205(b)(2)</p>
+              </section>
+              <div class="fdp-table-scroll fdp-unknown-table" id="fdpTableThreeContainer" aria-label="Table 3 maximum FDP for unknown state of acclimatisation"></div>
+
               <p class="fdp-reference-status hidden" id="fdpReferenceStatus" aria-live="polite"></p>
             </div>
           </details>
@@ -347,7 +410,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.15</small>
+            <small class="app-version">v2.16</small>
           </section>
         </section>
 
@@ -412,7 +475,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.15</small>
+            <small class="app-version">v2.16</small>
           </section>
         </section>
       </main>
@@ -437,8 +500,8 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-62"></script>
-    <script src="./ltot-core.js?v=cloud-sync-62"></script>
-    <script src="./app.js?v=cloud-sync-62"></script>
+    <script src="./supabase-config.js?v=cloud-sync-63"></script>
+    <script src="./ltot-core.js?v=cloud-sync-63"></script>
+    <script src="./app.js?v=cloud-sync-63"></script>
   </body>
 </html>
