@@ -786,11 +786,18 @@ button:disabled {
   padding: 6px 8px;
 }
 
-.fdp-table-button:hover,
 .fdp-table-button:focus-visible {
   border-color: rgba(198, 161, 90, 0.62);
   outline: 2px solid rgba(198, 161, 90, 0.22);
   outline-offset: 1px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fdp-table-button:hover {
+    border-color: rgba(198, 161, 90, 0.62);
+    outline: 2px solid rgba(198, 161, 90, 0.22);
+    outline-offset: 1px;
+  }
 }
 
 .fdp-table-button.is-selected {
@@ -800,13 +807,18 @@ button:disabled {
 }
 
 .fdp-state-table td {
-  color: var(--navy);
   font-weight: 900;
 }
 
+.fdp-state-table td.fdp-state-b-cell {
+  color: #2f6b4f;
+}
+
+.fdp-state-table td.fdp-state-d-cell {
+  color: #245f89;
+}
+
 .fdp-state-table td.fdp-state-x-cell {
-  background: rgba(196, 143, 43, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(196, 143, 43, 0.12);
   color: #87621d;
 }
 
@@ -890,13 +902,16 @@ button:disabled {
   color: var(--navy);
 }
 
+strong.fdp-state-b-label {
+  color: #2f6b4f;
+}
+
+strong.fdp-state-d-label {
+  color: #245f89;
+}
+
 strong.fdp-state-x-label {
-  display: inline-flex;
-  border-radius: 999px;
-  background: rgba(196, 143, 43, 0.18);
   color: #87621d;
-  line-height: 1;
-  padding: 3px 7px;
 }
 
 .settings-section,
@@ -1764,17 +1779,6 @@ form label {
 
   input[type="date"] {
     width: 100%;
-  }
-}
-
-@media (min-width: 881px) {
-  .ftl-form .duration-grid {
-    width: min(100%, 900px);
-    margin-inline: auto;
-  }
-
-  .ftl-form .sector-duration-grid {
-    width: min(100%, 640px);
   }
 }
 

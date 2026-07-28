@@ -650,19 +650,6 @@ function showFdpReferenceStatus(message) {
   }, 5000);
 }
 
-function returnToMaximumFdpControl() {
-  const maximumFdpControl = ftlDurationControls.maxFdp.hours.closest(".duration-control");
-  if (!maximumFdpControl) return;
-
-  window.setTimeout(() => {
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    maximumFdpControl.scrollIntoView({
-      behavior: reduceMotion ? "auto" : "smooth",
-      block: "center",
-    });
-  }, 50);
-}
-
 function setMaximumFdpFromReference(value, rowLabel, columnLabel, tableLabel, referenceKey) {
   const isSelected = referenceKey === selectedFdpReferenceKey && currentMaximumFdpTableValue() === value;
   if (isSelected) {
@@ -675,7 +662,6 @@ function setMaximumFdpFromReference(value, rowLabel, columnLabel, tableLabel, re
     }
 
     showFdpReferenceStatus("Maximum FDP cleared.");
-    returnToMaximumFdpControl();
     return;
   }
 
@@ -688,7 +674,6 @@ function setMaximumFdpFromReference(value, rowLabel, columnLabel, tableLabel, re
   showFdpReferenceStatus(
     `Maximum FDP set to ${formatDurationWithZeroMinutes(durationStringToMinutes(value))} from ${tableLabel}, ${rowLabel}, ${columnLabel}.`
   );
-  returnToMaximumFdpControl();
 }
 
 function renderFdpReferenceTable(container, rows, columns, firstColumnLabel, tableLabel) {
@@ -729,7 +714,10 @@ function renderFdpReferenceTable(container, rows, columns, firstColumnLabel, tab
         "aria-label",
         `Set Maximum FDP to ${row[column.key]} from ${tableLabel}, ${row.start}, ${column.label}`
       );
-      button.addEventListener("click", () => setMaximumFdpFromReference(row[column.key], row.start, column.label, tableLabel, referenceKey));
+      button.addEventListener("click", (event) => {
+        setMaximumFdpFromReference(row[column.key], row.start, column.label, tableLabel, referenceKey);
+        if (event.detail > 0) button.blur();
+      });
       cell.append(button);
       tr.append(cell);
     });

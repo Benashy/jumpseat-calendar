@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="Flight deck tools for jumpseat requests and latest takeoff time calculations." />
     <title>Ben's OpsDeck</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-68" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-69" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-68" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-69" />
   </head>
   <body>
     <div class="app-shell">
@@ -108,7 +108,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.21</small>
+            <small class="app-version">v2.22</small>
           </section>
 
         </section>
@@ -318,8 +318,8 @@
                   <div>
                     <strong>3. Select the FDP</strong>
                     <ul class="fdp-workflow-options">
-                      <li><strong>B</strong>: use Table 2 with London time.</li>
-                      <li><strong>D</strong>: use Table 2 with the departure airport local time.</li>
+                      <li><strong class="fdp-state-b-label">B</strong>: use Table 2 with London time.</li>
+                      <li><strong class="fdp-state-d-label">D</strong>: use Table 2 with the departure airport local time.</li>
                       <li><strong class="fdp-state-x-label">X</strong>: use Table 3.</li>
                     </ul>
                   </div>
@@ -351,42 +351,42 @@
                   <tbody>
                     <tr>
                       <th scope="row">&lt;4 hr</th>
-                      <td>B</td>
-                      <td>D</td>
-                      <td>D</td>
-                      <td>D</td>
-                      <td>D</td>
+                      <td class="fdp-state-b-cell">B</td>
+                      <td class="fdp-state-d-cell">D</td>
+                      <td class="fdp-state-d-cell">D</td>
+                      <td class="fdp-state-d-cell">D</td>
+                      <td class="fdp-state-d-cell">D</td>
                     </tr>
                     <tr>
                       <th scope="row">4-6 hr</th>
-                      <td>B</td>
+                      <td class="fdp-state-b-cell">B</td>
                       <td class="fdp-state-x-cell">X</td>
-                      <td>D</td>
-                      <td>D</td>
-                      <td>D</td>
+                      <td class="fdp-state-d-cell">D</td>
+                      <td class="fdp-state-d-cell">D</td>
+                      <td class="fdp-state-d-cell">D</td>
                     </tr>
                     <tr>
                       <th scope="row">&gt;6-9 hr</th>
-                      <td>B</td>
+                      <td class="fdp-state-b-cell">B</td>
                       <td class="fdp-state-x-cell">X</td>
                       <td class="fdp-state-x-cell">X</td>
-                      <td>D</td>
-                      <td>D</td>
+                      <td class="fdp-state-d-cell">D</td>
+                      <td class="fdp-state-d-cell">D</td>
                     </tr>
                     <tr>
                       <th scope="row">&gt;9-12 hr</th>
-                      <td>B</td>
+                      <td class="fdp-state-b-cell">B</td>
                       <td class="fdp-state-x-cell">X</td>
                       <td class="fdp-state-x-cell">X</td>
                       <td class="fdp-state-x-cell">X</td>
-                      <td>D</td>
+                      <td class="fdp-state-d-cell">D</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
               <div class="fdp-reference-legend">
-                <p><strong>B</strong> means the crew member is acclimatised to the local time of the departure time zone.</p>
-                <p><strong>D</strong> means the crew member is acclimatised to the local time where the crew member starts his or her next duty.</p>
+                <p><strong class="fdp-state-b-label">B</strong> means the crew member is acclimatised to the local time of the departure time zone.</p>
+                <p><strong class="fdp-state-d-label">D</strong> means the crew member is acclimatised to the local time where the crew member starts his or her next duty.</p>
                 <p><strong class="fdp-state-x-label">X</strong> means the crew member is in an unknown state of acclimatisation. Use Table 3.</p>
               </div>
 
@@ -415,8 +415,8 @@
                 <button class="icon-button" id="bdxInfoCloseButton" type="button" aria-label="Close B, D and X examples">×</button>
               </div>
               <div class="info-modal-content">
-                <p><strong>B</strong> usually means the time-zone change has not been large enough, or the crew member has not been there long enough, to move the body clock away from the departure time zone. Example: after a short stay in New York, the body clock may still effectively be on London time, so London time is used when entering Table 2.</p>
-                <p><strong>D</strong> means the crew member has had time to acclimatise to where the next duty starts. Example: after long enough in New York, use New York local report time with Table 2.</p>
+                <p><strong class="fdp-state-b-label">B</strong> usually means the time-zone change has not been large enough, or the crew member has not been there long enough, to move the body clock away from the departure time zone. Example: after a short stay in New York, the body clock may still effectively be on London time, so London time is used when entering Table 2.</p>
+                <p><strong class="fdp-state-d-label">D</strong> means the crew member has had time to acclimatise to where the next duty starts. Example: after long enough in New York, use New York local report time with Table 2.</p>
                 <p><strong class="fdp-state-x-label">X</strong> usually follows a larger time-zone change without enough time to fully acclimatise. The crew member is between time zones, so Table 3 is used. Table 3 is generally more restrictive.</p>
               </div>
             </div>
@@ -456,7 +456,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.21</small>
+            <small class="app-version">v2.22</small>
           </section>
         </section>
 
@@ -521,7 +521,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.21</small>
+            <small class="app-version">v2.22</small>
           </section>
         </section>
       </main>
@@ -546,8 +546,8 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-68"></script>
-    <script src="./ltot-core.js?v=cloud-sync-68"></script>
-    <script src="./app.js?v=cloud-sync-68"></script>
+    <script src="./supabase-config.js?v=cloud-sync-69"></script>
+    <script src="./ltot-core.js?v=cloud-sync-69"></script>
+    <script src="./app.js?v=cloud-sync-69"></script>
   </body>
 </html>
