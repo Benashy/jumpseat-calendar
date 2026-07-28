@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="Flight deck tools for jumpseat requests and latest takeoff time calculations." />
     <title>Ben's OpsDeck</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-61" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-62" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-61" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-62" />
   </head>
   <body>
     <div class="app-shell">
@@ -108,7 +108,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.14</small>
+            <small class="app-version">v2.15</small>
           </section>
 
         </section>
@@ -179,7 +179,7 @@
         <section class="ftl-panel view-panel hidden" id="ftlView" role="tabpanel" aria-labelledby="ftlToolTab" aria-hidden="true">
           <div class="form-heading">
             <div>
-              <h2>Ben's LTOT Calculator</h2>
+              <h2>LTOT Calculator</h2>
               <p class="ftl-context">All times Zulu</p>
             </div>
             <div class="ftl-heading-actions">
@@ -300,6 +300,19 @@
 
           <p class="ftl-telegram-status hidden" id="ftlTelegramStatus" aria-live="polite"></p>
 
+          <details class="guidance-panel fdp-reference-panel">
+            <summary>FDP Table - Acclimatised Crew</summary>
+            <div class="guidance-content fdp-reference-content">
+              <section>
+                <h3>OMA 7.7 Table 2</h3>
+                <p>For acclimatised crew. If acclimatisation is uncertain or outside the normal two-hour assumption, check OMA 7.2/Table 1 and the unknown-state tables before using a value.</p>
+                <p class="fdp-reference-source">Reference: OMA 7.7 Table 2 / ORO.FTL.205(b)(1)</p>
+              </section>
+              <div class="fdp-table-scroll" id="fdpTableContainer" aria-label="Maximum FDP table"></div>
+              <p class="fdp-reference-status hidden" id="fdpReferenceStatus" aria-live="polite"></p>
+            </div>
+          </details>
+
           <details class="guidance-panel">
             <summary>Guidance</summary>
             <div class="guidance-content">
@@ -334,7 +347,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.14</small>
+            <small class="app-version">v2.15</small>
           </section>
         </section>
 
@@ -399,7 +412,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.14</small>
+            <small class="app-version">v2.15</small>
           </section>
         </section>
       </main>
@@ -424,8 +437,8 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-61"></script>
-    <script src="./ltot-core.js?v=cloud-sync-61"></script>
-    <script src="./app.js?v=cloud-sync-61"></script>
+    <script src="./supabase-config.js?v=cloud-sync-62"></script>
+    <script src="./ltot-core.js?v=cloud-sync-62"></script>
+    <script src="./app.js?v=cloud-sync-62"></script>
   </body>
 </html>

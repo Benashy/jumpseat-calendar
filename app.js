@@ -74,6 +74,8 @@ const elements = {
   clearFtlButton: document.querySelector("#clearFtlButton"),
   sendLtotTelegramButton: document.querySelector("#sendLtotTelegramButton"),
   ftlTelegramStatus: document.querySelector("#ftlTelegramStatus"),
+  fdpTableContainer: document.querySelector("#fdpTableContainer"),
+  fdpReferenceStatus: document.querySelector("#fdpReferenceStatus"),
   dutyStartTime: document.querySelector("#dutyStartTime"),
   dutyStartShell: document.querySelector("#dutyStartShell"),
   latestPushback: document.querySelector("#latestPushback"),
@@ -153,6 +155,29 @@ const ftlDurationControls = {
   },
 };
 
+const FDP_TABLE_COLUMNS = [
+  { key: "oneTwo", label: "1-2 sectors" },
+  { key: "three", label: "3 sectors" },
+  { key: "four", label: "4 sectors" },
+  { key: "five", label: "5 sectors" },
+];
+
+const FDP_TABLE_ROWS = [
+  { start: "0600-1329", oneTwo: "13:00", three: "12:30", four: "12:00", five: "11:30" },
+  { start: "1330-1359", oneTwo: "12:45", three: "12:15", four: "11:45", five: "11:15" },
+  { start: "1400-1429", oneTwo: "12:30", three: "12:00", four: "11:30", five: "11:00" },
+  { start: "1430-1459", oneTwo: "12:15", three: "11:45", four: "11:15", five: "10:45" },
+  { start: "1500-1529", oneTwo: "12:00", three: "11:30", four: "11:00", five: "10:30" },
+  { start: "1530-1559", oneTwo: "11:45", three: "11:15", four: "10:45", five: "10:15" },
+  { start: "1600-1629", oneTwo: "11:30", three: "11:00", four: "10:30", five: "10:00" },
+  { start: "1630-1659", oneTwo: "11:15", three: "10:45", four: "10:15", five: "09:45" },
+  { start: "1700-0459", oneTwo: "11:00", three: "10:30", four: "10:00", five: "09:30" },
+  { start: "0500-0514", oneTwo: "12:00", three: "11:30", four: "11:00", five: "10:30" },
+  { start: "0515-0529", oneTwo: "12:15", three: "11:45", four: "11:15", five: "10:45" },
+  { start: "0530-0544", oneTwo: "12:30", three: "12:00", four: "11:30", five: "11:00" },
+  { start: "0545-0559", oneTwo: "12:45", three: "12:15", four: "11:45", five: "11:15" },
+];
+
 let requests = loadRequests();
 let currentUser = null;
 let cloudReady = false;
@@ -169,6 +194,7 @@ let lastCloudSuccess = null;
 let isOfflineReadOnly = false;
 let telegramLinked = false;
 let telegramLtotSupported = false;
+let selectedFdpReferenceKey = null;
 
 // Cloud setup and shared status helpers.
 const cloudConfig = window.JUMPSEAT_SUPABASE || {};
@@ -567,6 +593,98 @@ function setupDurationControl(control) {
   });
 }
 
+function durationStringToParts(value) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return { hours, minutes };
+}
+
+function durationStringToMinutes(value) {
+  const { hours, minutes } = durationStringToParts(value);
+  return (hours * 60) + minutes;
+}
+
+function currentMaximumFdpTableValue() {
+  const control = ftlDurationControls.maxFdp;
+  if (!hasDurationValue(control)) return "";
+  const hours = String(Number(control.hours.value)).padStart(2, "0");
+  const minutes = String(Number(control.minutes.value)).padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
+function updateFdpReferenceSelection() {
+  if (!elements.fdpTableContainer) return;
+  const selectedValue = currentMaximumFdpTableValue();
+  elements.fdpTableContainer.querySelectorAll(".fdp-table-button").forEach((button) => {
+    const isSelected = button.dataset.key === selectedFdpReferenceKey && button.dataset.value === selectedValue;
+    button.classList.toggle("is-selected", isSelected);
+    button.setAttribute("aria-pressed", String(isSelected));
+  });
+}
+
+function setMaximumFdpFromReference(value, rowLabel, columnLabel, referenceKey) {
+  selectedFdpReferenceKey = referenceKey;
+  const { hours, minutes } = durationStringToParts(value);
+  setDurationControl(ftlDurationControls.maxFdp, hours, minutes);
+  updateDurationIncompleteState(ftlDurationControls.maxFdp);
+  calculateFtl();
+
+  if (!elements.fdpReferenceStatus) return;
+  elements.fdpReferenceStatus.textContent =
+    `Maximum FDP set to ${formatDurationWithZeroMinutes(durationStringToMinutes(value))} from ${rowLabel}, ${columnLabel}.`;
+  elements.fdpReferenceStatus.classList.remove("hidden");
+}
+
+function renderFdpReferenceTable() {
+  if (!elements.fdpTableContainer) return;
+
+  const table = document.createElement("table");
+  table.className = "fdp-reference-table";
+
+  const header = document.createElement("thead");
+  const headerRow = document.createElement("tr");
+  ["Start of FDP", ...FDP_TABLE_COLUMNS.map((column) => column.label)].forEach((label) => {
+    const heading = document.createElement("th");
+    heading.scope = "col";
+    heading.textContent = label;
+    headerRow.append(heading);
+  });
+  header.append(headerRow);
+  table.append(header);
+
+  const body = document.createElement("tbody");
+  FDP_TABLE_ROWS.forEach((row) => {
+    const tr = document.createElement("tr");
+    const rowHeading = document.createElement("th");
+    rowHeading.scope = "row";
+    rowHeading.textContent = row.start;
+    tr.append(rowHeading);
+
+    FDP_TABLE_COLUMNS.forEach((column) => {
+      const cell = document.createElement("td");
+      const referenceKey = `${row.start}-${column.key}`;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "fdp-table-button";
+      button.textContent = row[column.key];
+      button.dataset.value = row[column.key];
+      button.dataset.key = referenceKey;
+      button.setAttribute(
+        "aria-label",
+        `Set Maximum FDP to ${row[column.key]} for ${row.start}, ${column.label}`
+      );
+      button.addEventListener("click", () => setMaximumFdpFromReference(row[column.key], row.start, column.label, referenceKey));
+      cell.append(button);
+      tr.append(cell);
+    });
+
+    body.append(tr);
+  });
+  table.append(body);
+
+  elements.fdpTableContainer.replaceChildren(table);
+  updateFdpReferenceSelection();
+}
+
 function setDurationControl(control, hours, minutes) {
   if (control.minuteOnly) {
     control.minutes.value = String(minutes);
@@ -820,6 +938,7 @@ function calculateFtl() {
   } else {
     elements.maxAllowableFdp.textContent = "--";
   }
+  updateFdpReferenceSelection();
 
   elements.sectorLength.textContent = hasFlightTime ? formatDurationWithZeroMinutes(sectorLength) : "--";
 
@@ -854,6 +973,7 @@ function calculateFtl() {
 
 function setupFtlCalculator() {
   Object.values(ftlDurationControls).forEach(setupDurationControl);
+  renderFdpReferenceTable();
   elements.dutyStartTime.addEventListener("input", () => {
     updateDutyStartEmptyState();
     calculateFtl();
@@ -871,6 +991,8 @@ function setupFtlCalculator() {
 function clearFtlCalculator() {
   elements.dutyStartTime.value = "";
   updateDutyStartEmptyState();
+  selectedFdpReferenceKey = null;
+  elements.fdpReferenceStatus?.classList.add("hidden");
 
   Object.values(ftlDurationControls).forEach((control) => {
     setDurationControl(control, control.defaultHours ?? 0, control.defaultMinutes ?? 0);
