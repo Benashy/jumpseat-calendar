@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="Flight deck tools for jumpseat requests and latest takeoff time calculations." />
     <title>Ben's OpsDeck</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-60" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-61" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-60" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-61" />
   </head>
   <body>
     <div class="app-shell">
@@ -108,7 +108,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.13</small>
+            <small class="app-version">v2.14</small>
           </section>
 
         </section>
@@ -182,7 +182,10 @@
               <h2>Ben's LTOT Calculator</h2>
               <p class="ftl-context">All times Zulu</p>
             </div>
-            <button class="text-button secondary" id="clearFtlButton" type="button" aria-label="Reset LTOT calculator">Reset</button>
+            <div class="ftl-heading-actions">
+              <button class="text-button secondary hidden" id="sendLtotTelegramButton" type="button">Send LTOT</button>
+              <button class="text-button secondary" id="clearFtlButton" type="button" aria-label="Reset LTOT calculator">Reset</button>
+            </div>
           </div>
 
           <section class="ftl-results" aria-label="Calculated latest times">
@@ -295,6 +298,8 @@
             </section>
           </form>
 
+          <p class="ftl-telegram-status hidden" id="ftlTelegramStatus" aria-live="polite"></p>
+
           <details class="guidance-panel">
             <summary>Guidance</summary>
             <div class="guidance-content">
@@ -329,7 +334,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.13</small>
+            <small class="app-version">v2.14</small>
           </section>
         </section>
 
@@ -394,7 +399,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.13</small>
+            <small class="app-version">v2.14</small>
           </section>
         </section>
       </main>
@@ -419,7 +424,8 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-60"></script>
-    <script src="./app.js?v=cloud-sync-60"></script>
+    <script src="./supabase-config.js?v=cloud-sync-61"></script>
+    <script src="./ltot-core.js?v=cloud-sync-61"></script>
+    <script src="./app.js?v=cloud-sync-61"></script>
   </body>
 </html>

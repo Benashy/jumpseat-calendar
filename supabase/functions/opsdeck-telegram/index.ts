@@ -25,6 +25,21 @@ type JumpseatRequest = {
   notes?: string;
 };
 
+type LtotSummary = {
+  latest_pushback?: string;
+  latest_takeoff?: string;
+  latest_on_chocks?: string;
+  duty_start?: string;
+  maximum_fdp?: string;
+  commander_discretion?: string;
+  flight_time?: string;
+  taxi_out?: string;
+  holding?: string;
+  taxi_in?: string;
+  contingency?: string;
+  sector_length?: string;
+};
+
 class AppError extends Error {
   status: number;
   code: string;
@@ -128,6 +143,12 @@ function normaliseFlightNumber(value: unknown) {
   return normaliseText(value).toUpperCase();
 }
 
+function cleanSummaryText(value: unknown, fallback = "--") {
+  const text = normaliseText(value);
+  if (!text) return fallback;
+  return text.slice(0, 80);
+}
+
 function isIsoDate(value: unknown) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""));
 }
@@ -224,6 +245,37 @@ function buildSampleReminderMessage() {
     ],
     notes: "Sample note",
   });
+}
+
+function buildLtotSummaryMessage(summary: LtotSummary) {
+  const latestPushback = cleanSummaryText(summary.latest_pushback);
+  const latestTakeoff = cleanSummaryText(summary.latest_takeoff);
+  const latestOnChocks = cleanSummaryText(summary.latest_on_chocks);
+
+  if (latestPushback === "--" || latestTakeoff === "--" || latestOnChocks === "--") {
+    fail(400, "ltot_summary_incomplete", "Complete the LTOT calculation before sending it to Telegram.");
+  }
+
+  return [
+    "OpsDeck LTOT summary",
+    "",
+    `Latest pushback: ${latestPushback} (soft limit)`,
+    `Latest takeoff: ${latestTakeoff} (hard limit)`,
+    `Latest on-chocks: ${latestOnChocks} (FDP limit)`,
+    "",
+    "FDP",
+    `Duty start: ${cleanSummaryText(summary.duty_start)}`,
+    `Maximum FDP: ${cleanSummaryText(summary.maximum_fdp)}`,
+    `Commander's discretion: ${cleanSummaryText(summary.commander_discretion)}`,
+    "",
+    "Final sector timing",
+    `Flight time: ${cleanSummaryText(summary.flight_time)}`,
+    `Taxi out: ${cleanSummaryText(summary.taxi_out)}`,
+    `Holding: ${cleanSummaryText(summary.holding)}`,
+    `Taxi in: ${cleanSummaryText(summary.taxi_in)}`,
+    `Contingency: ${cleanSummaryText(summary.contingency)}`,
+    `Anticipated sector length: ${cleanSummaryText(summary.sector_length)}`,
+  ].join("\n");
 }
 
 async function telegramRequest(method: string, payload: Record<string, unknown>) {
@@ -433,6 +485,39 @@ async function sendSampleReminder(userId: string) {
   };
 }
 
+async function sendLtotSummary(userId: string, summary: unknown) {
+  const admin = requireServerConfig();
+  const settings = await getTelegramSettings(userId);
+
+  if (!settings?.enabled || !settings.chat_id) {
+    fail(400, "telegram_not_linked", "Link Telegram before sending an LTOT summary.");
+  }
+
+  if (!summary || typeof summary !== "object") {
+    fail(400, "ltot_summary_missing", "Complete the LTOT calculation before sending it to Telegram.");
+  }
+
+  await sendTelegramMessage(settings.chat_id, buildLtotSummaryMessage(summary as LtotSummary));
+
+  const testSentAt = new Date().toISOString();
+  const { error } = await admin
+    .from("opsdeck_telegram_settings")
+    .update({
+      test_sent_at: testSentAt,
+      updated_at: testSentAt,
+    })
+    .eq("user_id", userId);
+
+  if (error) {
+    fail(500, "ltot_update_failed", error.message);
+  }
+
+  return {
+    ok: true,
+    sent_at: testSentAt,
+  };
+}
+
 async function probe(userId: string) {
   const settings = await getTelegramSettings(userId);
 
@@ -447,6 +532,7 @@ async function probe(userId: string) {
     test_sent_at: settings?.test_sent_at || null,
     reminder_offset_minutes: REMINDER_OFFSET_MINUTES,
     notes_policy: "Messages include note text when notes are present.",
+    ltot_summary_supported: true,
   };
 }
 
@@ -613,6 +699,10 @@ Deno.serve(async (req: Request) => {
 
     if (action === "send_sample_reminder") {
       return jsonResponse(await sendSampleReminder(user.id));
+    }
+
+    if (action === "send_ltot_summary") {
+      return jsonResponse(await sendLtotSummary(user.id, body.summary));
     }
 
     fail(400, "unknown_action", "Unknown OpsDeck Telegram action.");

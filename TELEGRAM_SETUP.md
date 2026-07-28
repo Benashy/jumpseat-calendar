@@ -8,6 +8,7 @@
 - Fixed jumpseat reminder timing: 75 minutes before Zulu departure.
 - One scheduled reminder per saved flight/date.
 - Telegram messages include flight, route, British-format departure date, request names, BA ID yes/no, available jumpseats, and note text when present.
+- Manual LTOT summary sending is prepared in the app and Edge Function source. The live button appears once the updated Edge Function is deployed and reports LTOT summary support.
 
 ## Secrets To Add In Supabase
 

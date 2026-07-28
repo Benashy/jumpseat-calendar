@@ -5,7 +5,6 @@ const MAGIC_LINK_COOLDOWN_SECONDS = 75;
 const MAGIC_LINK_RATE_LIMIT_SECONDS = 60 * 60;
 const CLOUD_FRESH_HOURS = 1;
 const CLOUD_STALE_HOURS = 24;
-const MINUTES_IN_DAY = 24 * 60;
 
 // Shared DOM handles and app state.
 const elements = {
@@ -73,6 +72,8 @@ const elements = {
   template: document.querySelector("#requestTemplate"),
   ftlForm: document.querySelector("#ftlForm"),
   clearFtlButton: document.querySelector("#clearFtlButton"),
+  sendLtotTelegramButton: document.querySelector("#sendLtotTelegramButton"),
+  ftlTelegramStatus: document.querySelector("#ftlTelegramStatus"),
   dutyStartTime: document.querySelector("#dutyStartTime"),
   dutyStartShell: document.querySelector("#dutyStartShell"),
   latestPushback: document.querySelector("#latestPushback"),
@@ -167,6 +168,7 @@ let ftlLatestOnChocksMinutes = null;
 let lastCloudSuccess = null;
 let isOfflineReadOnly = false;
 let telegramLinked = false;
+let telegramLtotSupported = false;
 
 // Cloud setup and shared status helpers.
 const cloudConfig = window.JUMPSEAT_SUPABASE || {};
@@ -324,6 +326,7 @@ function setOfflineReadOnly(isReadOnly) {
   elements.checkPairingButton.disabled = isReadOnly;
   elements.sendTelegramTestButton.disabled = isReadOnly;
   elements.sendSampleReminderButton.disabled = isReadOnly;
+  updateLtotTelegramButton();
 
   if (isReadOnly) {
     setActiveTab("home");
@@ -475,13 +478,7 @@ function twoDigits(value) {
 }
 
 function formatZuluTime(totalMinutes) {
-  const dayOffset = Math.floor(totalMinutes / MINUTES_IN_DAY);
-  const normalized = ((totalMinutes % MINUTES_IN_DAY) + MINUTES_IN_DAY) % MINUTES_IN_DAY;
-  const hours = Math.floor(normalized / 60);
-  const minutes = normalized % 60;
-  const suffix = dayOffset > 0 ? ` +${dayOffset}` : dayOffset < 0 ? ` ${dayOffset}` : "";
-
-  return `${twoDigits(hours)}:${twoDigits(minutes)}Z${suffix}`;
+  return window.OpsDeckLtot.formatZuluTime(totalMinutes);
 }
 
 function populateSelect(select, start, end, selectedValue, options = {}) {
@@ -627,6 +624,16 @@ function formatDurationFromMinutes(totalMinutes) {
   return `${hours} ${pluralize(hours, "hr")} ${minutes} ${pluralize(minutes, "min")}`;
 }
 
+function formatOptionalDuration(control) {
+  if (!hasDurationValue(control)) return "--";
+  return formatDurationWithZeroMinutes(getDurationMinutes(control));
+}
+
+function formatOptionalMinuteDuration(control) {
+  if (!hasDurationValue(control)) return "--";
+  return formatDurationFromMinutes(getDurationMinutes(control));
+}
+
 function formatDurationWithZeroMinutes(totalMinutes) {
   const absoluteMinutes = Math.abs(Math.round(totalMinutes));
   const hours = Math.floor(absoluteMinutes / 60);
@@ -686,6 +693,58 @@ function updateFtlCountdown() {
   updateCountdownElement(elements.latestTakeoffCountdown, ftlLatestTakeoffMinutes);
 }
 
+function hasCompleteLtotResult() {
+  return ftlLatestOnChocksMinutes !== null &&
+    ftlLatestPushbackMinutes !== null &&
+    ftlLatestTakeoffMinutes !== null;
+}
+
+function setLtotTelegramStatus(message = "", isError = false, isSuccess = false) {
+  elements.ftlTelegramStatus.textContent = message;
+  elements.ftlTelegramStatus.classList.toggle("hidden", !message);
+  elements.ftlTelegramStatus.classList.toggle("status-error", isError);
+  elements.ftlTelegramStatus.classList.toggle("status-success", isSuccess);
+}
+
+function updateLtotTelegramButton() {
+  if (!elements.sendLtotTelegramButton) return;
+
+  const showButton = telegramLtotSupported;
+  const hasResult = hasCompleteLtotResult();
+  elements.sendLtotTelegramButton.classList.toggle("hidden", !showButton);
+
+  if (!showButton) {
+    elements.sendLtotTelegramButton.disabled = true;
+    return;
+  }
+
+  elements.sendLtotTelegramButton.disabled = isOfflineReadOnly || !telegramLinked || !hasResult;
+  elements.sendLtotTelegramButton.title = !telegramLinked
+    ? "Link Telegram in Settings first"
+    : !hasResult
+      ? "Enter final sector timing before sending LTOT"
+      : "";
+}
+
+function buildLtotTelegramSummary() {
+  if (!hasCompleteLtotResult()) return null;
+
+  return {
+    latest_pushback: elements.latestPushback.textContent,
+    latest_takeoff: elements.latestTakeoff.textContent,
+    latest_on_chocks: elements.latestOnChocks.textContent,
+    duty_start: elements.dutyStartTime.value ? `${elements.dutyStartTime.value}Z` : "--",
+    maximum_fdp: formatOptionalDuration(ftlDurationControls.maxFdp),
+    commander_discretion: formatOptionalDuration(ftlDurationControls.discretion),
+    flight_time: formatOptionalDuration(ftlDurationControls.flightTime),
+    taxi_out: formatOptionalMinuteDuration(ftlDurationControls.taxiOut),
+    holding: formatOptionalMinuteDuration(ftlDurationControls.holding),
+    taxi_in: formatOptionalMinuteDuration(ftlDurationControls.taxiIn),
+    contingency: formatOptionalMinuteDuration(ftlDurationControls.contingency),
+    sector_length: elements.sectorLength.textContent,
+  };
+}
+
 function updateContingencyNote(element, contingency) {
   const hasContingency = contingency > 0;
   element.textContent = hasContingency ? formatContingencyIncluded(contingency) : "";
@@ -730,6 +789,7 @@ function resetFinalSectorResults() {
   ftlLatestPushbackMinutes = null;
   ftlLatestTakeoffMinutes = null;
   updateFtlCountdown();
+  updateLtotTelegramButton();
 }
 
 function calculateFtl() {
@@ -741,13 +801,18 @@ function calculateFtl() {
   const dutyStart = hasDutyStart ? getDutyStartMinutes() : 0;
   const maximumFdp = getDurationMinutes(ftlDurationControls.maxFdp);
   const discretion = getDurationMinutes(ftlDurationControls.discretion);
-  const maximumAllowableFdp = maximumFdp + discretion;
-  const sectorLength =
-    getDurationMinutes(ftlDurationControls.taxiOut) +
-    getDurationMinutes(ftlDurationControls.flightTime) +
-    getDurationMinutes(ftlDurationControls.holding) +
-    getDurationMinutes(ftlDurationControls.taxiIn) +
-    getDurationMinutes(ftlDurationControls.contingency);
+  const calculation = window.OpsDeckLtot.calculateLtot({
+    dutyStartMinutes: hasFdpLimit ? dutyStart : null,
+    maximumFdpMinutes: hasMaximumFdp && !hasPartialDiscretion ? maximumFdp : null,
+    discretionMinutes: discretion,
+    taxiOutMinutes: getDurationMinutes(ftlDurationControls.taxiOut),
+    flightTimeMinutes: hasFlightTime ? getDurationMinutes(ftlDurationControls.flightTime) : null,
+    holdingMinutes: getDurationMinutes(ftlDurationControls.holding),
+    taxiInMinutes: getDurationMinutes(ftlDurationControls.taxiIn),
+    contingencyMinutes: getDurationMinutes(ftlDurationControls.contingency),
+  });
+  const maximumAllowableFdp = calculation.maximumAllowableFdpMinutes ?? 0;
+  const sectorLength = calculation.sectorLengthMinutes ?? 0;
   const contingency = getDurationMinutes(ftlDurationControls.contingency);
 
   if (hasMaximumFdp && !hasPartialDiscretion) {
@@ -763,7 +828,7 @@ function calculateFtl() {
     return;
   }
 
-  const latestOnChocks = dutyStart + maximumAllowableFdp;
+  const latestOnChocks = calculation.latestOnChocksMinutes;
   elements.latestOnChocks.textContent = formatZuluTime(latestOnChocks);
   updateResultDiscretionNote(elements.onChocksDiscretion, discretion);
   ftlLatestOnChocksMinutes = latestOnChocks;
@@ -773,12 +838,8 @@ function calculateFtl() {
     return;
   }
 
-  const latestTakeoff = latestOnChocks -
-    getDurationMinutes(ftlDurationControls.flightTime) -
-    getDurationMinutes(ftlDurationControls.holding) -
-    getDurationMinutes(ftlDurationControls.taxiIn) -
-    getDurationMinutes(ftlDurationControls.contingency);
-  const latestPushback = latestTakeoff - getDurationMinutes(ftlDurationControls.taxiOut);
+  const latestTakeoff = calculation.latestTakeoffMinutes;
+  const latestPushback = calculation.latestPushbackMinutes;
 
   elements.latestTakeoff.textContent = formatZuluTime(latestTakeoff);
   elements.latestPushback.textContent = formatZuluTime(latestPushback);
@@ -788,6 +849,7 @@ function calculateFtl() {
   ftlLatestPushbackMinutes = latestPushback;
   ftlLatestTakeoffMinutes = latestTakeoff;
   updateFtlCountdown();
+  updateLtotTelegramButton();
 }
 
 function setupFtlCalculator() {
@@ -1510,6 +1572,7 @@ async function handleSession(session) {
 
   setSignedInState(user);
   if (user && !isSameLoadedUser) await loadCloudRequests();
+  if (user) refreshTelegramStatus();
 }
 
 async function signIn() {
@@ -1604,11 +1667,14 @@ function setTelegramStatus(message, isError = false, isSuccess = false, isWarnin
 
 function resetTelegramPanel() {
   telegramLinked = false;
+  telegramLtotSupported = false;
   elements.telegramLinkState.textContent = "Not linked";
   elements.telegramBotState.textContent = "Bot token pending";
   elements.telegramPairingExpiry.textContent = "Not started";
   elements.telegramPairingCode.textContent = "OD------";
   setTelegramStatus("Telegram reminders are not linked yet.");
+  setLtotTelegramStatus("");
+  updateLtotTelegramButton();
 }
 
 function setTelegramBusy(isBusy) {
@@ -1625,6 +1691,7 @@ function setTelegramBusy(isBusy) {
   elements.checkPairingButton.disabled = isOfflineReadOnly || !botConfigured;
   elements.sendTelegramTestButton.disabled = isOfflineReadOnly || !botConfigured || !telegramLinked;
   elements.sendSampleReminderButton.disabled = isOfflineReadOnly || !botConfigured || !telegramLinked;
+  updateLtotTelegramButton();
 }
 
 async function invokeTelegramAction(action, body = {}) {
@@ -1661,6 +1728,7 @@ async function invokeTelegramAction(action, body = {}) {
 
 function updateTelegramPanel(data) {
   telegramLinked = Boolean(data.linked);
+  telegramLtotSupported = Boolean(data.ltot_summary_supported);
   const linkedLabel = data.linked
     ? `Linked to ${data.chat_label || data.username || "Telegram"}`
     : "Not linked";
@@ -1670,6 +1738,7 @@ function updateTelegramPanel(data) {
   elements.sendTelegramTestButton.disabled = isOfflineReadOnly || !data.linked || !data.bot_configured;
   elements.sendSampleReminderButton.disabled = isOfflineReadOnly || !data.linked || !data.bot_configured;
   elements.checkPairingButton.disabled = isOfflineReadOnly || !data.bot_configured;
+  updateLtotTelegramButton();
 
   if (!data.bot_configured) {
     setTelegramStatus("Add the Telegram bot token in Supabase secrets before checking pairing.", false, false, true);
@@ -1772,6 +1841,29 @@ async function sendSampleReminder() {
   }
 }
 
+async function sendLtotTelegramSummary() {
+  const summary = buildLtotTelegramSummary();
+
+  if (!summary) {
+    setLtotTelegramStatus("Enter final sector timing before sending LTOT.", true);
+    updateLtotTelegramButton();
+    return;
+  }
+
+  elements.sendLtotTelegramButton.disabled = true;
+  setLtotTelegramStatus("Sending LTOT to Telegram...");
+
+  try {
+    await invokeTelegramAction("send_ltot_summary", { summary });
+    setLtotTelegramStatus("LTOT sent to Telegram.", false, true);
+    refreshTelegramStatus();
+  } catch (error) {
+    setLtotTelegramStatus(error.message || "LTOT could not be sent to Telegram.", true);
+  } finally {
+    updateLtotTelegramButton();
+  }
+}
+
 async function returnOnline() {
   setOfflineReadOnly(false);
   elements.authPanel.classList.remove("hidden");
@@ -1868,6 +1960,7 @@ elements.requestForm.addEventListener("keydown", (event) => {
 elements.jumpseatToolTab.addEventListener("click", () => setActiveTool("jumpseat"));
 elements.ftlToolTab.addEventListener("click", () => setActiveTool("ftl"));
 elements.clearFtlButton.addEventListener("click", clearFtlCalculator);
+elements.sendLtotTelegramButton.addEventListener("click", sendLtotTelegramSummary);
 elements.homeTab.addEventListener("click", () => setActiveTab("home"));
 elements.addTab.addEventListener("click", startAdd);
 [elements.requestDate, elements.flightNumber, elements.routeFrom, elements.routeTo, elements.departureTime]

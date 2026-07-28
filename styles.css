@@ -1219,6 +1219,21 @@ button:disabled {
   color: var(--navy);
 }
 
+.ftl-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.ftl-telegram-status {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+  line-height: 1.35;
+  margin: -2px 0 14px;
+}
+
 form,
 .requests-panel {
   display: grid;

@@ -2,10 +2,12 @@
 
 ## Current Status
 
-- Current visible app version: v2.13.
+- Current visible app version: v2.14.
 - The top navigation has been simplified to `Jumpseat` and `LTOT Calculator`, with Jumpseat sub-tabs now `Today` and `Add`.
 - Empty Jumpseat days now use a compact message with a direct `Add request` shortcut.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
+- LTOT calculation logic has been extracted into a shared helper with automated tests for rollover, standalone on-chocks, discretion, contingency, and missing FDP input.
+- A guarded `Send LTOT` Telegram action has been prepared; the button only appears once the deployed Supabase function advertises LTOT summary support.
 - Latest on-chocks now works as a standalone gross-check tool after Duty start time, Maximum FDP, and optional Commander's discretion are entered.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
@@ -20,8 +22,8 @@
 - Telegram testing: continue live operational testing and confirm device notifications arrive reliably.
 - Operational testing: use the app non-operationally alongside the normal BA/manual process, then note anything that slows the user down, is easy to misread, or feels clumsy.
 - Backup system: add a daily GitHub Actions backup of Supabase data, ideally into a private or otherwise secure backup location.
-- LTOT validation checks: add lightweight automated tests for midnight rollover, Commander’s discretion, missing minutes, latest on-chocks only, and final pushback/takeoff calculations.
-- LTOT next polish: consider planned on-chocks input/margin display, copy summary, and a compact calculation breakdown.
+- LTOT next polish: consider planned on-chocks input/margin display and a compact calculation breakdown.
+- Supabase deployment: deploy the updated `opsdeck-telegram` Edge Function before expecting the live `Send LTOT` button to appear.
 - Jumpseat real-use polish: review whether BA ID, queue ordering, search, and daily view are showing exactly what is needed during actual requests.
 - Login reliability: keep watching Supabase magic-link rate limits and mobile sign-in behaviour; consider tuning settings or relying more on password sign-in if magic links remain awkward.
 - Day export/copy option: consider copying a clean text summary of jumpseat requests for messaging or email.
