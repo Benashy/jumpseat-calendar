@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="Flight deck tools for jumpseat requests and latest takeoff time calculations." />
     <title>Ben's OpsDeck</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-69" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-70" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-69" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-70" />
   </head>
   <body>
     <div class="app-shell">
@@ -108,7 +108,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.22</small>
+            <small class="app-version">v2.23</small>
           </section>
 
         </section>
@@ -308,12 +308,12 @@
                 <p class="fdp-time-context"><strong>Time reference:</strong> the LTOT calculator uses Zulu, while FDP table start times use the applicable local or reference report time.</p>
                 <div class="fdp-workflow">
                   <div>
-                    <strong>1. Within London band</strong>
-                    <p>Within the 2-hour wide time zone band around London, crew normally remain acclimatised. Use the local report time at the departure airport and select from Table 2.</p>
+                    <strong>1. Difference of 2 hours or less</strong>
+                    <p>If the departure-airport local time differs from the time zone to which the crew member is acclimatised by no more than 2 hours, use the departure-airport local report time with Table 2.</p>
                   </div>
                   <div>
-                    <strong>2. Outside the band</strong>
-                    <p>If the duty pattern moves outside that 2-hour wide time zone band, use Table 1 to establish whether the crew member is in state B, D, or X.</p>
+                    <strong>2. Difference greater than 2 hours</strong>
+                    <p>Use Table 1 to establish whether the crew member is in state B, D, or X.</p>
                   </div>
                   <div>
                     <strong>3. Select the FDP</strong>
@@ -331,6 +331,12 @@
                   <button class="info-button" id="bdxInfoButton" type="button" aria-label="Open B, D, and X examples">i</button>
                 </div>
                 <p>Use this when the next duty starts in a local time zone more than 2 hours away from the time zone the crew member is currently acclimatised to.</p>
+                <div class="fdp-elapsed-note">
+                  <strong>How to count elapsed time</strong>
+                  <p>Count from the first report at home base at the start of the current rotation until reporting for the next duty. This includes the first FDP and the time spent away. The clock starts again with the next rotation after returning to home base for rest.</p>
+                  <p><strong>New York example:</strong> after reporting in London, operating to New York and reporting again following a 24-hour stay, use the total real time from the London report to the New York report. Using the 4-6 hour row: less than 48 hours gives B, 48 hours to 71 hours 59 minutes gives X, and 72 hours or more gives D.</p>
+                  <p>For a rotation involving several changing time zones, confirm the acclimatisation state using the full OMA process or Global Ops.</p>
+                </div>
                 <p class="fdp-reference-source">Reference: OMA 7.2 Table 1</p>
               </section>
               <div class="fdp-table-scroll" aria-label="Acclimatisation state table">
@@ -350,7 +356,7 @@
                   </thead>
                   <tbody>
                     <tr>
-                      <th scope="row">&lt;4 hr</th>
+                      <th scope="row">&gt;2 and &lt;4 hr</th>
                       <td class="fdp-state-b-cell">B</td>
                       <td class="fdp-state-d-cell">D</td>
                       <td class="fdp-state-d-cell">D</td>
@@ -358,7 +364,7 @@
                       <td class="fdp-state-d-cell">D</td>
                     </tr>
                     <tr>
-                      <th scope="row">4-6 hr</th>
+                      <th scope="row">&ge;4 and &le;6 hr</th>
                       <td class="fdp-state-b-cell">B</td>
                       <td class="fdp-state-x-cell">X</td>
                       <td class="fdp-state-d-cell">D</td>
@@ -366,7 +372,7 @@
                       <td class="fdp-state-d-cell">D</td>
                     </tr>
                     <tr>
-                      <th scope="row">&gt;6-9 hr</th>
+                      <th scope="row">&gt;6 and &le;9 hr</th>
                       <td class="fdp-state-b-cell">B</td>
                       <td class="fdp-state-x-cell">X</td>
                       <td class="fdp-state-x-cell">X</td>
@@ -374,7 +380,7 @@
                       <td class="fdp-state-d-cell">D</td>
                     </tr>
                     <tr>
-                      <th scope="row">&gt;9-12 hr</th>
+                      <th scope="row">&gt;9 and &le;12 hr</th>
                       <td class="fdp-state-b-cell">B</td>
                       <td class="fdp-state-x-cell">X</td>
                       <td class="fdp-state-x-cell">X</td>
@@ -384,6 +390,7 @@
                   </tbody>
                 </table>
               </div>
+              <p class="fdp-table-clarification">OMA displays the first row as &lt;4 hours. It is shown here as &gt;2 and &lt;4 hours because Table 1 is only used when the time difference exceeds 2 hours.</p>
               <div class="fdp-reference-legend">
                 <p><strong class="fdp-state-b-label">B</strong> means the crew member is acclimatised to the local time of the departure time zone.</p>
                 <p><strong class="fdp-state-d-label">D</strong> means the crew member is acclimatised to the local time where the crew member starts his or her next duty.</p>
@@ -456,7 +463,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.22</small>
+            <small class="app-version">v2.23</small>
           </section>
         </section>
 
@@ -521,7 +528,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.22</small>
+            <small class="app-version">v2.23</small>
           </section>
         </section>
       </main>
@@ -546,8 +553,8 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-69"></script>
-    <script src="./ltot-core.js?v=cloud-sync-69"></script>
-    <script src="./app.js?v=cloud-sync-69"></script>
+    <script src="./supabase-config.js?v=cloud-sync-70"></script>
+    <script src="./ltot-core.js?v=cloud-sync-70"></script>
+    <script src="./app.js?v=cloud-sync-70"></script>
   </body>
 </html>

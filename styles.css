@@ -610,6 +610,32 @@ button:disabled {
   padding-left: 10px;
 }
 
+.fdp-elapsed-note {
+  border-left: 3px solid rgba(36, 95, 137, 0.56);
+  color: var(--ink);
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding-left: 10px;
+}
+
+.fdp-elapsed-note > strong {
+  color: var(--navy);
+  font-size: 0.82rem;
+}
+
+.fdp-elapsed-note p {
+  margin: 0;
+}
+
+.fdp-table-clarification {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: -3px 0 0;
+}
+
 .fdp-workflow {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

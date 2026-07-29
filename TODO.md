@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.22.
+- Current visible app version: v2.23.
 - The top navigation has been simplified to `Jumpseat` and `LTOT Calculator`, with Jumpseat sub-tabs now `Today` and `Add`.
 - Empty Jumpseat days now use a compact message with a direct `Add request` shortcut.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -10,7 +10,7 @@
 - A guarded `Send LTOT` Telegram action has been prepared; the button only appears once the deployed Supabase function advertises LTOT summary support.
 - Latest on-chocks now works as a standalone gross-check tool after Duty start time, Maximum FDP, and optional Commander's discretion are entered.
 - LTOT now has a plain-English FDP lookup workflow using London/local departure airport wording, a line-by-line B/D/X selection step, tappable Table 2/Table 3 values, and a B/D/X examples pop-up.
-- v2.22 distinguishes B, D, and X with text-only colours, keeps table selections in place, and restores full-width LTOT inputs on iPad landscape.
+- v2.23 clarifies the 2-hour Table 1 trigger, displays the operationally applicable time-difference ranges, and explains elapsed rotation time with a New York example.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
@@ -27,6 +27,7 @@
 - LTOT next polish: consider planned on-chocks input/margin display and a compact calculation breakdown.
 - LTOT reference data: add the exact BA AOMA reference wording/numbering if it differs from `OMA 7.7 Table 2`.
 - FDP lookup redesign: later consider a guided OMA lookup beside Maximum FDP, while retaining the full tables for manual verification.
+- FDP elapsed-time helper: consider optional first-report and next-report date/time inputs that calculate the elapsed Table 1 column without attempting to automate complex acclimatisation states.
 - Supabase deployment: deploy the updated `opsdeck-telegram` Edge Function before expecting the live `Send LTOT` button to appear.
 - Jumpseat real-use polish: review whether BA ID, queue ordering, search, and daily view are showing exactly what is needed during actual requests.
 - Login reliability: keep watching Supabase magic-link rate limits and mobile sign-in behaviour; consider tuning settings or relying more on password sign-in if magic links remain awkward.
