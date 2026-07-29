@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="Flight deck tools for jumpseat requests and latest takeoff time calculations." />
     <title>Ben's OpsDeck</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-70" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-71" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-70" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-71" />
   </head>
   <body>
     <div class="app-shell">
@@ -108,7 +108,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.23</small>
+            <small class="app-version">v2.24</small>
           </section>
 
         </section>
@@ -308,18 +308,18 @@
                 <p class="fdp-time-context"><strong>Time reference:</strong> the LTOT calculator uses Zulu, while FDP table start times use the applicable local or reference report time.</p>
                 <div class="fdp-workflow">
                   <div>
-                    <strong>1. Difference of 2 hours or less</strong>
-                    <p>If the departure-airport local time differs from the time zone to which the crew member is acclimatised by no more than 2 hours, use the departure-airport local report time with Table 2.</p>
+                    <strong>1. No more than 2 hours from London</strong>
+                    <p>Remain acclimatised to London. Use the departure-airport local report time with Table 2. Table 1 is not required.</p>
                   </div>
                   <div>
-                    <strong>2. Difference greater than 2 hours</strong>
-                    <p>Use Table 1 to establish whether the crew member is in state B, D, or X.</p>
+                    <strong>2. More than 2 hours from London</strong>
+                    <p>Use Table 1 with the time-zone difference and the total elapsed time since the first London report to establish whether the crew member is in state B, D, or X.</p>
                   </div>
                   <div>
                     <strong>3. Select the FDP</strong>
                     <ul class="fdp-workflow-options">
-                      <li><strong class="fdp-state-b-label">B</strong>: use Table 2 with London time.</li>
-                      <li><strong class="fdp-state-d-label">D</strong>: use Table 2 with the departure airport local time.</li>
+                      <li><strong class="fdp-state-b-label">B</strong>: use Table 2 with London time for this London-originating short-haul workflow.</li>
+                      <li><strong class="fdp-state-d-label">D</strong>: use Table 2 with the local report time where the next duty starts.</li>
                       <li><strong class="fdp-state-x-label">X</strong>: use Table 3.</li>
                     </ul>
                   </div>
@@ -331,20 +331,27 @@
                   <button class="info-button" id="bdxInfoButton" type="button" aria-label="Open B, D, and X examples">i</button>
                 </div>
                 <p>Use this when the next duty starts in a local time zone more than 2 hours away from the time zone the crew member is currently acclimatised to.</p>
-                <div class="fdp-elapsed-note">
-                  <strong>How to count elapsed time</strong>
-                  <p>Count from the first report at home base at the start of the current rotation until reporting for the next duty. This includes the first FDP and the time spent away. The clock starts again with the next rotation after returning to home base for rest.</p>
-                  <p><strong>New York example:</strong> after reporting in London, operating to New York and reporting again following a 24-hour stay, use the total real time from the London report to the New York report. Using the 4-6 hour row: less than 48 hours gives B, 48 hours to 71 hours 59 minutes gives X, and 72 hours or more gives D.</p>
-                  <p>For a rotation involving several changing time zones, confirm the acclimatisation state using the full OMA process or Global Ops.</p>
-                </div>
                 <p class="fdp-reference-source">Reference: OMA 7.2 Table 1</p>
               </section>
+              <div class="fdp-direct-guidance">
+                <strong>No more than 2 hours from London</strong>
+                <span>Table 1 is not required. Remain acclimatised to London and use the departure-airport local report time with Table 2.</span>
+              </div>
+              <div class="fdp-mobile-elapsed-heading">
+                <span>Time elapsed since reporting at reference time</span>
+                <button class="info-button" id="elapsedInfoButtonMobile" type="button" aria-label="Open elapsed-time guidance">i</button>
+              </div>
               <div class="fdp-table-scroll" aria-label="Acclimatisation state table">
                 <table class="fdp-reference-table fdp-state-table">
                   <thead>
                     <tr>
                       <th scope="col" rowspan="2">Time difference between reference time and next-duty local time</th>
-                      <th scope="col" colspan="5">Time elapsed since reporting at reference time</th>
+                      <th scope="col" colspan="5">
+                        <span class="fdp-table-heading-with-info">
+                          <span>Time elapsed since reporting at reference time</span>
+                          <button class="info-button" id="elapsedInfoButton" type="button" aria-label="Open elapsed-time guidance">i</button>
+                        </span>
+                      </th>
                     </tr>
                     <tr>
                       <th scope="col">&lt;48 hr</th>
@@ -390,7 +397,7 @@
                   </tbody>
                 </table>
               </div>
-              <p class="fdp-table-clarification">OMA displays the first row as &lt;4 hours. It is shown here as &gt;2 and &lt;4 hours because Table 1 is only used when the time difference exceeds 2 hours.</p>
+              <p class="fdp-table-clarification">OMA Table 1 displays its first row as less than 4 hours. OpsDeck separately shows the no-more-than-2-hours route directly to Table 2, so the first applicable Table 1 range is displayed as more than 2 but less than 4 hours. The underlying OMA values are unchanged.</p>
               <div class="fdp-reference-legend">
                 <p><strong class="fdp-state-b-label">B</strong> means the crew member is acclimatised to the local time of the departure time zone.</p>
                 <p><strong class="fdp-state-d-label">D</strong> means the crew member is acclimatised to the local time where the crew member starts his or her next duty.</p>
@@ -399,7 +406,7 @@
 
               <section>
                 <h3>OMA 7.7 Table 2 - Acclimatised crew</h3>
-                <p>Use when Table 1 gives B or D.</p>
+                <p>Use when Table 1 is not required because the difference from London is no more than 2 hours, or when Table 1 gives B or D.</p>
                 <p class="fdp-reference-source">Reference: OMA 7.7 Table 2</p>
               </section>
               <div class="fdp-table-scroll" id="fdpTableTwoContainer" aria-label="Table 2 maximum FDP for acclimatised crew"></div>
@@ -425,6 +432,21 @@
                 <p><strong class="fdp-state-b-label">B</strong> usually means the time-zone change has not been large enough, or the crew member has not been there long enough, to move the body clock away from the departure time zone. Example: after a short stay in New York, the body clock may still effectively be on London time, so London time is used when entering Table 2.</p>
                 <p><strong class="fdp-state-d-label">D</strong> means the crew member has had time to acclimatise to where the next duty starts. Example: after long enough in New York, use New York local report time with Table 2.</p>
                 <p><strong class="fdp-state-x-label">X</strong> usually follows a larger time-zone change without enough time to fully acclimatise. The crew member is between time zones, so Table 3 is used. Table 3 is generally more restrictive.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-backdrop hidden" id="elapsedInfoDialog" role="dialog" aria-modal="true" aria-labelledby="elapsedInfoTitle">
+            <div class="info-modal">
+              <div class="info-modal-heading">
+                <h3 id="elapsedInfoTitle">How to count elapsed time</h3>
+                <button class="icon-button" id="elapsedInfoCloseButton" type="button" aria-label="Close elapsed-time guidance">×</button>
+              </div>
+              <div class="info-modal-content">
+                <p>Start the clock at the first report in London for the current rotation and stop it at the subsequent down-route report. Include the outbound FDP and all intervening rest or layover time.</p>
+                <p>The clock resets when the rotation ends and the next rotation begins following rest at home base.</p>
+                <p><strong>New York example:</strong> after initially reporting in London, operating to New York, resting, and subsequently reporting in New York, use the total elapsed time from the London report to the New York report. If the applicable time difference is 5 hours, use the 4-6-hour row: less than 48 hours gives B, 48 hours to 71 hours 59 minutes gives X, and 72 hours or more gives D.</p>
+                <p>For a rotation involving further duties after rest periods in several different time zones, confirm the acclimatisation state using the full OMA process or Global Ops.</p>
               </div>
             </div>
           </div>
@@ -463,7 +485,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.23</small>
+            <small class="app-version">v2.24</small>
           </section>
         </section>
 
@@ -528,7 +550,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.23</small>
+            <small class="app-version">v2.24</small>
           </section>
         </section>
       </main>
@@ -553,8 +575,8 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-70"></script>
-    <script src="./ltot-core.js?v=cloud-sync-70"></script>
-    <script src="./app.js?v=cloud-sync-70"></script>
+    <script src="./supabase-config.js?v=cloud-sync-71"></script>
+    <script src="./ltot-core.js?v=cloud-sync-71"></script>
+    <script src="./app.js?v=cloud-sync-71"></script>
   </body>
 </html>

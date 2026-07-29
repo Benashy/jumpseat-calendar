@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.23.
+- Current visible app version: v2.24.
 - The top navigation has been simplified to `Jumpseat` and `LTOT Calculator`, with Jumpseat sub-tabs now `Today` and `Add`.
 - Empty Jumpseat days now use a compact message with a direct `Add request` shortcut.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -11,6 +11,7 @@
 - Latest on-chocks now works as a standalone gross-check tool after Duty start time, Maximum FDP, and optional Commander's discretion are entered.
 - LTOT now has a plain-English FDP lookup workflow using London/local departure airport wording, a line-by-line B/D/X selection step, tappable Table 2/Table 3 values, and a B/D/X examples pop-up.
 - v2.23 clarifies the 2-hour Table 1 trigger, displays the operationally applicable time-difference ranges, and explains elapsed rotation time with a New York example.
+- v2.24 adds a London-specific direct-to-Table-2 guidance band, clarifies B/D/X workflow wording, and moves elapsed-time guidance into a compact information panel.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.

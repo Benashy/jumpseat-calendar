@@ -610,28 +610,10 @@ button:disabled {
   padding-left: 10px;
 }
 
-.fdp-elapsed-note {
-  border-left: 3px solid rgba(36, 95, 137, 0.56);
-  color: var(--ink);
-  display: grid;
-  gap: 6px;
-  margin-top: 10px;
-  padding-left: 10px;
-}
-
-.fdp-elapsed-note > strong {
-  color: var(--navy);
-  font-size: 0.82rem;
-}
-
-.fdp-elapsed-note p {
-  margin: 0;
-}
-
 .fdp-table-clarification {
   color: var(--muted);
   font-size: 0.76rem;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.4;
   margin: -3px 0 0;
 }
@@ -679,6 +661,42 @@ button:disabled {
 
 .fdp-section-heading h3 {
   margin: 0;
+}
+
+.fdp-direct-guidance {
+  display: grid;
+  gap: 3px;
+  border: 1px solid rgba(36, 95, 137, 0.24);
+  border-left: 4px solid rgba(36, 95, 137, 0.68);
+  border-radius: 7px;
+  background: linear-gradient(180deg, rgba(229, 240, 246, 0.9), rgba(242, 247, 248, 0.92));
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  padding: 9px 11px;
+}
+
+.fdp-direct-guidance strong {
+  color: var(--navy);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.fdp-table-heading-with-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  white-space: normal;
+}
+
+.fdp-table-heading-with-info .info-button {
+  color: var(--navy);
+  margin: -8px -7px -8px 0;
+}
+
+.fdp-mobile-elapsed-heading {
+  display: none;
 }
 
 .info-button {
@@ -1822,6 +1840,23 @@ form label {
   .app-shell {
     width: min(100% - 22px, 1180px);
     padding-top: 14px;
+  }
+
+  .fdp-mobile-elapsed-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: var(--navy);
+    font-size: 0.78rem;
+    font-weight: 900;
+    line-height: 1.3;
+    margin-bottom: -5px;
+    padding-left: 9px;
+  }
+
+  .fdp-table-heading-with-info .info-button {
+    visibility: hidden;
   }
 
   .day-summary {

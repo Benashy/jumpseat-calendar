@@ -80,6 +80,10 @@ const elements = {
   bdxInfoButton: document.querySelector("#bdxInfoButton"),
   bdxInfoDialog: document.querySelector("#bdxInfoDialog"),
   bdxInfoCloseButton: document.querySelector("#bdxInfoCloseButton"),
+  elapsedInfoButton: document.querySelector("#elapsedInfoButton"),
+  elapsedInfoButtonMobile: document.querySelector("#elapsedInfoButtonMobile"),
+  elapsedInfoDialog: document.querySelector("#elapsedInfoDialog"),
+  elapsedInfoCloseButton: document.querySelector("#elapsedInfoCloseButton"),
   dutyStartTime: document.querySelector("#dutyStartTime"),
   dutyStartShell: document.querySelector("#dutyStartShell"),
   latestPushback: document.querySelector("#latestPushback"),
@@ -211,6 +215,7 @@ let isOfflineReadOnly = false;
 let telegramLinked = false;
 let telegramLtotSupported = false;
 let selectedFdpReferenceKey = null;
+let elapsedInfoTrigger = null;
 
 // Cloud setup and shared status helpers.
 const cloudConfig = window.JUMPSEAT_SUPABASE || {};
@@ -1072,6 +1077,18 @@ function openBdxInfo() {
 function closeBdxInfo() {
   elements.bdxInfoDialog?.classList.add("hidden");
   elements.bdxInfoButton?.focus();
+}
+
+function openElapsedInfo(event) {
+  elapsedInfoTrigger = event?.currentTarget || null;
+  elements.elapsedInfoDialog?.classList.remove("hidden");
+  elements.elapsedInfoCloseButton?.focus();
+}
+
+function closeElapsedInfo() {
+  elements.elapsedInfoDialog?.classList.add("hidden");
+  elapsedInfoTrigger?.focus();
+  elapsedInfoTrigger = null;
 }
 
 function requestSortValue(request) {
@@ -2161,6 +2178,12 @@ elements.bdxInfoCloseButton?.addEventListener("click", closeBdxInfo);
 elements.bdxInfoDialog?.addEventListener("click", (event) => {
   if (event.target === elements.bdxInfoDialog) closeBdxInfo();
 });
+elements.elapsedInfoButton?.addEventListener("click", openElapsedInfo);
+elements.elapsedInfoButtonMobile?.addEventListener("click", openElapsedInfo);
+elements.elapsedInfoCloseButton?.addEventListener("click", closeElapsedInfo);
+elements.elapsedInfoDialog?.addEventListener("click", (event) => {
+  if (event.target === elements.elapsedInfoDialog) closeElapsedInfo();
+});
 elements.homeTab.addEventListener("click", () => setActiveTab("home"));
 elements.addTab.addEventListener("click", startAdd);
 [elements.requestDate, elements.flightNumber, elements.routeFrom, elements.routeTo, elements.departureTime]
@@ -2219,6 +2242,8 @@ window.addEventListener("online", returnOnline);
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !elements.bdxInfoDialog?.classList.contains("hidden")) {
     closeBdxInfo();
+  } else if (event.key === "Escape" && !elements.elapsedInfoDialog?.classList.contains("hidden")) {
+    closeElapsedInfo();
   }
 });
 
