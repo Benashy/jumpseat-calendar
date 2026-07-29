@@ -610,14 +610,6 @@ button:disabled {
   padding-left: 10px;
 }
 
-.fdp-table-clarification {
-  color: var(--muted);
-  font-size: 0.76rem;
-  font-weight: 500;
-  line-height: 1.4;
-  margin: -3px 0 0;
-}
-
 .fdp-workflow {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -661,25 +653,6 @@ button:disabled {
 
 .fdp-section-heading h3 {
   margin: 0;
-}
-
-.fdp-direct-guidance {
-  display: grid;
-  gap: 3px;
-  border: 1px solid rgba(36, 95, 137, 0.24);
-  border-left: 4px solid rgba(36, 95, 137, 0.68);
-  border-radius: 7px;
-  background: linear-gradient(180deg, rgba(229, 240, 246, 0.9), rgba(242, 247, 248, 0.92));
-  color: var(--muted);
-  font-size: 0.8rem;
-  line-height: 1.4;
-  padding: 9px 11px;
-}
-
-.fdp-direct-guidance strong {
-  color: var(--navy);
-  font-size: 0.82rem;
-  font-weight: 900;
 }
 
 .fdp-table-heading-with-info {
@@ -864,6 +837,35 @@ button:disabled {
 
 .fdp-state-table td.fdp-state-x-cell {
   color: #87621d;
+}
+
+.fdp-state-table tbody tr.fdp-local-row th,
+.fdp-state-table tbody tr.fdp-local-row td {
+  background: #edf5f8;
+  border-bottom-color: rgba(36, 95, 137, 0.24);
+  color: #245f89;
+}
+
+.fdp-state-table tbody tr.fdp-local-row th {
+  border-right-color: rgba(36, 95, 137, 0.24);
+  color: var(--navy);
+}
+
+.fdp-local-row th span,
+.fdp-local-row th small {
+  display: block;
+}
+
+.fdp-local-row th small {
+  margin-top: 3px;
+  color: #245f89;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.fdp-state-table tbody tr.fdp-local-row td {
+  font-size: 0.72rem;
 }
 
 .fdp-state-table thead th:first-child {
