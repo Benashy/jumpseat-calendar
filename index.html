@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="Flight deck tools for jumpseat requests and latest takeoff time calculations." />
     <title>Ben's OpsDeck</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-75" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-76" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-75" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-76" />
   </head>
   <body>
     <div class="app-shell">
@@ -108,7 +108,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.27</small>
+            <small class="app-version">v2.28</small>
           </section>
 
         </section>
@@ -258,14 +258,14 @@
 
               <div class="crew-input-panel" id="flightCrewInputs" role="tabpanel" aria-labelledby="flightCrewTab" aria-hidden="false">
                 <div class="duration-grid">
-                  <label class="duration-control required-duration native-time-control">
+                  <div class="duration-control required-duration native-time-control">
                     <span class="duration-label">Duty start time (Zulu)</span>
                     <span class="time-input-shell is-empty" id="dutyStartShell">
                       <input class="native-time-input" id="dutyStartTime" type="time" aria-label="Flight crew duty start time Zulu" />
                       <span class="time-placeholder" aria-hidden="true">Select time</span>
                     </span>
-                  </label>
-                  <label class="duration-control required-duration">
+                  </div>
+                  <div class="duration-control required-duration">
                     <span class="duration-label">Maximum FDP</span>
                     <span class="duration-picker">
                       <select id="maxFdpHours" aria-label="Flight crew Maximum FDP hours"></select>
@@ -273,8 +273,8 @@
                       <select id="maxFdpMinutes" aria-label="Flight crew Maximum FDP minutes"></select>
                       <small>min</small>
                     </span>
-                  </label>
-                  <label class="duration-control">
+                  </div>
+                  <div class="duration-control">
                     <span class="duration-label">Commander's discretion</span>
                     <span class="duration-picker">
                       <select id="discretionHours" aria-label="Flight crew Commander's discretion hours"></select>
@@ -282,7 +282,7 @@
                       <select id="discretionMinutes" aria-label="Flight crew Commander's discretion minutes"></select>
                       <small>min</small>
                     </span>
-                  </label>
+                  </div>
                 </div>
                 <div class="calculation-strip">
                   <span>Maximum allowable FDP</span>
@@ -292,14 +292,14 @@
 
               <div class="crew-input-panel hidden" id="cabinCrewInputs" role="tabpanel" aria-labelledby="cabinCrewTab" aria-hidden="true">
                 <div class="duration-grid">
-                  <label class="duration-control required-duration native-time-control">
+                  <div class="duration-control required-duration native-time-control">
                     <span class="duration-label">Duty start time (Zulu)</span>
                     <span class="time-input-shell is-empty" id="cabinDutyStartShell">
                       <input class="native-time-input" id="cabinDutyStartTime" type="time" aria-label="Cabin crew duty start time Zulu" />
                       <span class="time-placeholder" aria-hidden="true">Select time</span>
                     </span>
-                  </label>
-                  <label class="duration-control required-duration">
+                  </div>
+                  <div class="duration-control required-duration">
                     <span class="duration-label">Maximum FDP</span>
                     <span class="duration-picker">
                       <select id="cabinMaxFdpHours" aria-label="Cabin crew Maximum FDP hours"></select>
@@ -307,8 +307,8 @@
                       <select id="cabinMaxFdpMinutes" aria-label="Cabin crew Maximum FDP minutes"></select>
                       <small>min</small>
                     </span>
-                  </label>
-                  <label class="duration-control">
+                  </div>
+                  <div class="duration-control">
                     <span class="duration-label">Commander's discretion</span>
                     <span class="duration-picker">
                       <select id="cabinDiscretionHours" aria-label="Cabin crew Commander's discretion hours"></select>
@@ -316,7 +316,7 @@
                       <select id="cabinDiscretionMinutes" aria-label="Cabin crew Commander's discretion minutes"></select>
                       <small>min</small>
                     </span>
-                  </label>
+                  </div>
                 </div>
                 <div class="calculation-strip">
                   <span>Maximum allowable FDP</span>
@@ -328,7 +328,7 @@
             <section class="duration-section" aria-label="Planned sector timings">
               <h3>Final sector timing</h3>
               <div class="duration-grid sector-duration-grid">
-                <label class="duration-control required-duration">
+                <div class="duration-control required-duration">
                   <span class="duration-label">Flight time</span>
                   <span class="duration-picker">
                     <select id="flightTimeHours" aria-label="Flight time hours"></select>
@@ -336,35 +336,35 @@
                     <select id="flightTimeMinutes" aria-label="Flight time minutes"></select>
                     <small>min</small>
                   </span>
-                </label>
-                <label class="duration-control minute-only">
+                </div>
+                <div class="duration-control minute-only">
                   <span class="duration-label">Taxi out</span>
                   <span class="duration-picker">
                     <select id="taxiOutMinutes" aria-label="Taxi out minutes"></select>
                     <small>min</small>
                   </span>
-                </label>
-                <label class="duration-control minute-only">
+                </div>
+                <div class="duration-control minute-only">
                   <span class="duration-label">Holding</span>
                   <span class="duration-picker">
                     <select id="holdingMinutes" aria-label="Holding minutes"></select>
                     <small>min</small>
                   </span>
-                </label>
-                <label class="duration-control minute-only">
+                </div>
+                <div class="duration-control minute-only">
                   <span class="duration-label">Taxi in</span>
                   <span class="duration-picker">
                     <select id="taxiInMinutes" aria-label="Taxi in minutes"></select>
                     <small>min</small>
                   </span>
-                </label>
-                <label class="duration-control minute-only">
+                </div>
+                <div class="duration-control minute-only">
                   <span class="duration-label">Contingency</span>
                   <span class="duration-picker">
                     <select id="contingencyMinutes" aria-label="Contingency minutes"></select>
                     <small>min</small>
                   </span>
-                </label>
+                </div>
               </div>
               <div class="calculation-strip">
                 <span>Anticipated sector length</span>
@@ -566,7 +566,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.27</small>
+            <small class="app-version">v2.28</small>
           </section>
         </section>
 
@@ -631,7 +631,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.27</small>
+            <small class="app-version">v2.28</small>
           </section>
         </section>
       </main>
@@ -656,8 +656,8 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-75"></script>
-    <script src="./ltot-core.js?v=cloud-sync-75"></script>
-    <script src="./app.js?v=cloud-sync-75"></script>
+    <script src="./supabase-config.js?v=cloud-sync-76"></script>
+    <script src="./ltot-core.js?v=cloud-sync-76"></script>
+    <script src="./app.js?v=cloud-sync-76"></script>
   </body>
 </html>
