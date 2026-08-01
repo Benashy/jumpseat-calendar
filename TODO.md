@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.25.
+- Current visible app version: v2.26.
 - The top navigation has been simplified to `Jumpseat` and `LTOT Calculator`, with Jumpseat sub-tabs now `Today` and `Add`.
 - Empty Jumpseat days now use a compact message with a direct `Add request` shortcut.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -13,6 +13,7 @@
 - v2.23 clarifies the 2-hour Table 1 trigger, displays the operationally applicable time-difference ranges, and explains elapsed rotation time with a New York example.
 - v2.24 adds a London-specific direct-to-Table-2 guidance band, clarifies B/D/X workflow wording, and moves elapsed-time guidance into a compact information panel.
 - v2.25 integrates the no-more-than-2-hours London case into Table 1 as a compact blue `Local` row and tightens the three-step lookup wording.
+- v2.26 releases focus from LTOT time and duration selectors when the user taps elsewhere, preventing a completed selector from remaining active on iPad.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.

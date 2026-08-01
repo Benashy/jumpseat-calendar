@@ -1055,6 +1055,16 @@ function setupFtlCalculator() {
   ftlCountdownTimer = window.setInterval(updateFtlCountdown, 1000);
 }
 
+function releaseFtlPickerFocus(event) {
+  const focusedControl = document.activeElement;
+  if (!(focusedControl instanceof HTMLElement)) return;
+  if (!elements.ftlForm.contains(focusedControl)) return;
+  if (!focusedControl.matches('select, input[type="time"]')) return;
+  if (focusedControl === event.target || focusedControl.contains(event.target)) return;
+
+  focusedControl.blur();
+}
+
 function clearFtlCalculator() {
   elements.dutyStartTime.value = "";
   updateDutyStartEmptyState();
@@ -2239,6 +2249,7 @@ elements.sendTelegramTestButton.addEventListener("click", sendTelegramTest);
 elements.sendSampleReminderButton.addEventListener("click", sendSampleReminder);
 window.addEventListener("offline", () => startOfflineMode());
 window.addEventListener("online", returnOnline);
+document.addEventListener("pointerdown", releaseFtlPickerFocus, true);
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !elements.bdxInfoDialog?.classList.contains("hidden")) {
     closeBdxInfo();
