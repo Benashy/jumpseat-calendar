@@ -84,20 +84,44 @@ const elements = {
   elapsedInfoButtonMobile: document.querySelector("#elapsedInfoButtonMobile"),
   elapsedInfoDialog: document.querySelector("#elapsedInfoDialog"),
   elapsedInfoCloseButton: document.querySelector("#elapsedInfoCloseButton"),
+  toggleCabinCrewButton: document.querySelector("#toggleCabinCrewButton"),
+  crewTabs: document.querySelector("#crewTabs"),
+  flightCrewTab: document.querySelector("#flightCrewTab"),
+  cabinCrewTab: document.querySelector("#cabinCrewTab"),
+  flightCrewInputs: document.querySelector("#flightCrewInputs"),
+  cabinCrewInputs: document.querySelector("#cabinCrewInputs"),
   dutyStartTime: document.querySelector("#dutyStartTime"),
   dutyStartShell: document.querySelector("#dutyStartShell"),
+  cabinDutyStartTime: document.querySelector("#cabinDutyStartTime"),
+  cabinDutyStartShell: document.querySelector("#cabinDutyStartShell"),
   latestPushback: document.querySelector("#latestPushback"),
   latestPushbackCountdown: document.querySelector("#latestPushbackCountdown"),
+  pushbackCrewLimit: document.querySelector("#pushbackCrewLimit"),
   pushbackDiscretion: document.querySelector("#pushbackDiscretion"),
   pushbackContingency: document.querySelector("#pushbackContingency"),
   latestTakeoff: document.querySelector("#latestTakeoff"),
   latestTakeoffCountdown: document.querySelector("#latestTakeoffCountdown"),
+  takeoffCrewLimit: document.querySelector("#takeoffCrewLimit"),
   takeoffDiscretion: document.querySelector("#takeoffDiscretion"),
   takeoffContingency: document.querySelector("#takeoffContingency"),
   latestOnChocks: document.querySelector("#latestOnChocks"),
   latestOnChocksCountdown: document.querySelector("#latestOnChocksCountdown"),
+  onChocksCrewLimit: document.querySelector("#onChocksCrewLimit"),
   onChocksDiscretion: document.querySelector("#onChocksDiscretion"),
   maxAllowableFdp: document.querySelector("#maxAllowableFdp"),
+  cabinMaxAllowableFdp: document.querySelector("#cabinMaxAllowableFdp"),
+  crewResults: document.querySelector("#crewResults"),
+  crewComparisonStatus: document.querySelector("#crewComparisonStatus"),
+  flightCrewResultRow: document.querySelector("#flightCrewResultRow"),
+  cabinCrewResultRow: document.querySelector("#cabinCrewResultRow"),
+  flightCrewLimitBadge: document.querySelector("#flightCrewLimitBadge"),
+  cabinCrewLimitBadge: document.querySelector("#cabinCrewLimitBadge"),
+  flightCrewPushback: document.querySelector("#flightCrewPushback"),
+  flightCrewTakeoff: document.querySelector("#flightCrewTakeoff"),
+  flightCrewOnChocks: document.querySelector("#flightCrewOnChocks"),
+  cabinCrewPushback: document.querySelector("#cabinCrewPushback"),
+  cabinCrewTakeoff: document.querySelector("#cabinCrewTakeoff"),
+  cabinCrewOnChocks: document.querySelector("#cabinCrewOnChocks"),
   sectorLength: document.querySelector("#sectorLength"),
   telegramLinkState: document.querySelector("#telegramLinkState"),
   telegramBotState: document.querySelector("#telegramBotState"),
@@ -125,6 +149,26 @@ const ftlDurationControls = {
   discretion: {
     hours: document.querySelector("#discretionHours"),
     minutes: document.querySelector("#discretionMinutes"),
+    maxHours: 2,
+    maxMinutesAtMaxHour: 0,
+    defaultHours: "",
+    defaultMinutes: "",
+    blankDefault: true,
+  },
+  cabinMaxFdp: {
+    hours: document.querySelector("#cabinMaxFdpHours"),
+    minutes: document.querySelector("#cabinMaxFdpMinutes"),
+    minHours: 9,
+    maxHours: 14,
+    maxMinutesAtMaxHour: 0,
+    minuteStep: 5,
+    defaultHours: "",
+    defaultMinutes: "",
+    blankDefault: true,
+  },
+  cabinDiscretion: {
+    hours: document.querySelector("#cabinDiscretionHours"),
+    minutes: document.querySelector("#cabinDiscretionMinutes"),
     maxHours: 2,
     maxMinutesAtMaxHour: 0,
     defaultHours: "",
@@ -214,8 +258,30 @@ let lastCloudSuccess = null;
 let isOfflineReadOnly = false;
 let telegramLinked = false;
 let telegramLtotSupported = false;
-let selectedFdpReferenceKey = null;
+let cabinCrewEnabled = false;
+let activeFtlCrew = "flight";
+let controllingFtlCrew = null;
+const selectedFdpReferenceKeys = { flight: null, cabin: null };
 let elapsedInfoTrigger = null;
+
+const ftlCrewControls = {
+  flight: {
+    label: "Flight crew",
+    dutyStart: elements.dutyStartTime,
+    dutyStartShell: elements.dutyStartShell,
+    maxFdp: ftlDurationControls.maxFdp,
+    discretion: ftlDurationControls.discretion,
+    maxAllowableFdp: elements.maxAllowableFdp,
+  },
+  cabin: {
+    label: "Cabin crew",
+    dutyStart: elements.cabinDutyStartTime,
+    dutyStartShell: elements.cabinDutyStartShell,
+    maxFdp: ftlDurationControls.cabinMaxFdp,
+    discretion: ftlDurationControls.cabinDiscretion,
+    maxAllowableFdp: elements.cabinMaxAllowableFdp,
+  },
+};
 
 // Cloud setup and shared status helpers.
 const cloudConfig = window.JUMPSEAT_SUPABASE || {};
@@ -624,8 +690,8 @@ function durationStringToMinutes(value) {
   return (hours * 60) + minutes;
 }
 
-function currentMaximumFdpTableValue() {
-  const control = ftlDurationControls.maxFdp;
+function currentMaximumFdpTableValue(crewKey = activeFtlCrew) {
+  const control = ftlCrewControls[crewKey].maxFdp;
   if (!hasDurationValue(control)) return "";
   const hours = String(Number(control.hours.value)).padStart(2, "0");
   const minutes = String(Number(control.minutes.value)).padStart(2, "0");
@@ -634,10 +700,11 @@ function currentMaximumFdpTableValue() {
 
 function updateFdpReferenceSelection() {
   const selectedValue = currentMaximumFdpTableValue();
+  const selectedKey = selectedFdpReferenceKeys[activeFtlCrew];
   [elements.fdpTableTwoContainer, elements.fdpTableThreeContainer].forEach((container) => {
     if (!container) return;
     container.querySelectorAll(".fdp-table-button").forEach((button) => {
-      const isSelected = button.dataset.key === selectedFdpReferenceKey && button.dataset.value === selectedValue;
+      const isSelected = button.dataset.key === selectedKey && button.dataset.value === selectedValue;
       button.classList.toggle("is-selected", isSelected);
       button.setAttribute("aria-pressed", String(isSelected));
     });
@@ -656,28 +723,29 @@ function showFdpReferenceStatus(message) {
 }
 
 function setMaximumFdpFromReference(value, rowLabel, columnLabel, tableLabel, referenceKey) {
-  const isSelected = referenceKey === selectedFdpReferenceKey && currentMaximumFdpTableValue() === value;
+  const crew = ftlCrewControls[activeFtlCrew];
+  const isSelected = referenceKey === selectedFdpReferenceKeys[activeFtlCrew] && currentMaximumFdpTableValue() === value;
   if (isSelected) {
-    selectedFdpReferenceKey = null;
-    setDurationControl(ftlDurationControls.maxFdp, "", "");
-    updateDurationIncompleteState(ftlDurationControls.maxFdp);
+    selectedFdpReferenceKeys[activeFtlCrew] = null;
+    setDurationControl(crew.maxFdp, "", "");
+    updateDurationIncompleteState(crew.maxFdp);
     calculateFtl();
     if (document.activeElement?.classList?.contains("fdp-table-button")) {
       document.activeElement.blur();
     }
 
-    showFdpReferenceStatus("Maximum FDP cleared.");
+    showFdpReferenceStatus(`${crew.label} Maximum FDP cleared.`);
     return;
   }
 
-  selectedFdpReferenceKey = referenceKey;
+  selectedFdpReferenceKeys[activeFtlCrew] = referenceKey;
   const { hours, minutes } = durationStringToParts(value);
-  setDurationControl(ftlDurationControls.maxFdp, hours, minutes);
-  updateDurationIncompleteState(ftlDurationControls.maxFdp);
+  setDurationControl(crew.maxFdp, hours, minutes);
+  updateDurationIncompleteState(crew.maxFdp);
   calculateFtl();
 
   showFdpReferenceStatus(
-    `Maximum FDP set to ${formatDurationWithZeroMinutes(durationStringToMinutes(value))} from ${tableLabel}, ${rowLabel}, ${columnLabel}.`
+    `${crew.label} Maximum FDP set to ${formatDurationWithZeroMinutes(durationStringToMinutes(value))} from ${tableLabel}, ${rowLabel}, ${columnLabel}.`
   );
 }
 
@@ -786,16 +854,17 @@ function getDurationMinutes(control) {
   return (Number(control.hours.value) * 60) + Number(control.minutes.value);
 }
 
-function hasDutyStartValue() {
-  return elements.dutyStartTime.value !== "";
+function hasDutyStartValue(crewKey) {
+  return ftlCrewControls[crewKey].dutyStart.value !== "";
 }
 
-function updateDutyStartEmptyState() {
-  elements.dutyStartShell.classList.toggle("is-empty", elements.dutyStartTime.value === "");
+function updateDutyStartEmptyState(crewKey) {
+  const crew = ftlCrewControls[crewKey];
+  crew.dutyStartShell.classList.toggle("is-empty", crew.dutyStart.value === "");
 }
 
-function getDutyStartMinutes() {
-  const [hours, minutes] = elements.dutyStartTime.value.split(":").map(Number);
+function getDutyStartMinutes(crewKey) {
+  const [hours, minutes] = ftlCrewControls[crewKey].dutyStart.value.split(":").map(Number);
   return (hours * 60) + minutes;
 }
 
@@ -914,13 +983,21 @@ function updateLtotTelegramButton() {
 function buildLtotTelegramSummary() {
   if (!hasCompleteLtotResult()) return null;
 
+  const crewKey = controllingFtlCrew === "cabin" ? "cabin" : "flight";
+  const crew = ftlCrewControls[crewKey];
+  const crewLimitLabel = cabinCrewEnabled
+    ? controllingFtlCrew === "joint"
+      ? " (joint crew limit; flight crew inputs shown)"
+      : ` (${crew.label} limit)`
+    : "";
+
   return {
     latest_pushback: elements.latestPushback.textContent,
     latest_takeoff: elements.latestTakeoff.textContent,
     latest_on_chocks: elements.latestOnChocks.textContent,
-    duty_start: elements.dutyStartTime.value ? `${elements.dutyStartTime.value}Z` : "--",
-    maximum_fdp: formatOptionalDuration(ftlDurationControls.maxFdp),
-    commander_discretion: formatOptionalDuration(ftlDurationControls.discretion),
+    duty_start: crew.dutyStart.value ? `${crew.dutyStart.value}Z${crewLimitLabel}` : "--",
+    maximum_fdp: formatOptionalDuration(crew.maxFdp),
+    commander_discretion: formatOptionalDuration(crew.discretion),
     flight_time: formatOptionalDuration(ftlDurationControls.flightTime),
     taxi_out: formatOptionalMinuteDuration(ftlDurationControls.taxiOut),
     holding: formatOptionalMinuteDuration(ftlDurationControls.holding),
@@ -937,14 +1014,14 @@ function updateContingencyNote(element, contingency) {
   element.classList.toggle("is-included", contingency > 0);
 }
 
-function updateMaximumAllowableFdp(maximumAllowableFdp, discretion) {
-  elements.maxAllowableFdp.textContent = formatDurationWithZeroMinutes(maximumAllowableFdp);
+function updateMaximumAllowableFdp(element, maximumAllowableFdp, discretion) {
+  element.textContent = formatDurationWithZeroMinutes(maximumAllowableFdp);
   if (discretion <= 0) return;
 
   const discretionNote = document.createElement("span");
   discretionNote.className = "discretion-note is-active";
   discretionNote.textContent = `(${formatCommanderDiscretion(discretion)})`;
-  elements.maxAllowableFdp.append(discretionNote);
+  element.append(discretionNote);
 }
 
 function updateResultDiscretionNote(element, discretion) {
@@ -953,15 +1030,112 @@ function updateResultDiscretionNote(element, discretion) {
   element.classList.toggle("hidden", !hasDiscretion);
 }
 
-function updateResultDiscretionNotes(discretion) {
-  updateResultDiscretionNote(elements.pushbackDiscretion, discretion);
-  updateResultDiscretionNote(elements.takeoffDiscretion, discretion);
+function updateResultDiscretionText(element, text) {
+  element.textContent = text;
+  element.classList.toggle("hidden", !text);
+}
+
+function getCrewDiscretionMinutes(crewKey) {
+  return getDurationMinutes(ftlCrewControls[crewKey].discretion);
+}
+
+function controllingDiscretionText(controllingCrew) {
+  if (controllingCrew === "flight" || controllingCrew === "cabin") {
+    const discretion = getCrewDiscretionMinutes(controllingCrew);
+    return discretion > 0 ? formatCommanderDiscretion(discretion) : "";
+  }
+
+  if (controllingCrew !== "joint") return "";
+
+  const flightDiscretion = getCrewDiscretionMinutes("flight");
+  const cabinDiscretion = getCrewDiscretionMinutes("cabin");
+  if (flightDiscretion === cabinDiscretion) {
+    return flightDiscretion > 0 ? formatCommanderDiscretion(flightDiscretion) : "";
+  }
+
+  const parts = [];
+  if (flightDiscretion > 0) parts.push(`Flight crew ${formatDurationWithZeroMinutes(flightDiscretion)}`);
+  if (cabinDiscretion > 0) parts.push(`Cabin crew ${formatDurationWithZeroMinutes(cabinDiscretion)}`);
+  return parts.length ? `${parts.join("; ")} Commander's discretion included` : "";
+}
+
+function updateResultDiscretionNotes(text) {
+  updateResultDiscretionText(elements.pushbackDiscretion, text);
+  updateResultDiscretionText(elements.takeoffDiscretion, text);
+}
+
+function updateCrewLimitSources(controllingCrew, hasFinalSector) {
+  const labels = {
+    flight: "Flight crew limit",
+    cabin: "Cabin crew limit",
+    joint: "Joint crew limit",
+  };
+  const label = cabinCrewEnabled ? labels[controllingCrew] || "" : "";
+
+  [elements.pushbackCrewLimit, elements.takeoffCrewLimit].forEach((element) => {
+    element.textContent = hasFinalSector ? label : "";
+    element.classList.toggle("hidden", !hasFinalSector || !label);
+  });
+  elements.onChocksCrewLimit.textContent = label;
+  elements.onChocksCrewLimit.classList.toggle("hidden", !label);
+}
+
+function crewResultTime(result, property) {
+  const value = result?.[property];
+  return Number.isFinite(value) ? formatZuluTime(value) : "--:--Z";
+}
+
+function updateCrewComparison(comparison) {
+  elements.crewResults.classList.toggle("hidden", !cabinCrewEnabled);
+  if (!cabinCrewEnabled) return;
+
+  const resultElements = {
+    flight: {
+      result: comparison.flightCrew,
+      row: elements.flightCrewResultRow,
+      badge: elements.flightCrewLimitBadge,
+      pushback: elements.flightCrewPushback,
+      takeoff: elements.flightCrewTakeoff,
+      onChocks: elements.flightCrewOnChocks,
+    },
+    cabin: {
+      result: comparison.cabinCrew,
+      row: elements.cabinCrewResultRow,
+      badge: elements.cabinCrewLimitBadge,
+      pushback: elements.cabinCrewPushback,
+      takeoff: elements.cabinCrewTakeoff,
+      onChocks: elements.cabinCrewOnChocks,
+    },
+  };
+
+  Object.entries(resultElements).forEach(([crewKey, view]) => {
+    view.pushback.textContent = crewResultTime(view.result, "latestPushbackMinutes");
+    view.takeoff.textContent = crewResultTime(view.result, "latestTakeoffMinutes");
+    view.onChocks.textContent = crewResultTime(view.result, "latestOnChocksMinutes");
+    const isLimiting = comparison.controllingCrew === crewKey || comparison.controllingCrew === "joint";
+    view.row.classList.toggle("is-limiting", isLimiting);
+    view.badge.textContent = comparison.controllingCrew === "joint"
+      ? "Joint limit"
+      : comparison.controllingCrew === crewKey
+        ? "Limiting"
+        : "";
+  });
+
+  const status = comparison.controllingCrew === "flight"
+    ? "Flight crew limit applies"
+    : comparison.controllingCrew === "cabin"
+      ? "Cabin crew limit applies"
+      : comparison.controllingCrew === "joint"
+        ? "Equal crew limits"
+        : "Complete both crew limits";
+  elements.crewComparisonStatus.textContent = status;
 }
 
 function resetFtlResults() {
   elements.latestOnChocks.textContent = "--:--Z";
   ftlLatestOnChocksMinutes = null;
   updateResultDiscretionNote(elements.onChocksDiscretion, 0);
+  updateCrewLimitSources(null, false);
   resetFinalSectorResults();
 }
 
@@ -970,86 +1144,168 @@ function resetFinalSectorResults() {
   elements.latestPushback.textContent = "--:--Z";
   updateContingencyNote(elements.pushbackContingency, 0);
   updateContingencyNote(elements.takeoffContingency, 0);
-  updateResultDiscretionNotes(0);
+  updateResultDiscretionNotes("");
+  elements.pushbackCrewLimit.classList.add("hidden");
+  elements.takeoffCrewLimit.classList.add("hidden");
   ftlLatestPushbackMinutes = null;
   ftlLatestTakeoffMinutes = null;
   updateFtlCountdown();
   updateLtotTelegramButton();
 }
 
+function buildCrewFtlInput(crewKey) {
+  const crew = ftlCrewControls[crewKey];
+  const hasDutyStart = hasDutyStartValue(crewKey);
+  const hasMaximumFdp = hasDurationValue(crew.maxFdp);
+  const hasPartialDiscretion = hasPartialDurationValue(crew.discretion);
+
+  return {
+    dutyStartMinutes: hasDutyStart ? getDutyStartMinutes(crewKey) : null,
+    maximumFdpMinutes: hasMaximumFdp && !hasPartialDiscretion
+      ? getDurationMinutes(crew.maxFdp)
+      : null,
+    discretionMinutes: getDurationMinutes(crew.discretion),
+  };
+}
+
+function updateCrewMaximumAllowableFdp(crewKey, calculation) {
+  const crew = ftlCrewControls[crewKey];
+  const hasMaximumFdp = hasDurationValue(crew.maxFdp);
+  const hasPartialDiscretion = hasPartialDurationValue(crew.discretion);
+
+  if (hasMaximumFdp && !hasPartialDiscretion && Number.isFinite(calculation?.maximumAllowableFdpMinutes)) {
+    updateMaximumAllowableFdp(
+      crew.maxAllowableFdp,
+      calculation.maximumAllowableFdpMinutes,
+      getDurationMinutes(crew.discretion)
+    );
+  } else {
+    crew.maxAllowableFdp.textContent = "--";
+  }
+}
+
 function calculateFtl() {
-  const hasDutyStart = hasDutyStartValue();
-  const hasMaximumFdp = hasDurationValue(ftlDurationControls.maxFdp);
   const hasFlightTime = hasDurationValue(ftlDurationControls.flightTime);
-  const hasPartialDiscretion = hasPartialDurationValue(ftlDurationControls.discretion);
-  const hasFdpLimit = hasDutyStart && hasMaximumFdp && !hasPartialDiscretion;
-  const dutyStart = hasDutyStart ? getDutyStartMinutes() : 0;
-  const maximumFdp = getDurationMinutes(ftlDurationControls.maxFdp);
-  const discretion = getDurationMinutes(ftlDurationControls.discretion);
-  const calculation = window.OpsDeckLtot.calculateLtot({
-    dutyStartMinutes: hasFdpLimit ? dutyStart : null,
-    maximumFdpMinutes: hasMaximumFdp && !hasPartialDiscretion ? maximumFdp : null,
-    discretionMinutes: discretion,
+  const sectorTiming = {
     taxiOutMinutes: getDurationMinutes(ftlDurationControls.taxiOut),
     flightTimeMinutes: hasFlightTime ? getDurationMinutes(ftlDurationControls.flightTime) : null,
     holdingMinutes: getDurationMinutes(ftlDurationControls.holding),
     taxiInMinutes: getDurationMinutes(ftlDurationControls.taxiIn),
     contingencyMinutes: getDurationMinutes(ftlDurationControls.contingency),
+  };
+  const comparison = window.OpsDeckLtot.calculateCrewLtot({
+    flightCrew: buildCrewFtlInput("flight"),
+    cabinCrew: buildCrewFtlInput("cabin"),
+    cabinCrewEnabled,
+    sectorTiming,
   });
-  const maximumAllowableFdp = calculation.maximumAllowableFdpMinutes ?? 0;
-  const sectorLength = calculation.sectorLengthMinutes ?? 0;
-  const contingency = getDurationMinutes(ftlDurationControls.contingency);
+  const sectorLength = comparison.flightCrew.sectorLengthMinutes ?? 0;
+  const contingency = sectorTiming.contingencyMinutes;
 
-  if (hasMaximumFdp && !hasPartialDiscretion) {
-    updateMaximumAllowableFdp(maximumAllowableFdp, discretion);
-  } else {
-    elements.maxAllowableFdp.textContent = "--";
-  }
+  controllingFtlCrew = comparison.controllingCrew;
+  updateCrewMaximumAllowableFdp("flight", comparison.flightCrew);
+  updateCrewMaximumAllowableFdp("cabin", comparison.cabinCrew);
+  updateCrewComparison(comparison);
   updateFdpReferenceSelection();
-
   elements.sectorLength.textContent = hasFlightTime ? formatDurationWithZeroMinutes(sectorLength) : "--";
 
-  if (!hasFdpLimit) {
+  const controllingResult = comparison.controllingResult;
+  if (!controllingResult) {
     resetFtlResults();
     return;
   }
 
-  const latestOnChocks = calculation.latestOnChocksMinutes;
+  const discretionText = controllingDiscretionText(comparison.controllingCrew);
+  const latestOnChocks = controllingResult.latestOnChocksMinutes;
   elements.latestOnChocks.textContent = formatZuluTime(latestOnChocks);
-  updateResultDiscretionNote(elements.onChocksDiscretion, discretion);
+  updateResultDiscretionText(elements.onChocksDiscretion, discretionText);
   ftlLatestOnChocksMinutes = latestOnChocks;
+  updateCrewLimitSources(comparison.controllingCrew, hasFlightTime);
 
   if (!hasFlightTime) {
     resetFinalSectorResults();
+    updateFtlCountdown();
     return;
   }
 
-  const latestTakeoff = calculation.latestTakeoffMinutes;
-  const latestPushback = calculation.latestPushbackMinutes;
-
+  const latestTakeoff = controllingResult.latestTakeoffMinutes;
+  const latestPushback = controllingResult.latestPushbackMinutes;
   elements.latestTakeoff.textContent = formatZuluTime(latestTakeoff);
   elements.latestPushback.textContent = formatZuluTime(latestPushback);
   updateContingencyNote(elements.pushbackContingency, contingency);
   updateContingencyNote(elements.takeoffContingency, contingency);
-  updateResultDiscretionNotes(discretion);
+  updateResultDiscretionNotes(discretionText);
   ftlLatestPushbackMinutes = latestPushback;
   ftlLatestTakeoffMinutes = latestTakeoff;
   updateFtlCountdown();
   updateLtotTelegramButton();
 }
 
+function renderFtlCrewMode() {
+  const showCabin = cabinCrewEnabled;
+  elements.crewTabs.classList.toggle("hidden", !showCabin);
+  elements.crewResults.classList.toggle("hidden", !showCabin);
+  elements.toggleCabinCrewButton.textContent = showCabin ? "Remove cabin crew" : "Add cabin crew";
+  elements.toggleCabinCrewButton.setAttribute("aria-expanded", String(showCabin));
+
+  const cabinActive = showCabin && activeFtlCrew === "cabin";
+  elements.flightCrewTab.classList.toggle("active", !cabinActive);
+  elements.flightCrewTab.setAttribute("aria-selected", String(!cabinActive));
+  elements.cabinCrewTab.classList.toggle("active", cabinActive);
+  elements.cabinCrewTab.setAttribute("aria-selected", String(cabinActive));
+  elements.flightCrewInputs.classList.toggle("hidden", cabinActive);
+  elements.flightCrewInputs.setAttribute("aria-hidden", String(cabinActive));
+  elements.cabinCrewInputs.classList.toggle("hidden", !cabinActive);
+  elements.cabinCrewInputs.setAttribute("aria-hidden", String(!cabinActive));
+}
+
+function setActiveFtlCrew(crewKey) {
+  if (crewKey === "cabin" && !cabinCrewEnabled) return;
+  activeFtlCrew = crewKey;
+  renderFtlCrewMode();
+  updateFdpReferenceSelection();
+}
+
+function resetCrewFtlInputs(crewKey) {
+  const crew = ftlCrewControls[crewKey];
+  crew.dutyStart.value = "";
+  updateDutyStartEmptyState(crewKey);
+  setDurationControl(crew.maxFdp, crew.maxFdp.defaultHours, crew.maxFdp.defaultMinutes);
+  setDurationControl(crew.discretion, crew.discretion.defaultHours, crew.discretion.defaultMinutes);
+  selectedFdpReferenceKeys[crewKey] = null;
+}
+
+function toggleCabinCrew() {
+  cabinCrewEnabled = !cabinCrewEnabled;
+  if (cabinCrewEnabled) {
+    activeFtlCrew = "cabin";
+  } else {
+    resetCrewFtlInputs("cabin");
+    activeFtlCrew = "flight";
+  }
+  renderFtlCrewMode();
+  calculateFtl();
+}
+
 function setupFtlCalculator() {
   Object.values(ftlDurationControls).forEach(setupDurationControl);
   renderFdpReferenceTables();
-  elements.dutyStartTime.addEventListener("input", () => {
-    updateDutyStartEmptyState();
-    calculateFtl();
+  Object.keys(ftlCrewControls).forEach((crewKey) => {
+    const crew = ftlCrewControls[crewKey];
+    crew.dutyStart.addEventListener("input", () => {
+      updateDutyStartEmptyState(crewKey);
+      calculateFtl();
+    });
+    crew.dutyStart.addEventListener("change", () => {
+      updateDutyStartEmptyState(crewKey);
+      calculateFtl();
+    });
+    updateDutyStartEmptyState(crewKey);
   });
-  elements.dutyStartTime.addEventListener("change", () => {
-    updateDutyStartEmptyState();
-    calculateFtl();
-  });
-  updateDutyStartEmptyState();
+  elements.toggleCabinCrewButton.addEventListener("click", toggleCabinCrew);
+  elements.flightCrewTab.addEventListener("click", () => setActiveFtlCrew("flight"));
+  elements.cabinCrewTab.addEventListener("click", () => setActiveFtlCrew("cabin"));
+  renderFtlCrewMode();
   calculateFtl();
   window.clearInterval(ftlCountdownTimer);
   ftlCountdownTimer = window.setInterval(updateFtlCountdown, 1000);
@@ -1066,9 +1322,12 @@ function releaseFtlPickerFocus(event) {
 }
 
 function clearFtlCalculator() {
-  elements.dutyStartTime.value = "";
-  updateDutyStartEmptyState();
-  selectedFdpReferenceKey = null;
+  ftlCrewControls.flight.dutyStart.value = "";
+  ftlCrewControls.cabin.dutyStart.value = "";
+  updateDutyStartEmptyState("flight");
+  updateDutyStartEmptyState("cabin");
+  selectedFdpReferenceKeys.flight = null;
+  selectedFdpReferenceKeys.cabin = null;
   window.clearTimeout(fdpReferenceStatusTimer);
   elements.fdpReferenceStatus?.classList.add("hidden");
 
@@ -1076,6 +1335,10 @@ function clearFtlCalculator() {
     setDurationControl(control, control.defaultHours ?? 0, control.defaultMinutes ?? 0);
   });
 
+  cabinCrewEnabled = false;
+  activeFtlCrew = "flight";
+  controllingFtlCrew = null;
+  renderFtlCrewMode();
   calculateFtl();
 }
 

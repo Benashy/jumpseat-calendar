@@ -21,6 +21,15 @@
     return `${twoDigits(hours)}:${twoDigits(minutes)}Z${suffix}`;
   }
 
+  function alignToNearestOperationalDay(value, reference) {
+    if (!isFiniteMinute(value) || !isFiniteMinute(reference)) return value;
+
+    let aligned = value;
+    while ((aligned - reference) > (MINUTES_IN_DAY / 2)) aligned -= MINUTES_IN_DAY;
+    while ((aligned - reference) < -(MINUTES_IN_DAY / 2)) aligned += MINUTES_IN_DAY;
+    return aligned;
+  }
+
   function calculateLtot(input) {
     const dutyStartMinutes = input.dutyStartMinutes;
     const maximumFdpMinutes = input.maximumFdpMinutes;
@@ -72,8 +81,68 @@
     };
   }
 
+  function calculateCrewLtot(input) {
+    const sectorTiming = input.sectorTiming || {};
+    const flightCrewInput = { ...(input.flightCrew || {}) };
+    const cabinCrewInput = { ...(input.cabinCrew || {}) };
+    if (isFiniteMinute(flightCrewInput.dutyStartMinutes) && isFiniteMinute(cabinCrewInput.dutyStartMinutes)) {
+      cabinCrewInput.dutyStartMinutes = alignToNearestOperationalDay(
+        cabinCrewInput.dutyStartMinutes,
+        flightCrewInput.dutyStartMinutes
+      );
+    }
+
+    const flightCrew = calculateLtot({ ...sectorTiming, ...flightCrewInput });
+    const cabinCrewEnabled = Boolean(input.cabinCrewEnabled);
+    const cabinCrew = cabinCrewEnabled
+      ? calculateLtot({ ...sectorTiming, ...cabinCrewInput })
+      : null;
+    const flightComplete = isFiniteMinute(flightCrew.latestOnChocksMinutes);
+    const cabinComplete = Boolean(cabinCrew && isFiniteMinute(cabinCrew.latestOnChocksMinutes));
+
+    if (!cabinCrewEnabled) {
+      return {
+        flightCrew,
+        cabinCrew,
+        comparisonComplete: flightComplete,
+        controllingCrew: flightComplete ? "flight" : null,
+        controllingResult: flightComplete ? flightCrew : null,
+      };
+    }
+
+    if (!flightComplete || !cabinComplete) {
+      return {
+        flightCrew,
+        cabinCrew,
+        comparisonComplete: false,
+        controllingCrew: null,
+        controllingResult: null,
+      };
+    }
+
+    if (flightCrew.latestOnChocksMinutes === cabinCrew.latestOnChocksMinutes) {
+      return {
+        flightCrew,
+        cabinCrew,
+        comparisonComplete: true,
+        controllingCrew: "joint",
+        controllingResult: flightCrew,
+      };
+    }
+
+    const flightControls = flightCrew.latestOnChocksMinutes < cabinCrew.latestOnChocksMinutes;
+    return {
+      flightCrew,
+      cabinCrew,
+      comparisonComplete: true,
+      controllingCrew: flightControls ? "flight" : "cabin",
+      controllingResult: flightControls ? flightCrew : cabinCrew,
+    };
+  }
+
   const api = {
     MINUTES_IN_DAY,
+    calculateCrewLtot,
     calculateLtot,
     formatZuluTime,
   };

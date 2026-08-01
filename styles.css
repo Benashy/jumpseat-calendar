@@ -538,6 +538,89 @@ button:disabled {
   color: var(--warn);
 }
 
+.ftl-results .crew-limit-source {
+  color: var(--accent);
+}
+
+.crew-results {
+  border: 1px solid rgba(23, 58, 86, 0.16);
+  border-radius: 8px;
+  background: var(--panel-soft);
+  display: grid;
+  gap: 8px;
+  margin: -6px 0 16px;
+  padding: 10px 12px;
+}
+
+.crew-results-heading {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.crew-results-heading strong {
+  color: var(--navy);
+  font-size: 0.85rem;
+}
+
+.crew-results-heading small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.crew-result-grid {
+  display: grid;
+}
+
+.crew-result-row {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(112px, 1.2fr) repeat(3, minmax(80px, 1fr));
+  min-width: 0;
+  padding: 8px;
+}
+
+.crew-result-row + .crew-result-row {
+  border-top: 1px solid rgba(23, 58, 86, 0.1);
+}
+
+.crew-result-header {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 850;
+  padding-bottom: 5px;
+  padding-top: 2px;
+}
+
+.crew-result-row strong {
+  color: var(--navy);
+  font-size: 0.84rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.crew-result-name {
+  color: var(--ink);
+  display: grid;
+  font-size: 0.78rem;
+  font-weight: 900;
+  gap: 2px;
+}
+
+.crew-result-name small {
+  color: var(--accent);
+  font-size: 0.66rem;
+  font-weight: 900;
+}
+
+.crew-result-row.is-limiting {
+  background: rgba(198, 161, 90, 0.12);
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
 .guidance-panel {
   border: 1px solid rgba(198, 161, 90, 0.28);
   border-radius: 8px;
@@ -1085,6 +1168,46 @@ strong.fdp-state-x-label {
   color: var(--navy);
   font-size: 0.95rem;
   margin-bottom: 1px;
+}
+
+.duration-section-heading {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.compact-button {
+  min-height: 36px;
+  padding: 0 11px;
+}
+
+.crew-tabs {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.crew-tab {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: linear-gradient(180deg, #fffefa, #f4ecd9);
+  color: var(--navy);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.crew-tab.active {
+  border-color: rgba(198, 161, 90, 0.48);
+  background: var(--navy);
+  color: #fff;
+}
+
+.crew-input-panel {
+  display: grid;
+  gap: 13px;
 }
 
 .calculation-strip {
@@ -1919,6 +2042,33 @@ form label {
 
   .ftl-results {
     grid-template-columns: 1fr;
+  }
+
+  .crew-results-heading {
+    align-items: flex-start;
+  }
+
+  .crew-results-heading small {
+    text-align: right;
+  }
+
+  .crew-result-row {
+    gap: 4px;
+    grid-template-columns: minmax(74px, 1.1fr) repeat(3, minmax(0, 1fr));
+    padding: 7px 4px;
+  }
+
+  .crew-result-row strong {
+    font-size: 0.69rem;
+  }
+
+  .crew-result-header,
+  .crew-result-name {
+    font-size: 0.66rem;
+  }
+
+  .crew-result-name small {
+    font-size: 0.6rem;
   }
 
   .duration-control {

@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { calculateLtot, formatZuluTime } = require("../ltot-core");
+const { calculateCrewLtot, calculateLtot, formatZuluTime } = require("../ltot-core");
 
 const hr = (hours) => hours * 60;
 
@@ -95,4 +95,117 @@ test("missing FDP inputs prevent any latest time calculation", () => {
   assert.equal(result.latestOnChocksMinutes, null);
   assert.equal(result.latestTakeoffMinutes, null);
   assert.equal(result.latestPushbackMinutes, null);
+});
+
+test("selects the earlier cabin crew FDP limit as controlling", () => {
+  const result = calculateCrewLtot({
+    cabinCrewEnabled: true,
+    flightCrew: {
+      dutyStartMinutes: hr(6),
+      maximumFdpMinutes: hr(13),
+      discretionMinutes: 0,
+    },
+    cabinCrew: {
+      dutyStartMinutes: hr(5) + 30,
+      maximumFdpMinutes: hr(12),
+      discretionMinutes: 0,
+    },
+    sectorTiming: {
+      taxiOutMinutes: 15,
+      flightTimeMinutes: hr(2),
+      holdingMinutes: 15,
+      taxiInMinutes: 15,
+      contingencyMinutes: 5,
+    },
+  });
+
+  assert.equal(result.comparisonComplete, true);
+  assert.equal(result.controllingCrew, "cabin");
+  assert.equal(formatZuluTime(result.flightCrew.latestOnChocksMinutes), "19:00Z");
+  assert.equal(formatZuluTime(result.cabinCrew.latestOnChocksMinutes), "17:30Z");
+  assert.equal(result.controllingResult, result.cabinCrew);
+});
+
+test("preserves the existing single flight crew calculation by default", () => {
+  const result = calculateCrewLtot({
+    flightCrew: {
+      dutyStartMinutes: hr(7),
+      maximumFdpMinutes: hr(12) + 30,
+      discretionMinutes: 0,
+    },
+    sectorTiming: {
+      taxiOutMinutes: 15,
+      flightTimeMinutes: hr(2),
+      holdingMinutes: 15,
+      taxiInMinutes: 15,
+      contingencyMinutes: 0,
+    },
+  });
+
+  assert.equal(result.cabinCrew, null);
+  assert.equal(result.controllingCrew, "flight");
+  assert.equal(formatZuluTime(result.controllingResult.latestOnChocksMinutes), "19:30Z");
+  assert.equal(formatZuluTime(result.controllingResult.latestPushbackMinutes), "16:45Z");
+});
+
+test("reports a joint limit when both crew groups have the same latest on-chocks", () => {
+  const result = calculateCrewLtot({
+    cabinCrewEnabled: true,
+    flightCrew: {
+      dutyStartMinutes: hr(6),
+      maximumFdpMinutes: hr(13),
+      discretionMinutes: 0,
+    },
+    cabinCrew: {
+      dutyStartMinutes: hr(7),
+      maximumFdpMinutes: hr(12),
+      discretionMinutes: 0,
+    },
+  });
+
+  assert.equal(result.comparisonComplete, true);
+  assert.equal(result.controllingCrew, "joint");
+  assert.equal(formatZuluTime(result.controllingResult.latestOnChocksMinutes), "19:00Z");
+});
+
+test("does not declare a controlling limit until both enabled crew groups are complete", () => {
+  const result = calculateCrewLtot({
+    cabinCrewEnabled: true,
+    flightCrew: {
+      dutyStartMinutes: hr(6),
+      maximumFdpMinutes: hr(13),
+      discretionMinutes: 0,
+    },
+    cabinCrew: {
+      dutyStartMinutes: hr(6) + 30,
+      maximumFdpMinutes: null,
+      discretionMinutes: 0,
+    },
+  });
+
+  assert.equal(formatZuluTime(result.flightCrew.latestOnChocksMinutes), "19:00Z");
+  assert.equal(result.cabinCrew.latestOnChocksMinutes, null);
+  assert.equal(result.comparisonComplete, false);
+  assert.equal(result.controllingCrew, null);
+  assert.equal(result.controllingResult, null);
+});
+
+test("compares split crew reports correctly across midnight", () => {
+  const result = calculateCrewLtot({
+    cabinCrewEnabled: true,
+    flightCrew: {
+      dutyStartMinutes: hr(23) + 30,
+      maximumFdpMinutes: hr(13),
+      discretionMinutes: 0,
+    },
+    cabinCrew: {
+      dutyStartMinutes: 15,
+      maximumFdpMinutes: hr(11) + 30,
+      discretionMinutes: 0,
+    },
+  });
+
+  assert.equal(formatZuluTime(result.flightCrew.latestOnChocksMinutes), "12:30Z +1");
+  assert.equal(formatZuluTime(result.cabinCrew.latestOnChocksMinutes), "11:45Z +1");
+  assert.equal(result.controllingCrew, "cabin");
 });
