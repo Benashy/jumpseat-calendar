@@ -23,13 +23,13 @@
 - Supabase Cron is active every 5 minutes, using pg_net with a 30-second timeout.
 - Live Telegram reminder test passed on 23 July 2026: BA123 sent at `09:35:02Z`.
 - Telegram reminder wording now uses British date format, removes the redundant timing line, and includes notes directly when present.
+- The current day-to-day workflow is considered well optimised; further functional additions should be driven by operational use rather than added speculatively.
 
 ## Next Priorities
 
 - Telegram testing: continue live operational testing and confirm device notifications arrive reliably.
 - Operational testing: use the app non-operationally alongside the normal BA/manual process, then note anything that slows the user down, is easy to misread, or feels clumsy.
 - Backup system: add a daily GitHub Actions backup of Supabase data, ideally into a private or otherwise secure backup location.
-- LTOT next polish: consider planned on-chocks input/margin display and a compact calculation breakdown.
 - LTOT reference data: add the exact BA AOMA reference wording/numbering if it differs from `OMA 7.7 Table 2`.
 - FDP lookup redesign: later consider a guided OMA lookup beside Maximum FDP, while retaining the full tables for manual verification.
 - FDP elapsed-time helper: consider optional first-report and next-report date/time inputs that calculate the elapsed Table 1 column without attempting to automate complex acclimatisation states.
@@ -38,3 +38,10 @@
 - Login reliability: keep watching Supabase magic-link rate limits and mobile sign-in behaviour; consider tuning settings or relying more on password sign-in if magic links remain awkward.
 - Day export/copy option: consider copying a clean text summary of jumpseat requests for messaging or email.
 - Code organisation audit: separate Jumpseat and LTOT logic more clearly before adding more tools.
+
+## Future Considerations (Deliberately Deferred)
+
+- Scheduled on-chocks: optionally enter the scheduled on-chocks time in Zulu and show the planned margin against the controlling latest on-chocks time. This would be informational only and must handle midnight rollover correctly.
+- BA form status: optionally add a single `BA form submitted` status per flight, shown discreetly in green on the flight card.
+- Telegram behaviour: if BA form status is added, decide whether a completed flight should suppress the 75-minute reminder or receive a brief confirmation instead.
+- LTOT scope: retain one agreed calculation snapshot without revision history unless operational experience demonstrates a genuine need for multiple revisions.
