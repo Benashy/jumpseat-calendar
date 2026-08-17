@@ -34,10 +34,10 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-79" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-80" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-79" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-80" />
   </head>
   <body>
     <div class="app-shell">
@@ -133,7 +133,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.31</small>
+            <small class="app-version">v2.32</small>
           </section>
 
         </section>
@@ -272,16 +272,10 @@
 
               <div class="crew-input-panel" id="flightCrewInputs" role="tabpanel" aria-labelledby="flightCrewTab" aria-hidden="false">
                 <div class="crew-limit-list" id="flightCrewLimits"></div>
-                <div class="crew-limit-add-row">
-                  <button class="text-button secondary compact-button" id="addFlightCrewLimitButton" type="button">Add pilot limit</button>
-                </div>
               </div>
 
               <div class="crew-input-panel hidden" id="cabinCrewInputs" role="tabpanel" aria-labelledby="cabinCrewTab" aria-hidden="true">
                 <div class="crew-limit-list" id="cabinCrewLimits"></div>
-                <div class="crew-limit-add-row">
-                  <button class="text-button secondary compact-button" id="addCabinCrewLimitButton" type="button">Add individual limit</button>
-                </div>
               </div>
             </section>
 
@@ -527,7 +521,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.31</small>
+            <small class="app-version">v2.32</small>
           </section>
         </section>
 
@@ -615,7 +609,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.31</small>
+            <small class="app-version">v2.32</small>
           </section>
         </section>
       </main>
@@ -641,32 +635,6 @@
 
     <template id="crewLimitTemplate">
       <article class="crew-limit-card">
-        <div class="crew-limit-card-heading">
-          <div>
-            <h4 class="crew-limit-title"></h4>
-            <small class="crew-limit-subtitle"></small>
-          </div>
-          <button class="icon-button crew-limit-remove hidden" type="button" aria-label="Remove crew limit">×</button>
-        </div>
-
-        <details class="crew-identity-details">
-          <summary class="crew-identity-summary">Identify this limit (optional)</summary>
-          <div class="crew-identity-grid">
-            <label>
-              Name or identifier
-              <input class="crew-limit-name" type="text" maxlength="60" autocomplete="off" placeholder="Optional" />
-            </label>
-            <label>
-              Staff number
-              <input class="crew-limit-staff-number" type="text" maxlength="30" autocomplete="off" placeholder="Optional" />
-            </label>
-            <label class="crew-code-field">
-              Crew code
-              <input class="crew-limit-crew-code" type="text" maxlength="30" autocomplete="off" placeholder="Optional" />
-            </label>
-          </div>
-        </details>
-
         <div class="duration-grid crew-limit-duration-grid">
           <div class="duration-control required-duration native-time-control">
             <span class="duration-label">Duty start time (Zulu)</span>
@@ -706,8 +674,8 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-79"></script>
-    <script src="./ltot-core.js?v=cloud-sync-79"></script>
-    <script src="./app.js?v=cloud-sync-79"></script>
+    <script src="./supabase-config.js?v=cloud-sync-80"></script>
+    <script src="./ltot-core.js?v=cloud-sync-80"></script>
+    <script src="./app.js?v=cloud-sync-80"></script>
   </body>
 </html>

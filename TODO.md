@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.31.
+- Current visible app version: v2.32.
 - The top navigation has been simplified to `Jumpseat` and `FDP & LTOT`, with Jumpseat sub-tabs now `Today` and `Add`.
 - Empty Jumpseat days now use a compact message with a direct `Add request` shortcut.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -19,6 +19,7 @@
 - v2.29 adds persistent individual crew limits while preserving the simple Flight crew/Cabin crew flow: up to 2 Flight crew and 6 Cabin crew records, individual Commander's discretion, joint-limit handling, targeted FDP-table selection, a named limiting-crew comparison and Telegram summary, plus protected local/cloud synchronisation.
 - v2.30 introduces the refined executive light appearance and a matching graphite Night appearance. Automatic, Light and Night are selectable in Settings and remembered locally on each device without entering cloud data.
 - v2.31 replaces the gold selected-state detail on the Jumpseat, FDP & LTOT, Today and Add controls with a restrained silver finish.
+- v2.32 restores the simpler FDP workflow: one Flight crew limit and one optional Cabin crew limit, with no individual crew records. Calculator persistence, limiting-group comparison and Telegram output remain in place.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
@@ -34,7 +35,7 @@
 - Operational testing: use the app non-operationally alongside the normal BA/manual process, then note anything that slows the user down, is easy to misread, or feels clumsy.
 - Backup system: add a daily GitHub Actions backup of Supabase data, ideally into a private or otherwise secure backup location.
 - LTOT reference data: add the exact BA AOMA reference wording/numbering if it differs from `OMA 7.7 Table 2`.
-- Multi-crew operational testing: verify real split-report and individual-discretion scenarios on iPad and confirm that the comparison identifies the expected limiting crew member.
+- Split-crew operational testing: verify real Flight crew/Cabin crew report differences on iPad and confirm that the comparison identifies the expected limiting group.
 - FDP lookup redesign: later consider a guided OMA lookup beside Maximum FDP, while retaining the full tables for manual verification.
 - FDP elapsed-time helper: consider optional first-report and next-report date/time inputs that calculate the elapsed Table 1 column without attempting to automate complex acclimatisation states.
 - Jumpseat real-use polish: review whether BA ID, queue ordering, search, and daily view are showing exactly what is needed during actual requests.
