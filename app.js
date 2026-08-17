@@ -1,4 +1,6 @@
 const STORAGE_KEY = "jumpseat-calendar-requests-v1";
+const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
+const APP_VERSION = "2.34";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 2;
 const MAGIC_LINK_SENT_KEY = "jumpseat-calendar-magic-link-sent-at";
@@ -8,6 +10,7 @@ const MAGIC_LINK_COOLDOWN_SECONDS = 75;
 const MAGIC_LINK_RATE_LIMIT_SECONDS = 60 * 60;
 const CLOUD_FRESH_HOURS = 1;
 const CLOUD_STALE_HOURS = 24;
+const CALCULATION_STALE_SECONDS = 12 * 60 * 60;
 const PAGE_QUERY = new URLSearchParams(window.location.search);
 const IS_LOCAL_PREVIEW = ["127.0.0.1", "localhost"].includes(window.location.hostname) &&
   PAGE_QUERY.has("preview");
@@ -129,6 +132,16 @@ const elements = {
   sendTelegramTestButton: document.querySelector("#sendTelegramTestButton"),
   sendSampleReminderButton: document.querySelector("#sendSampleReminderButton"),
   appearanceInputs: document.querySelectorAll('input[name="appearance"]'),
+  requestConflictDialog: document.querySelector("#requestConflictDialog"),
+  requestConflictSummary: document.querySelector("#requestConflictSummary"),
+  useCloudConflictButton: document.querySelector("#useCloudConflictButton"),
+  keepDeviceConflictButton: document.querySelector("#keepDeviceConflictButton"),
+  downloadConflictButton: document.querySelector("#downloadConflictButton"),
+  exportJsonButton: document.querySelector("#exportJsonButton"),
+  exportCsvButton: document.querySelector("#exportCsvButton"),
+  restoreBackupButton: document.querySelector("#restoreBackupButton"),
+  restoreBackupInput: document.querySelector("#restoreBackupInput"),
+  dataStatus: document.querySelector("#dataStatus"),
 };
 
 const ftlDurationControls = {
@@ -198,14 +211,24 @@ const FDP_TABLE_THREE_ROWS = [
   { start: "Maximum FDP", oneTwo: "11:00", three: "10:30", four: "10:00", five: "09:30" },
 ];
 
-let requests = loadRequests();
+const initialRequestEnvelope = loadRequestEnvelope();
+let requests = initialRequestEnvelope.requests;
 let currentUser = null;
 let cloudReady = false;
 let cloudLoaded = false;
 let cloudUpdatedAt = null;
 let saveTimer = null;
+let requestRetryTimer = null;
+let requestSaveInFlight = false;
+let requestChangeRevision = 0;
+let requestRetryAttempt = 0;
+let requestLocalDirty = initialRequestEnvelope.dirty;
+let requestLocalBaseUpdatedAt = initialRequestEnvelope.baseUpdatedAt;
+let pendingRequestConflict = null;
 let calculatorSaveTimer = null;
+let calculatorRetryTimer = null;
 let calculatorSaveInFlight = false;
+let calculatorRetryAttempt = 0;
 let calculatorChangeRevision = 0;
 let magicLinkRetryTimer = null;
 let syncElapsedTimer = null;
@@ -214,9 +237,11 @@ let fdpReferenceStatusTimer = null;
 let ftlLatestPushbackMinutes = null;
 let ftlLatestTakeoffMinutes = null;
 let ftlLatestOnChocksMinutes = null;
+let ftlAnchorDate = null;
 let lastCloudSuccess = null;
 let isOfflineReadOnly = false;
 let telegramLinked = false;
+let telegramBotConfigured = false;
 let telegramLtotSupported = false;
 let cabinCrewEnabled = false;
 let activeFtlCrew = "flight";
@@ -352,6 +377,11 @@ function updateCloudSuccessStatus() {
 }
 
 function setCloudSuccessStatus() {
+  if (requestLocalDirty || calculatorLocalDirty) {
+    setSyncStatus("Changes not yet synced · retrying automatically", false, true);
+    return;
+  }
+
   lastCloudSuccess = {
     at: new Date(),
   };
@@ -455,6 +485,7 @@ function setOfflineReadOnly(isReadOnly) {
   elements.checkPairingButton.disabled = isReadOnly;
   elements.sendTelegramTestButton.disabled = isReadOnly;
   elements.sendSampleReminderButton.disabled = isReadOnly;
+  elements.restoreBackupButton.disabled = isReadOnly;
   updateLtotTelegramButton();
 
   if (isReadOnly) {
@@ -466,7 +497,10 @@ function setOfflineReadOnly(isReadOnly) {
 }
 
 function startOfflineMode(message = "Offline: viewing saved data") {
-  requests = sanitizeRequests(loadRequests());
+  const local = loadRequestEnvelope();
+  requests = local.requests;
+  requestLocalDirty = local.dirty;
+  requestLocalBaseUpdatedAt = local.baseUpdatedAt;
   cloudLoaded = false;
   cloudUpdatedAt = null;
   calculatorCloudLoaded = false;
@@ -504,9 +538,11 @@ function setSignedInState(user) {
     lastCloudSuccess = null;
     window.clearInterval(syncElapsedTimer);
     window.clearInterval(magicLinkRetryTimer);
+    window.clearTimeout(requestRetryTimer);
+    window.clearTimeout(calculatorRetryTimer);
     elements.magicLinkButton.disabled = false;
     elements.magicLinkButton.textContent = "Email magic link";
-    setAuthStatus("Sign in to load and save your jumpseat requests online.");
+    setAuthStatus("Sign in to load and save your OpsDeck data.");
     setSyncStatus("Cloud ready");
     resetTelegramPanel();
   }
@@ -589,6 +625,7 @@ function createDefaultCrewLimitRecord(category) {
 function createDefaultCalculatorState() {
   return {
     schemaVersion: CALCULATOR_SCHEMA_VERSION,
+    anchorDate: null,
     crewLimits: [createDefaultCrewLimitRecord("flight")],
     sectorTiming: {
       taxiOutMinutes: "15",
@@ -671,6 +708,7 @@ function sanitizeCalculatorState(value) {
 
   return {
     schemaVersion: CALCULATOR_SCHEMA_VERSION,
+    anchorDate: isIsoDate(value.anchorDate) ? value.anchorDate : null,
     crewLimits: sanitizeStoredCrewLimits(value.crewLimits),
     sectorTiming: {
       taxiOutMinutes: sanitizeStoredNumber(sourceTiming.taxiOutMinutes, 0, 59) || "15",
@@ -887,6 +925,11 @@ function createCrewLimitCard(record) {
 
   const handleCrewChange = () => {
     dutyStartShell.classList.toggle("is-empty", !dutyStart.value);
+    if (record.id === "flight") {
+      ftlAnchorDate = dutyStart.value
+        ? window.OpsDeckLtot.resolveNearestUtcDateIso(getDutyStartMinutes("flight"))
+        : null;
+    }
     calculateFtl();
   };
   dutyStart.addEventListener("input", handleCrewChange);
@@ -976,14 +1019,6 @@ function openFdpReferenceFor(crewId) {
   });
 }
 
-function returnToCrewLimit(crewId) {
-  const control = ftlCrewControls[crewId];
-  if (!control) return;
-  window.setTimeout(() => {
-    control.card.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, 120);
-}
-
 function showFdpReferenceStatus(message) {
   if (!elements.fdpReferenceStatus) return;
 
@@ -1010,7 +1045,6 @@ function setMaximumFdpFromReference(value, rowLabel, columnLabel, tableLabel, re
     }
 
     showFdpReferenceStatus(`${crew.label} Maximum FDP cleared.`);
-    returnToCrewLimit(targetId);
     return;
   }
 
@@ -1023,7 +1057,6 @@ function setMaximumFdpFromReference(value, rowLabel, columnLabel, tableLabel, re
   showFdpReferenceStatus(
     `${crewLimitDisplayLabel(crew)} Maximum FDP set to ${formatDurationWithZeroMinutes(durationStringToMinutes(value))} from ${tableLabel}, ${rowLabel}, ${columnLabel}.`
   );
-  returnToCrewLimit(targetId);
 }
 
 function renderFdpReferenceTable(container, rows, columns, firstColumnLabel, tableLabel) {
@@ -1153,6 +1186,7 @@ function serializeCalculatorState() {
 
   return sanitizeCalculatorState({
     schemaVersion: CALCULATOR_SCHEMA_VERSION,
+    anchorDate: ftlAnchorDate,
     crewLimits,
     sectorTiming: {
       taxiOutMinutes: ftlDurationControls.taxiOut.minutes.value,
@@ -1191,6 +1225,16 @@ function queueCalculatorSave() {
   }, 500);
 }
 
+function scheduleCalculatorRetry() {
+  if (!calculatorLocalDirty || !navigator.onLine || !currentUser || !calculatorCloudLoaded) return;
+  const delays = [2000, 5000, 15000, 30000];
+  const delay = delays[Math.min(calculatorRetryAttempt, delays.length - 1)];
+  calculatorRetryAttempt += 1;
+  window.clearTimeout(calculatorRetryTimer);
+  setSyncStatus("Calculator changes not yet synced · retrying automatically", false, true);
+  calculatorRetryTimer = window.setTimeout(() => saveCloudCalculatorState(), delay);
+}
+
 function applySectorTimingState(sectorTiming) {
   const timing = sanitizeCalculatorState({ crewLimits: crewLimitRecords, sectorTiming }).sectorTiming;
   setDurationControl(ftlDurationControls.taxiOut, 0, timing.taxiOutMinutes);
@@ -1203,8 +1247,12 @@ function applySectorTimingState(sectorTiming) {
 
 function applyCalculatorState(value) {
   const state = sanitizeCalculatorState(value);
+  ftlAnchorDate = state.anchorDate;
   applySectorTimingState(state.sectorTiming);
   renderCrewLimitRecords(state.crewLimits);
+  if (!ftlAnchorDate && ftlCrewControls.flight?.dutyStart.value) {
+    ftlAnchorDate = window.OpsDeckLtot.resolveNearestUtcDateIso(getDutyStartMinutes("flight"));
+  }
   if (!cabinCrewEnabled && activeFtlCrew === "cabin") activeFtlCrew = "flight";
   renderFtlCrewMode();
   calculateFtl(false);
@@ -1281,9 +1329,21 @@ function updateCountdownElement(element, targetMinutes) {
     return;
   }
 
-  const now = new Date();
-  const currentZuluSeconds = (now.getUTCHours() * 3600) + (now.getUTCMinutes() * 60) + now.getUTCSeconds();
-  const remainingSeconds = (targetMinutes * 60) - currentZuluSeconds;
+  const remainingSeconds = window.OpsDeckLtot.countdownSeconds(ftlAnchorDate, targetMinutes);
+  if (remainingSeconds === null) {
+    element.textContent = "Set required inputs";
+    element.classList.remove("status-error", "status-warning", "status-success");
+    card?.classList.remove("is-warning", "is-overdue");
+    return;
+  }
+  if (remainingSeconds < -CALCULATION_STALE_SECONDS) {
+    element.textContent = "Calculation expired";
+    element.classList.add("status-error");
+    element.classList.remove("status-warning", "status-success");
+    card?.classList.remove("is-warning");
+    card?.classList.add("is-overdue");
+    return;
+  }
   const isPast = remainingSeconds < 0;
   const isClose = remainingSeconds >= 0 && remainingSeconds <= (30 * 60);
 
@@ -1663,8 +1723,12 @@ function setupFtlCalculator() {
   calculatorCloudUpdatedAt = saved.baseUpdatedAt;
   Object.values(ftlDurationControls).forEach(setupDurationControl);
   crewLimitRecords = saved.state.crewLimits;
+  ftlAnchorDate = saved.state.anchorDate;
   applySectorTimingState(saved.state.sectorTiming);
   renderCrewLimitRecords(saved.state.crewLimits);
+  if (!ftlAnchorDate && ftlCrewControls.flight?.dutyStart.value) {
+    ftlAnchorDate = window.OpsDeckLtot.resolveNearestUtcDateIso(getDutyStartMinutes("flight"));
+  }
   renderFdpReferenceTables();
   elements.addCabinCrewButton.addEventListener("click", addCabinCrew);
   elements.removeCabinCrewButton.addEventListener("click", removeCabinCrew);
@@ -1695,6 +1759,7 @@ function clearFtlCalculator() {
   window.clearTimeout(fdpReferenceStatusTimer);
   elements.fdpReferenceStatus?.classList.add("hidden");
   const state = createDefaultCalculatorState();
+  ftlAnchorDate = null;
   applySectorTimingState(state.sectorTiming);
   activeFtlCrew = "flight";
   activeFdpTargetId = "flight";
@@ -1764,16 +1829,56 @@ function availabilityStatus(request) {
 }
 
 function loadRequests() {
+  return loadRequestEnvelope().requests;
+}
+
+function loadRequestEnvelope() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    return Array.isArray(saved) ? saved : [];
+    const saved = JSON.parse(localStorage.getItem(REQUESTS_ENVELOPE_KEY) || "null");
+    if (saved && Array.isArray(saved.requests)) {
+      return {
+        requests: sanitizeRequests(saved.requests),
+        dirty: Boolean(saved.dirty),
+        baseUpdatedAt: saved.baseUpdatedAt || null,
+      };
+    }
+
+    const legacy = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    return {
+      requests: sanitizeRequests(Array.isArray(legacy) ? legacy : []),
+      dirty: false,
+      baseUpdatedAt: null,
+    };
   } catch {
-    return [];
+    return { requests: [], dirty: false, baseUpdatedAt: null };
+  }
+}
+
+function saveRequestEnvelope() {
+  try {
+    const sanitized = sanitizeRequests(requests);
+    localStorage.setItem(REQUESTS_ENVELOPE_KEY, JSON.stringify({
+      requests: sanitized,
+      dirty: requestLocalDirty,
+      baseUpdatedAt: requestLocalBaseUpdatedAt,
+    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
+    return true;
+  } catch {
+    setSyncStatus("This device could not store the latest changes.", true);
+    return false;
   }
 }
 
 function saveRequests() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
+  requestChangeRevision += 1;
+  requestLocalDirty = true;
+  if (cloudLoaded) requestLocalBaseUpdatedAt = cloudUpdatedAt;
+  saveRequestEnvelope();
+
+  if (!navigator.onLine || !supabaseClient || !currentUser || !cloudLoaded) {
+    setSyncStatus("Changes saved on this device · waiting for cloud", false, true);
+  }
   queueCloudSave();
 }
 
@@ -1821,29 +1926,187 @@ function sanitizeRequests(value) {
     }));
 }
 
-function queueCloudSave() {
-  if (isOfflineReadOnly || !supabaseClient || !currentUser || !cloudLoaded) return;
+function queueCloudSave(delay = 350) {
+  if (!requestLocalDirty || isOfflineReadOnly || !navigator.onLine || !supabaseClient || !currentUser || !cloudLoaded) return;
 
   window.clearTimeout(saveTimer);
   saveTimer = window.setTimeout(() => {
     saveCloudRequests();
-  }, 350);
+  }, delay);
 }
 
-function handleCloudConflict() {
+function scheduleRequestRetry() {
+  if (!requestLocalDirty || !navigator.onLine || !currentUser || !cloudLoaded || pendingRequestConflict) return;
+  const delays = [2000, 5000, 15000, 30000];
+  const delay = delays[Math.min(requestRetryAttempt, delays.length - 1)];
+  requestRetryAttempt += 1;
+  window.clearTimeout(requestRetryTimer);
+  setSyncStatus("Changes not yet synced · retrying automatically", false, true);
+  requestRetryTimer = window.setTimeout(() => saveCloudRequests(), delay);
+}
+
+function downloadTextFile(filename, text, type) {
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function downloadJsonFile(filename, value) {
+  downloadTextFile(filename, JSON.stringify(value, null, 2), "application/json");
+}
+
+function backupTimestamp() {
+  return new Date().toISOString().replace(/[:]/g, "").slice(0, 15);
+}
+
+function setDataStatus(message = "", isError = false, isSuccess = false) {
+  elements.dataStatus.textContent = message;
+  elements.dataStatus.classList.toggle("status-error", isError);
+  elements.dataStatus.classList.toggle("status-success", isSuccess);
+}
+
+function buildPortableBackup() {
+  return window.OpsDeckData.buildBackup({
+    appVersion: APP_VERSION,
+    requests: sanitizeRequests(requests),
+    calculatorState: serializeCalculatorState(),
+  });
+}
+
+function exportJsonBackup() {
+  downloadJsonFile(`opsdeck-backup-${backupTimestamp()}.json`, buildPortableBackup());
+  setDataStatus("JSON backup downloaded.", false, true);
+}
+
+function exportCsvBackup() {
+  downloadTextFile(
+    `opsdeck-jumpseat-${backupTimestamp()}.csv`,
+    window.OpsDeckData.requestsToCsv(sanitizeRequests(requests)),
+    "text/csv;charset=utf-8"
+  );
+  setDataStatus("CSV export downloaded.", false, true);
+}
+
+async function restoreJsonBackup(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  try {
+    const backup = window.OpsDeckData.parseBackup(await file.text());
+    const restoredRequests = sanitizeRequests(backup.jumpseatRequests);
+    const restoredCalculator = sanitizeCalculatorState(backup.calculatorState);
+    const confirmed = window.confirm(
+      `Restore ${restoredRequests.length} ${pluralize(restoredRequests.length, "flight")} and the saved FDP and LTOT inputs? This replaces the current data on this account.`
+    );
+    if (!confirmed) {
+      setDataStatus("Restore cancelled.");
+      return;
+    }
+
+    requests = restoredRequests;
+    applyCalculatorState(restoredCalculator);
+    saveRequests();
+    queueCalculatorSave();
+    render();
+    setDataStatus("Backup restored. Cloud synchronisation is in progress.", false, true);
+  } catch (error) {
+    setDataStatus(error.message || "The backup could not be restored.", true);
+  } finally {
+    event.target.value = "";
+  }
+}
+
+function closeRequestConflictDialog() {
+  elements.requestConflictDialog?.classList.add("hidden");
+  pendingRequestConflict = null;
+}
+
+function showRequestConflict(localRequests, cloudRequests, latestCloudUpdatedAt) {
+  pendingRequestConflict = {
+    localRequests: sanitizeRequests(localRequests),
+    cloudRequests: sanitizeRequests(cloudRequests),
+    cloudUpdatedAt: latestCloudUpdatedAt || null,
+  };
+  elements.requestConflictSummary.textContent = `This device has ${localRequests.length} ${pluralize(localRequests.length, "flight")} and the cloud has ${cloudRequests.length}. Choose which copy to keep.`;
+  elements.requestConflictDialog.classList.remove("hidden");
+  elements.useCloudConflictButton.focus();
+}
+
+function useCloudConflictCopy() {
+  if (!pendingRequestConflict) return;
+  requests = pendingRequestConflict.cloudRequests;
+  cloudUpdatedAt = pendingRequestConflict.cloudUpdatedAt;
+  requestLocalBaseUpdatedAt = cloudUpdatedAt;
+  requestLocalDirty = false;
+  cloudLoaded = true;
+  requestRetryAttempt = 0;
+  saveRequestEnvelope();
+  closeRequestConflictDialog();
+  render();
+  setCloudSuccessStatus();
+}
+
+async function keepDeviceConflictCopy() {
+  if (!pendingRequestConflict) return;
+  requests = pendingRequestConflict.localRequests;
+  cloudUpdatedAt = pendingRequestConflict.cloudUpdatedAt;
+  requestLocalBaseUpdatedAt = cloudUpdatedAt;
+  requestLocalDirty = true;
+  cloudLoaded = true;
+  saveRequestEnvelope();
+  closeRequestConflictDialog();
+  render();
+  await saveCloudRequests();
+}
+
+function downloadRequestConflictCopies() {
+  if (!pendingRequestConflict) return;
+  downloadJsonFile(`opsdeck-conflict-${new Date().toISOString().slice(0, 10)}.json`, {
+    exportedAt: new Date().toISOString(),
+    deviceCopy: pendingRequestConflict.localRequests,
+    cloudCopy: pendingRequestConflict.cloudRequests,
+    cloudUpdatedAt: pendingRequestConflict.cloudUpdatedAt,
+  });
+}
+
+async function handleCloudConflict() {
   cloudLoaded = false;
   window.clearTimeout(saveTimer);
-  setSyncStatus("Cloud changed on another device. Tap Refresh before saving again.", true);
-  window.alert("Cloud data changed on another device. Tap Refresh before making further changes, so this device does not overwrite the newer cloud copy.");
+  window.clearTimeout(requestRetryTimer);
+  setSyncStatus("Cloud changed on another device · review required", true);
+
+  const { data, error } = await supabaseClient
+    .from("jumpseat_data")
+    .select("requests, updated_at")
+    .eq("user_id", currentUser.id)
+    .maybeSingle();
+  if (error || !Array.isArray(data?.requests)) {
+    setSyncStatus("Cloud changed on another device. Refresh when the connection is stable.", true);
+    return;
+  }
+
+  showRequestConflict(requests, data.requests, data.updated_at);
 }
 
 async function saveCloudRequests() {
-  if (!supabaseClient || !currentUser) return;
+  if (!supabaseClient || !currentUser || !cloudLoaded || !navigator.onLine || !requestLocalDirty) return;
+  if (requestSaveInFlight || pendingRequestConflict) return;
 
+  requestSaveInFlight = true;
+  const saveRevision = requestChangeRevision;
+  const saveUserId = currentUser.id;
+  const requestSnapshot = sanitizeRequests(requests);
+  let shouldSaveAgain = false;
   setSyncStatus("Saving...");
   const nextUpdatedAt = new Date().toISOString();
   const payload = {
-    requests,
+    requests: requestSnapshot,
     updated_at: nextUpdatedAt,
   };
 
@@ -1851,36 +2114,49 @@ async function saveCloudRequests() {
     ? supabaseClient
         .from("jumpseat_data")
         .update(payload)
-        .eq("user_id", currentUser.id)
+        .eq("user_id", saveUserId)
         .eq("updated_at", cloudUpdatedAt)
     : supabaseClient
         .from("jumpseat_data")
-        .insert({ user_id: currentUser.id, ...payload });
+        .insert({ user_id: saveUserId, ...payload });
 
-  const { data, error } = await query.select("updated_at").maybeSingle();
+  try {
+    const { data, error } = await query.select("updated_at").maybeSingle();
 
-  if (error) {
-    if (isRateLimitError(error.message || "")) {
-      setSyncStatus("Cloud save rate-limited. Try again shortly.", true);
+    if (error) {
+      if (error.code === "23505") {
+        await handleCloudConflict();
+        return;
+      }
+      setSyncStatus(
+        isRateLimitError(error.message || "")
+          ? "Cloud save delayed · retrying automatically"
+          : "Cloud save interrupted · retrying automatically",
+        false,
+        true
+      );
+      scheduleRequestRetry();
       return;
     }
 
-    if (error.code === "23505") {
-      handleCloudConflict();
+    if (!data) {
+      await handleCloudConflict();
       return;
     }
 
-    setSyncStatus(`Cloud save failed: ${error.message}`, true);
-    return;
+    cloudUpdatedAt = data.updated_at || nextUpdatedAt;
+    requestLocalBaseUpdatedAt = cloudUpdatedAt;
+    requestLocalDirty = requestChangeRevision !== saveRevision;
+    requestRetryAttempt = 0;
+    saveRequestEnvelope();
+    shouldSaveAgain = requestLocalDirty;
+    setCloudSuccessStatus();
+  } catch {
+    scheduleRequestRetry();
+  } finally {
+    requestSaveInFlight = false;
+    if (shouldSaveAgain && currentUser?.id === saveUserId) queueCloudSave(100);
   }
-
-  if (!data) {
-    handleCloudConflict();
-    return;
-  }
-
-  cloudUpdatedAt = data.updated_at || nextUpdatedAt;
-  setCloudSuccessStatus();
 }
 
 function handleCalculatorCloudConflict() {
@@ -1919,14 +2195,14 @@ async function saveCloudCalculatorState() {
 
     if (error) {
       if (isRateLimitError(error.message || "")) {
-        setSyncStatus("Calculator cloud save rate-limited. Try again shortly.", true);
+        scheduleCalculatorRetry();
         return;
       }
       if (error.code === "23505") {
         handleCalculatorCloudConflict();
         return;
       }
-      setSyncStatus(`Calculator cloud save failed: ${error.message}`, true);
+      scheduleCalculatorRetry();
       return;
     }
 
@@ -1938,11 +2214,12 @@ async function saveCloudCalculatorState() {
     calculatorCloudUpdatedAt = data.updated_at || nextUpdatedAt;
     calculatorLocalBaseUpdatedAt = calculatorCloudUpdatedAt;
     calculatorLocalDirty = calculatorChangeRevision !== saveRevision;
+    calculatorRetryAttempt = 0;
     shouldSaveAgain = calculatorLocalDirty;
     saveCalculatorEnvelope();
     setCloudSuccessStatus();
   } catch (error) {
-    setSyncStatus(`Calculator cloud save failed: ${error.message || "connection error"}`, true);
+    scheduleCalculatorRetry();
   } finally {
     calculatorSaveInFlight = false;
     if (shouldSaveAgain && navigator.onLine && currentUser?.id === saveUserId && calculatorCloudLoaded) {
@@ -2011,7 +2288,7 @@ async function loadCloudCalculatorState(options = {}) {
   await saveCloudCalculatorState();
 }
 
-async function loadCloudRequests() {
+async function loadCloudRequests(options = {}) {
   if (!supabaseClient || !currentUser) return;
 
   if (!navigator.onLine) {
@@ -2019,8 +2296,9 @@ async function loadCloudRequests() {
     return;
   }
 
+  const forceCloud = Boolean(options.forceCloud);
+  const local = loadRequestEnvelope();
   cloudLoaded = false;
-  cloudUpdatedAt = null;
   setSyncStatus("Loading cloud data...");
 
   const { data, error } = await supabaseClient
@@ -2030,23 +2308,47 @@ async function loadCloudRequests() {
     .maybeSingle();
 
   if (error) {
+    requestLocalDirty = local.dirty;
+    requestLocalBaseUpdatedAt = local.baseUpdatedAt;
     startOfflineMode(navigator.onLine ? "Cloud unavailable: viewing saved data" : "Offline: viewing saved data");
     return;
   }
 
-  const localRequests = loadRequests();
-
   if (Array.isArray(data?.requests)) {
+    if (local.dirty && !forceCloud) {
+      if (local.baseUpdatedAt !== data.updated_at) {
+        cloudUpdatedAt = data.updated_at || null;
+        await handleCloudConflict();
+        render();
+        return;
+      }
+
+      requests = local.requests;
+      cloudLoaded = true;
+      cloudUpdatedAt = data.updated_at || null;
+      requestLocalBaseUpdatedAt = cloudUpdatedAt;
+      requestLocalDirty = true;
+      saveRequestEnvelope();
+      await saveCloudRequests();
+      render();
+      return;
+    }
+
     requests = sanitizeRequests(data.requests);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
     cloudLoaded = true;
     cloudUpdatedAt = data.updated_at || null;
+    requestLocalBaseUpdatedAt = cloudUpdatedAt;
+    requestLocalDirty = false;
+    requestRetryAttempt = 0;
+    saveRequestEnvelope();
     setCloudSuccessStatus();
   } else {
-    requests = sanitizeRequests(localRequests);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
+    requests = local.requests;
     cloudLoaded = true;
     cloudUpdatedAt = null;
+    requestLocalBaseUpdatedAt = null;
+    requestLocalDirty = true;
+    saveRequestEnvelope();
     await saveCloudRequests();
   }
 
@@ -2610,7 +2912,7 @@ async function sendMagicLink() {
   setAuthStatus("Magic link sent. Check your email to sign in.", false, true);
 }
 
-async function signOut(message = "Sign in to load and save your jumpseat requests online.") {
+async function signOut(message = "Sign in to load and save your OpsDeck data.") {
   setSyncStatus("Signing out...");
 
   if (supabaseClient && navigator.onLine) {
@@ -2627,11 +2929,11 @@ async function signOut(message = "Sign in to load and save your jumpseat request
 
 async function refreshCloudData() {
   if (!currentUser) return;
-  if (calculatorLocalDirty) {
-    const confirmed = window.confirm("Refresh will replace this device's unsaved FDP and LTOT inputs with the cloud copy. Continue?");
+  if (requestLocalDirty || calculatorLocalDirty) {
+    const confirmed = window.confirm("Refresh will replace this device's unsaved Jumpseat, FDP and LTOT changes with the cloud copy. Continue?");
     if (!confirmed) return;
   }
-  await loadCloudRequests();
+  await loadCloudRequests({ forceCloud: true });
   await loadCloudCalculatorState({ forceCloud: true });
 }
 
@@ -2644,9 +2946,10 @@ function setTelegramStatus(message, isError = false, isSuccess = false, isWarnin
 
 function resetTelegramPanel() {
   telegramLinked = false;
+  telegramBotConfigured = false;
   telegramLtotSupported = false;
   elements.telegramLinkState.textContent = "Not linked";
-  elements.telegramBotState.textContent = "Bot token pending";
+  elements.telegramBotState.textContent = "Service unavailable";
   elements.telegramPairingExpiry.textContent = "Not started";
   elements.telegramPairingCode.textContent = "OD------";
   setTelegramStatus("Telegram reminders are not linked yet.");
@@ -2663,7 +2966,7 @@ function setTelegramBusy(isBusy) {
     return;
   }
 
-  const botConfigured = elements.telegramBotState.textContent === "Bot token set";
+  const botConfigured = telegramBotConfigured;
   elements.generatePairingButton.disabled = isOfflineReadOnly;
   elements.checkPairingButton.disabled = isOfflineReadOnly || !botConfigured;
   elements.sendTelegramTestButton.disabled = isOfflineReadOnly || !botConfigured || !telegramLinked;
@@ -2705,12 +3008,13 @@ async function invokeTelegramAction(action, body = {}) {
 
 function updateTelegramPanel(data) {
   telegramLinked = Boolean(data.linked);
+  telegramBotConfigured = Boolean(data.bot_configured);
   telegramLtotSupported = Boolean(data.ltot_summary_supported);
   const linkedLabel = data.linked
     ? `Linked to ${data.chat_label || data.username || "Telegram"}`
     : "Not linked";
   elements.telegramLinkState.textContent = linkedLabel;
-  elements.telegramBotState.textContent = data.bot_configured ? "Bot token set" : "Bot token pending";
+  elements.telegramBotState.textContent = data.bot_configured ? "Service ready" : "Service unavailable";
 
   elements.sendTelegramTestButton.disabled = isOfflineReadOnly || !data.linked || !data.bot_configured;
   elements.sendSampleReminderButton.disabled = isOfflineReadOnly || !data.linked || !data.bot_configured;
@@ -2718,7 +3022,7 @@ function updateTelegramPanel(data) {
   updateLtotTelegramButton();
 
   if (!data.bot_configured) {
-    setTelegramStatus("Add the Telegram bot token in Supabase secrets before checking pairing.", false, false, true);
+    setTelegramStatus("Telegram is temporarily unavailable. Try again later.", false, false, true);
     return;
   }
 
@@ -2756,7 +3060,7 @@ async function startTelegramPairing() {
     updateTelegramPanel({ ...data, linked: false });
     setTelegramStatus(data.bot_configured
       ? "Pairing code created. Send it to the Telegram bot, then check pairing."
-      : "Pairing code created, but the bot token still needs to be added in Supabase.",
+      : "Pairing code created, but Telegram is temporarily unavailable.",
       false,
       Boolean(data.bot_configured),
       !data.bot_configured);
@@ -3008,6 +3312,13 @@ elements.generatePairingButton.addEventListener("click", startTelegramPairing);
 elements.checkPairingButton.addEventListener("click", checkTelegramPairing);
 elements.sendTelegramTestButton.addEventListener("click", sendTelegramTest);
 elements.sendSampleReminderButton.addEventListener("click", sendSampleReminder);
+elements.useCloudConflictButton.addEventListener("click", useCloudConflictCopy);
+elements.keepDeviceConflictButton.addEventListener("click", keepDeviceConflictCopy);
+elements.downloadConflictButton.addEventListener("click", downloadRequestConflictCopies);
+elements.exportJsonButton.addEventListener("click", exportJsonBackup);
+elements.exportCsvButton.addEventListener("click", exportCsvBackup);
+elements.restoreBackupButton.addEventListener("click", () => elements.restoreBackupInput.click());
+elements.restoreBackupInput.addEventListener("change", restoreJsonBackup);
 window.addEventListener("offline", () => startOfflineMode());
 window.addEventListener("online", returnOnline);
 document.addEventListener("pointerdown", releaseFtlPickerFocus, true);

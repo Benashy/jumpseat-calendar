@@ -2,6 +2,8 @@
   "use strict";
 
   const MINUTES_IN_DAY = 24 * 60;
+  const MILLISECONDS_IN_MINUTE = 60 * 1000;
+  const MILLISECONDS_IN_DAY = MINUTES_IN_DAY * MILLISECONDS_IN_MINUTE;
 
   function isFiniteMinute(value) {
     return Number.isFinite(value);
@@ -19,6 +21,42 @@
     const suffix = dayOffset > 0 ? ` +${dayOffset}` : dayOffset < 0 ? ` ${dayOffset}` : "";
 
     return `${twoDigits(hours)}:${twoDigits(minutes)}Z${suffix}`;
+  }
+
+  function isIsoDate(value) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))) return false;
+    return !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+  }
+
+  function resolveNearestUtcDateIso(timeMinutes, nowMs = Date.now()) {
+    if (!isFiniteMinute(timeMinutes) || !Number.isFinite(nowMs)) return null;
+
+    const now = new Date(nowMs);
+    const todayStartMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    const normalizedMinutes = ((timeMinutes % MINUTES_IN_DAY) + MINUTES_IN_DAY) % MINUTES_IN_DAY;
+    const candidates = [-1, 0, 1].map((dayOffset) => {
+      const dayStartMs = todayStartMs + (dayOffset * MILLISECONDS_IN_DAY);
+      return {
+        dayStartMs,
+        timeMs: dayStartMs + (normalizedMinutes * MILLISECONDS_IN_MINUTE),
+      };
+    });
+    const nearest = candidates.reduce((best, candidate) => (
+      Math.abs(candidate.timeMs - nowMs) < Math.abs(best.timeMs - nowMs) ? candidate : best
+    ));
+
+    return new Date(nearest.dayStartMs).toISOString().slice(0, 10);
+  }
+
+  function absoluteTargetMs(anchorDateIso, targetMinutes) {
+    if (!isIsoDate(anchorDateIso) || !isFiniteMinute(targetMinutes)) return null;
+    return Date.parse(`${anchorDateIso}T00:00:00Z`) + (targetMinutes * MILLISECONDS_IN_MINUTE);
+  }
+
+  function countdownSeconds(anchorDateIso, targetMinutes, nowMs = Date.now()) {
+    const targetMs = absoluteTargetMs(anchorDateIso, targetMinutes);
+    if (targetMs === null || !Number.isFinite(nowMs)) return null;
+    return Math.floor((targetMs - nowMs) / 1000);
   }
 
   function alignToNearestOperationalDay(value, reference) {
@@ -163,10 +201,13 @@
 
   const api = {
     MINUTES_IN_DAY,
+    absoluteTargetMs,
     calculateCrewLimits,
     calculateCrewLtot,
     calculateLtot,
+    countdownSeconds,
     formatZuluTime,
+    resolveNearestUtcDateIso,
   };
 
   if (typeof module !== "undefined" && module.exports) {

@@ -157,6 +157,18 @@ h1 {
   gap: 9px;
 }
 
+.auth-field {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.auth-field input {
+  width: 100%;
+}
+
 .auth-actions {
   display: flex;
   gap: 9px;
@@ -1107,6 +1119,27 @@ input[type="time"],
   color: var(--navy);
 }
 
+.conflict-modal {
+  display: grid;
+  gap: 14px;
+}
+
+.conflict-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.conflict-actions button {
+  min-height: 44px;
+}
+
+@media (max-width: 560px) {
+  .conflict-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 strong.fdp-state-b-label {
   color: #2f6b4f;
 }
@@ -1136,6 +1169,33 @@ strong.fdp-state-x-label {
 
 .settings-heading {
   margin-bottom: 0;
+}
+
+.settings-copy,
+.data-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.data-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.data-actions button {
+  min-height: 44px;
+}
+
+.data-status.status-error {
+  color: var(--danger);
+}
+
+.data-status.status-success {
+  color: var(--success);
 }
 
 .compact-heading {

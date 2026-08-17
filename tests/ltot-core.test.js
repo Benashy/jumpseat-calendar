@@ -1,6 +1,14 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { calculateCrewLimits, calculateCrewLtot, calculateLtot, formatZuluTime } = require("../ltot-core");
+const {
+  absoluteTargetMs,
+  calculateCrewLimits,
+  calculateCrewLtot,
+  calculateLtot,
+  countdownSeconds,
+  formatZuluTime,
+  resolveNearestUtcDateIso,
+} = require("../ltot-core");
 
 const hr = (hours) => hours * 60;
 
@@ -9,6 +17,41 @@ test("formats Zulu times with day rollover suffixes", () => {
   assert.equal(formatZuluTime(hr(24) + 5), "00:05Z +1");
   assert.equal(formatZuluTime((hr(48)) + 75), "01:15Z +2");
   assert.equal(formatZuluTime(-15), "23:45Z -1");
+});
+
+test("anchors an entered duty start to the nearest UTC calendar date", () => {
+  const justAfterMidnight = Date.parse("2026-08-19T00:30:00Z");
+
+  assert.equal(resolveNearestUtcDateIso((23 * 60) + 45, justAfterMidnight), "2026-08-18");
+  assert.equal(resolveNearestUtcDateIso(60, justAfterMidnight), "2026-08-19");
+});
+
+test("keeps next-day LTOT countdowns correct across midnight", () => {
+  const anchorDate = "2026-08-18";
+  const nextDayTargetMinutes = (24 * 60) + 60;
+
+  assert.equal(
+    absoluteTargetMs(anchorDate, nextDayTargetMinutes),
+    Date.parse("2026-08-19T01:00:00Z")
+  );
+  assert.equal(
+    countdownSeconds(anchorDate, nextDayTargetMinutes, Date.parse("2026-08-18T23:30:00Z")),
+    90 * 60
+  );
+  assert.equal(
+    countdownSeconds(anchorDate, nextDayTargetMinutes, Date.parse("2026-08-19T00:30:00Z")),
+    30 * 60
+  );
+});
+
+test("uses the persisted anchor date after reopening the calculator", () => {
+  const savedAnchorDate = "2026-08-18";
+  const targetMinutes = (24 * 60) + 15;
+
+  assert.equal(
+    countdownSeconds(savedAnchorDate, targetMinutes, Date.parse("2026-08-19T00:05:00Z")),
+    10 * 60
+  );
 });
 
 test("calculates latest on-chocks as a standalone FDP gross check", () => {

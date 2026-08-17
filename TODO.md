@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.33.
+- Current visible app version: v2.34.
 - The top navigation is limited to `Jumpseat` and `FDP & LTOT`. Jumpseat opens the daily view by default, with contextual `Add request` and `Back to requests` actions instead of a second navigation row.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -21,6 +21,12 @@
 - v2.31 replaces the gold selected-state detail on the Jumpseat, FDP & LTOT, Today and Add controls with a restrained silver finish.
 - v2.32 restores the simpler FDP workflow: one Flight crew limit and one optional Cabin crew limit, with no individual crew records. Calculator persistence, limiting-group comparison and Telegram output remain in place.
 - v2.33 reduces Jumpseat navigation height, progressively reveals the completed crew comparison, simplifies FDP input framing, aligns final-sector controls, improves mobile comparison readability, standardises touch and focus states, and refines icons, contrast and numerical typography.
+- v2.34 anchors live FDP and LTOT countdowns to a Zulu calendar date, including correct next-day countdowns across midnight and an expired-calculation warning after 12 hours.
+- v2.34 protects locally changed Jumpseat data during interrupted saves, retries cloud writes automatically, and presents both copies for an explicit choice if another device has changed the same data.
+- v2.34 adds portable JSON backup and restore plus a readable Jumpseat CSV export under Settings. Authentication and Telegram credentials are deliberately excluded from exports.
+- v2.34 adds bounded Telegram reminder retries, a wider recovery window, and persistent attempt tracking for short-lived delivery failures.
+- v2.34 adds a repeatable release manifest, automated DOM/release/calculation checks on GitHub, and a documented rollback point at v2.33.
+- v2.34 gives sign-in fields persistent visible labels and replaces infrastructure wording in Telegram Settings with plain service status wording.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
@@ -32,9 +38,9 @@
 
 ## Next Priorities
 
-- Telegram testing: continue live operational testing and confirm device notifications arrive reliably.
+- Telegram testing: confirm an ordinary scheduled reminder still arrives once after the retry update, then keep observing delivery over several sectors.
+- Backup verification: download a JSON backup, retain it somewhere separate, and perform a controlled restore test using non-operational sample data.
 - Operational testing: use the app non-operationally alongside the normal BA/manual process, then note anything that slows the user down, is easy to misread, or feels clumsy.
-- Backup system: add a daily GitHub Actions backup of Supabase data, ideally into a private or otherwise secure backup location.
 - LTOT reference data: add the exact BA AOMA reference wording/numbering if it differs from `OMA 7.7 Table 2`.
 - Split-crew operational testing: verify real Flight crew/Cabin crew report differences on iPad and confirm that the comparison identifies the expected limiting group.
 - FDP lookup redesign: later consider a guided OMA lookup beside Maximum FDP, while retaining the full tables for manual verification.
@@ -43,6 +49,7 @@
 - Login reliability: keep watching Supabase magic-link rate limits and mobile sign-in behaviour; consider tuning settings or relying more on password sign-in if magic links remain awkward.
 - Day export/copy option: consider copying a clean text summary of jumpseat requests for messaging or email.
 - Code organisation audit: separate Jumpseat and LTOT logic more clearly before adding more tools.
+- Security and automated backups: handle authentication settings, database permissions, secrets, and any scheduled private Supabase backup as a separate approved phase.
 
 ## Future Considerations (Deliberately Deferred)
 

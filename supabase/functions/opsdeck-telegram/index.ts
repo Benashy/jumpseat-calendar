@@ -2,7 +2,9 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const FUNCTION_NAME = "opsdeck-telegram";
 const REMINDER_OFFSET_MINUTES = 75;
-const REMINDER_WINDOW_MINUTES = 10;
+const REMINDER_WINDOW_MINUTES = 30;
+const REMINDER_RETRY_MINUTES = 5;
+const MAX_REMINDER_ATTEMPTS = 3;
 const PAIRING_CODE_MINUTES = 15;
 
 const corsHeaders = {
@@ -538,8 +540,16 @@ async function probe(userId: string) {
   };
 }
 
-async function claimReminderRun(userId: string, request: JumpseatRequest, departureAt: Date) {
+type ReminderClaim = {
+  id: string;
+  attempt: number;
+  isRetry: boolean;
+};
+
+async function claimReminderRun(userId: string, request: JumpseatRequest, departureAt: Date): Promise<ReminderClaim | null> {
   const admin = requireServerConfig();
+  const now = new Date();
+  const nextAttemptAt = new Date(now.getTime() + REMINDER_RETRY_MINUTES * 60_000);
   const flightNumber = normaliseFlightNumber(request.flightNumber);
   const reminderDueAt = new Date(departureAt.getTime() - REMINDER_OFFSET_MINUTES * 60_000);
   const payload = {
@@ -552,35 +562,85 @@ async function claimReminderRun(userId: string, request: JumpseatRequest, depart
     scheduled_departure_at: departureAt.toISOString(),
     reminder_due_at: reminderDueAt.toISOString(),
     status: "pending",
+    attempt_count: 1,
+    last_attempt_at: now.toISOString(),
+    next_attempt_at: nextAttemptAt.toISOString(),
   };
   const { data, error } = await admin
     .from("jumpseat_reminder_runs")
     .insert(payload)
-    .select("id")
+    .select("id, attempt_count")
     .single();
 
   if (error?.code === "23505") {
-    return null;
+    const { data: existing, error: existingError } = await admin
+      .from("jumpseat_reminder_runs")
+      .select("id, status, attempt_count, next_attempt_at")
+      .eq("user_id", userId)
+      .eq("flight_key", payload.flight_key)
+      .eq("reminder_offset_minutes", REMINDER_OFFSET_MINUTES)
+      .single();
+    if (existingError) throw existingError;
+
+    const attemptCount = Number(existing.attempt_count || 0);
+    const retryAtMs = existing.next_attempt_at ? Date.parse(existing.next_attempt_at) : 0;
+    const canRetry = ["pending", "error"].includes(existing.status) &&
+      attemptCount < MAX_REMINDER_ATTEMPTS &&
+      retryAtMs <= now.getTime();
+    if (!canRetry) return null;
+
+    const nextAttempt = attemptCount + 1;
+    const { data: claimed, error: claimError } = await admin
+      .from("jumpseat_reminder_runs")
+      .update({
+        status: "pending",
+        attempt_count: nextAttempt,
+        last_attempt_at: now.toISOString(),
+        next_attempt_at: nextAttemptAt.toISOString(),
+        error: null,
+      })
+      .eq("id", existing.id)
+      .eq("attempt_count", attemptCount)
+      .in("status", ["pending", "error"])
+      .select("id, attempt_count")
+      .maybeSingle();
+    if (claimError) throw claimError;
+    if (!claimed) return null;
+
+    return { id: claimed.id as string, attempt: Number(claimed.attempt_count), isRetry: true };
   }
 
   if (error) {
     throw error;
   }
 
-  return data.id as string;
+  return { id: data.id as string, attempt: Number(data.attempt_count), isRetry: false };
 }
 
 async function finishReminderRun(id: string, status: "sent" | "error", message: string, errorMessage = "") {
   const admin = requireServerConfig();
-  await admin
-    .from("jumpseat_reminder_runs")
-    .update({
-      status,
-      message: status === "sent" ? message : null,
-      error: errorMessage || null,
-      sent_at: status === "sent" ? new Date().toISOString() : null,
-    })
-    .eq("id", id);
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const { data, error } = await admin
+      .from("jumpseat_reminder_runs")
+      .update({
+        status,
+        message: status === "sent" ? message : null,
+        error: errorMessage || null,
+        sent_at: status === "sent" ? new Date().toISOString() : null,
+        next_attempt_at: status === "sent" ? null : new Date(Date.now() + REMINDER_RETRY_MINUTES * 60_000).toISOString(),
+      })
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
+    if (!error && data) return;
+
+    lastError = new Error(error?.message || "Reminder status update returned no row.");
+    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 200));
+  }
+
+  throw lastError || new Error("Reminder status could not be updated.");
 }
 
 async function runJumpseatReminders() {
@@ -614,6 +674,7 @@ async function runJumpseatReminders() {
   let due = 0;
   let sent = 0;
   let skippedDuplicates = 0;
+  let retried = 0;
   let errors = 0;
 
   for (const row of requestRows || []) {
@@ -627,23 +688,28 @@ async function runJumpseatReminders() {
 
       due += 1;
       const message = buildReminderMessage(request);
-      let runId: string | null = null;
+      let claim: ReminderClaim | null = null;
 
       try {
-        runId = await claimReminderRun(row.user_id, request, departureAt);
-        if (!runId) {
+        claim = await claimReminderRun(row.user_id, request, departureAt);
+        if (!claim) {
           skippedDuplicates += 1;
           continue;
         }
+        if (claim.isRetry) retried += 1;
 
         await sendTelegramMessage(chatId, message);
-        await finishReminderRun(runId, "sent", message);
+        await finishReminderRun(claim.id, "sent", message);
         sent += 1;
       } catch (error) {
         errors += 1;
         const runMessage = error instanceof Error ? error.message : "Unknown reminder send error";
-        if (runId) {
-          await finishReminderRun(runId, "error", message, runMessage);
+        if (claim) {
+          try {
+            await finishReminderRun(claim.id, "error", message, runMessage);
+          } catch (statusError) {
+            console.error(statusError instanceof Error ? statusError.message : "Reminder error status could not be saved.");
+          }
         }
         console.error(runMessage);
       }
@@ -657,9 +723,11 @@ async function runJumpseatReminders() {
     due,
     sent,
     skipped_duplicates: skippedDuplicates,
+    retried,
     errors,
     reminder_offset_minutes: REMINDER_OFFSET_MINUTES,
     reminder_window_minutes: REMINDER_WINDOW_MINUTES,
+    max_reminder_attempts: MAX_REMINDER_ATTEMPTS,
   };
 }
 

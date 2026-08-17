@@ -34,10 +34,10 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-81" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-82" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-81" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-82" />
   </head>
   <body>
     <div class="app-shell">
@@ -49,12 +49,18 @@
 
       <section class="auth-panel hidden" id="authPanel" aria-label="Cloud sign in">
         <div class="auth-copy">
-          <p id="authStatus" aria-live="polite">Sign in to load and save your jumpseat requests online.</p>
+          <p id="authStatus" aria-live="polite">Sign in to load and save your OpsDeck data.</p>
         </div>
 
         <form class="auth-form" id="authForm" novalidate>
-          <input id="authEmail" name="email" type="email" placeholder="Email address" autocomplete="username" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next" required />
-          <input id="authPassword" name="password" type="password" placeholder="Password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" />
+          <label class="auth-field" for="authEmail">
+            <span>Email address</span>
+            <input id="authEmail" name="email" type="email" autocomplete="username" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next" required />
+          </label>
+          <label class="auth-field" for="authPassword">
+            <span>Password</span>
+            <input id="authPassword" name="password" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" />
+          </label>
           <div class="auth-actions">
             <button class="primary-button" id="signInButton" type="submit">Sign in</button>
             <button class="text-button secondary" id="magicLinkButton" type="button">Email magic link</button>
@@ -142,7 +148,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.33</small>
+            <small class="app-version">v2.34</small>
           </section>
 
         </section>
@@ -545,7 +551,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.33</small>
+            <small class="app-version">v2.34</small>
           </section>
         </section>
 
@@ -553,7 +559,7 @@
           <div class="form-heading">
             <div>
               <h2>Settings</h2>
-              <p class="ftl-context">Appearance, notifications and account</p>
+              <p class="ftl-context">Appearance, data, notifications and account</p>
             </div>
           </div>
 
@@ -580,6 +586,21 @@
             </fieldset>
           </section>
 
+          <section class="settings-section" aria-label="Data backup">
+            <div class="section-heading settings-heading">
+              <h2>Data</h2>
+              <span>Backup and restore</span>
+            </div>
+            <p class="settings-copy">Download a portable copy of your Jumpseat requests and FDP and LTOT inputs. JSON can restore OpsDeck; CSV opens in spreadsheet software.</p>
+            <div class="data-actions">
+              <button class="text-button secondary" id="exportJsonButton" type="button">Export JSON</button>
+              <button class="text-button secondary" id="exportCsvButton" type="button">Export CSV</button>
+              <button class="text-button secondary" id="restoreBackupButton" type="button">Restore JSON</button>
+              <input class="hidden" id="restoreBackupInput" type="file" accept="application/json,.json" />
+            </div>
+            <p class="data-status" id="dataStatus" aria-live="polite"></p>
+          </section>
+
           <section class="settings-section" aria-label="Notifications">
             <div class="section-heading settings-heading">
               <h2>Notifications</h2>
@@ -598,7 +619,7 @@
                 <article class="notification-card">
                   <span>Telegram</span>
                   <strong id="telegramLinkState">Not linked</strong>
-                  <small id="telegramBotState">Bot token pending</small>
+                  <small id="telegramBotState">Checking service</small>
                 </article>
                 <article class="notification-card">
                   <span>Reminder timing</span>
@@ -636,10 +657,28 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.33</small>
+            <small class="app-version">v2.34</small>
           </section>
         </section>
       </main>
+    </div>
+
+    <div class="modal-backdrop hidden" id="requestConflictDialog" role="dialog" aria-modal="true" aria-labelledby="requestConflictTitle">
+      <div class="info-modal conflict-modal">
+        <div class="info-modal-heading">
+          <h3 id="requestConflictTitle">Choose the latest Jumpseat copy</h3>
+        </div>
+        <div class="info-modal-content">
+          <p>Jumpseat requests changed on another device while this device also had unsaved changes. Nothing has been overwritten.</p>
+          <p id="requestConflictSummary"></p>
+          <p>Download both copies first if you want to compare them.</p>
+        </div>
+        <div class="conflict-actions">
+          <button class="primary-button" id="useCloudConflictButton" type="button">Use cloud copy</button>
+          <button class="text-button secondary" id="keepDeviceConflictButton" type="button">Keep this device</button>
+          <button class="text-button secondary" id="downloadConflictButton" type="button">Download both</button>
+        </div>
+      </div>
     </div>
 
     <template id="requestTemplate">
@@ -701,8 +740,9 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-81"></script>
-    <script src="./ltot-core.js?v=cloud-sync-81"></script>
-    <script src="./app.js?v=cloud-sync-81"></script>
+    <script src="./supabase-config.js?v=cloud-sync-82"></script>
+    <script src="./ltot-core.js?v=cloud-sync-82"></script>
+    <script src="./data-portability.js?v=cloud-sync-82"></script>
+    <script src="./app.js?v=cloud-sync-82"></script>
   </body>
 </html>
