@@ -2,9 +2,9 @@
 
 ## Current Status
 
-- Current visible app version: v2.32.
-- The top navigation has been simplified to `Jumpseat` and `FDP & LTOT`, with Jumpseat sub-tabs now `Today` and `Add`.
-- Empty Jumpseat days now use a compact message with a direct `Add request` shortcut.
+- Current visible app version: v2.33.
+- The top navigation is limited to `Jumpseat` and `FDP & LTOT`. Jumpseat opens the daily view by default, with contextual `Add request` and `Back to requests` actions instead of a second navigation row.
+- Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
 - LTOT calculation logic has been extracted into a shared helper with automated tests for rollover, standalone on-chocks, discretion, contingency, and missing FDP input.
 - A guarded `Send LTOT` Telegram action has been prepared; the button only appears once the deployed Supabase function advertises LTOT summary support.
@@ -20,6 +20,7 @@
 - v2.30 introduces the refined executive light appearance and a matching graphite Night appearance. Automatic, Light and Night are selectable in Settings and remembered locally on each device without entering cloud data.
 - v2.31 replaces the gold selected-state detail on the Jumpseat, FDP & LTOT, Today and Add controls with a restrained silver finish.
 - v2.32 restores the simpler FDP workflow: one Flight crew limit and one optional Cabin crew limit, with no individual crew records. Calculator persistence, limiting-group comparison and Telegram output remain in place.
+- v2.33 reduces Jumpseat navigation height, progressively reveals the completed crew comparison, simplifies FDP input framing, aligns final-sector controls, improves mobile comparison readability, standardises touch and focus states, and refines icons, contrast and numerical typography.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.

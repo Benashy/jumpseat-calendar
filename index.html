@@ -34,10 +34,10 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-80" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-81" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-80" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-81" />
   </head>
   <body>
     <div class="app-shell">
@@ -68,33 +68,35 @@
       </section>
 
       <nav class="tool-menu" aria-label="Flight tools" role="tablist">
-        <button class="tool-button active" id="jumpseatToolTab" type="button" role="tab" aria-controls="homeView" aria-selected="true">Jumpseat</button>
+        <button class="tool-button active" id="jumpseatToolTab" type="button" role="tab" aria-controls="homeView addView" aria-selected="true">Jumpseat</button>
         <button class="tool-button" id="ftlToolTab" type="button" role="tab" aria-controls="ftlView" aria-selected="false">FDP &amp; LTOT</button>
       </nav>
 
-      <nav class="app-tabs" aria-label="Jumpseat sections" role="tablist">
-        <button class="tab-button active" id="homeTab" type="button" role="tab" aria-controls="homeView" aria-selected="true">Today</button>
-        <button class="tab-button" id="addTab" type="button" role="tab" aria-controls="addView" aria-selected="false">Add</button>
-      </nav>
-
       <main class="layout">
-        <section class="day-panel view-panel" id="homeView" role="tabpanel" aria-labelledby="homeTab" aria-hidden="false">
+        <section class="day-panel view-panel" id="homeView" role="tabpanel" aria-labelledby="jumpseatToolTab" aria-hidden="false">
           <div class="date-toolbar">
             <button class="icon-button" id="previousDay" type="button" title="Previous day" aria-label="Previous day">
-              <span aria-hidden="true">‹</span>
+              <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
             </button>
             <div class="date-picker-group">
               <label for="selectedDate">Date</label>
               <input id="selectedDate" type="date" />
             </div>
             <button class="icon-button" id="nextDay" type="button" title="Next day" aria-label="Next day">
-              <span aria-hidden="true">›</span>
+              <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
             </button>
-            <button class="text-button" id="todayButton" type="button">Today</button>
+            <button class="text-button button-with-icon today-button" id="todayButton" type="button" title="Go to today" aria-label="Go to today">
+              <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 2v4M16 2v4" />
+                <rect width="18" height="18" x="3" y="4" rx="2" />
+                <path d="M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
+              </svg>
+              <span class="today-label">Today</span>
+            </button>
           </div>
 
           <div class="day-summary">
-            <div>
+            <div class="day-summary-date">
               <span id="weekdayLabel">Today</span>
               <strong id="dateLabel">Loading</strong>
             </div>
@@ -102,6 +104,10 @@
               <span><strong id="flightCount">0</strong> flights</span>
               <span><strong id="seatCount">0</strong> requests</span>
             </div>
+            <button class="primary-button button-with-icon day-add-button" id="openAddRequestButton" type="button" aria-label="Add request">
+              <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14" /></svg>
+              <span>Add<span class="day-add-detail"> request</span></span>
+            </button>
           </div>
 
           <div class="request-list" id="requestList" aria-live="polite"></div>
@@ -128,20 +134,26 @@
             <span id="homeSyncStatus" aria-live="polite">Cloud ready</span>
             <div class="account-actions">
               <button class="icon-button" id="refreshCloudButton" type="button" title="Refresh cloud data" aria-label="Refresh cloud data">
-                <span aria-hidden="true">↻</span>
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8" />
+                  <path d="M21 3v5h-5" />
+                </svg>
               </button>
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.32</small>
+            <small class="app-version">v2.33</small>
           </section>
 
         </section>
 
-        <aside class="entry-panel view-panel hidden" id="addView" role="tabpanel" aria-labelledby="addTab" aria-hidden="true">
+        <aside class="entry-panel view-panel hidden" id="addView" role="region" aria-labelledby="formTitle" aria-hidden="true">
           <div class="form-heading">
             <h2 id="formTitle">Add request</h2>
-            <button class="text-button secondary hidden" id="cancelEditButton" type="button">Cancel edit</button>
+            <button class="text-button secondary button-with-icon back-to-requests-button" id="backToRequestsButton" type="button" aria-label="Back to requests">
+              <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+              <span class="back-to-requests-label">Back to requests</span>
+            </button>
           </div>
 
           <form id="requestForm" novalidate>
@@ -177,8 +189,12 @@
                 <span class="stepper-field">
                   <input id="availableSeats" name="availableSeats" type="number" min="0" max="99" placeholder="Optional" inputmode="numeric" />
                   <span class="stepper-controls">
-                    <button id="availableSeatsUp" type="button" tabindex="-1" aria-label="Increase available jumpseats">▲</button>
-                    <button id="availableSeatsDown" type="button" tabindex="-1" aria-label="Decrease available jumpseats">▼</button>
+                    <button id="availableSeatsUp" type="button" tabindex="-1" aria-label="Increase available jumpseats">
+                      <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 15-6-6-6 6" /></svg>
+                    </button>
+                    <button id="availableSeatsDown" type="button" tabindex="-1" aria-label="Decrease available jumpseats">
+                      <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                    </button>
                   </span>
                 </span>
               </label>
@@ -187,7 +203,7 @@
             <section class="requests-panel" aria-labelledby="requestsHeading">
               <h3 id="requestsHeading">Requests</h3>
               <div class="staff-fields" id="staffFields"></div>
-              <button class="text-button secondary add-request-button" id="addSeatButton" type="button">Add request</button>
+              <button class="text-button secondary add-request-button" id="addSeatButton" type="button">Add another person</button>
             </section>
 
             <label>
@@ -262,12 +278,17 @@
             <section class="duration-section" aria-label="FDP limit">
               <div class="duration-section-heading">
                 <h3>FDP limit</h3>
-                <button class="text-button secondary compact-button" id="toggleCabinCrewButton" type="button">Add cabin crew</button>
+                <button class="text-button secondary compact-button" id="addCabinCrewButton" type="button" aria-expanded="false">Add cabin crew</button>
               </div>
 
-              <div class="crew-tabs hidden" id="crewTabs" role="tablist" aria-label="Crew FDP inputs">
-                <button class="crew-tab active" id="flightCrewTab" type="button" role="tab" aria-controls="flightCrewInputs" aria-selected="true">Flight crew</button>
-                <button class="crew-tab" id="cabinCrewTab" type="button" role="tab" aria-controls="cabinCrewInputs" aria-selected="false">Cabin crew</button>
+              <div class="crew-tabs-row hidden" id="crewTabsRow">
+                <div class="crew-tabs" id="crewTabs" role="tablist" aria-label="Crew FDP inputs">
+                  <button class="crew-tab active" id="flightCrewTab" type="button" role="tab" aria-controls="flightCrewInputs" aria-selected="true">Flight crew</button>
+                  <button class="crew-tab" id="cabinCrewTab" type="button" role="tab" aria-controls="cabinCrewInputs" aria-selected="false">Cabin crew</button>
+                </div>
+                <button class="icon-button crew-remove-button" id="removeCabinCrewButton" type="button" title="Remove cabin crew" aria-label="Remove cabin crew">
+                  <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                </button>
               </div>
 
               <div class="crew-input-panel" id="flightCrewInputs" role="tabpanel" aria-labelledby="flightCrewTab" aria-hidden="false">
@@ -320,7 +341,7 @@
                   </span>
                 </div>
               </div>
-              <div class="calculation-strip">
+              <div class="calculation-strip sector-calculation-strip">
                 <span>Anticipated sector length</span>
                 <strong id="sectorLength">--</strong>
               </div>
@@ -516,12 +537,15 @@
             <span id="ftlSyncStatus" aria-live="polite">Cloud ready</span>
             <div class="account-actions">
               <button class="icon-button" id="ftlRefreshCloudButton" type="button" title="Refresh cloud data" aria-label="Refresh cloud data">
-                <span aria-hidden="true">↻</span>
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8" />
+                  <path d="M21 3v5h-5" />
+                </svg>
               </button>
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.32</small>
+            <small class="app-version">v2.33</small>
           </section>
         </section>
 
@@ -605,11 +629,14 @@
             <span id="settingsSyncStatus" aria-live="polite">Cloud ready</span>
             <div class="account-actions">
               <button class="icon-button" id="settingsRefreshCloudButton" type="button" title="Refresh cloud data" aria-label="Refresh cloud data">
-                <span aria-hidden="true">↻</span>
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8" />
+                  <path d="M21 3v5h-5" />
+                </svg>
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.32</small>
+            <small class="app-version">v2.33</small>
           </section>
         </section>
       </main>
@@ -653,7 +680,7 @@
             </span>
           </div>
           <div class="duration-control">
-            <span class="duration-label">Commander's discretion</span>
+            <span class="duration-label">Commander's discretion <small class="field-optional">Optional</small></span>
             <span class="duration-picker">
               <select class="crew-limit-discretion-hours"></select>
               <small>hr</small>
@@ -674,8 +701,8 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-80"></script>
-    <script src="./ltot-core.js?v=cloud-sync-80"></script>
-    <script src="./app.js?v=cloud-sync-80"></script>
+    <script src="./supabase-config.js?v=cloud-sync-81"></script>
+    <script src="./ltot-core.js?v=cloud-sync-81"></script>
+    <script src="./app.js?v=cloud-sync-81"></script>
   </body>
 </html>

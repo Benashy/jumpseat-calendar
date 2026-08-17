@@ -39,16 +39,14 @@ const elements = {
   ftlSignOutButton: document.querySelector("#ftlSignOutButton"),
   settingsSignOutButton: document.querySelector("#settingsSignOutButton"),
   toolMenu: document.querySelector(".tool-menu"),
-  appTabs: document.querySelector(".app-tabs"),
   layout: document.querySelector(".layout"),
   jumpseatToolTab: document.querySelector("#jumpseatToolTab"),
   ftlToolTab: document.querySelector("#ftlToolTab"),
-  homeTab: document.querySelector("#homeTab"),
-  addTab: document.querySelector("#addTab"),
   homeView: document.querySelector("#homeView"),
   addView: document.querySelector("#addView"),
   ftlView: document.querySelector("#ftlView"),
   settingsView: document.querySelector("#settingsView"),
+  openAddRequestButton: document.querySelector("#openAddRequestButton"),
   previousDay: document.querySelector("#previousDay"),
   nextDay: document.querySelector("#nextDay"),
   todayButton: document.querySelector("#todayButton"),
@@ -64,7 +62,7 @@ const elements = {
   editingId: document.querySelector("#editingId"),
   formError: document.querySelector("#formError"),
   formTitle: document.querySelector("#formTitle"),
-  cancelEditButton: document.querySelector("#cancelEditButton"),
+  backToRequestsButton: document.querySelector("#backToRequestsButton"),
   saveButton: document.querySelector("#saveButton"),
   flightNumber: document.querySelector("#flightNumber"),
   departureTime: document.querySelector("#departureTime"),
@@ -91,8 +89,9 @@ const elements = {
   elapsedInfoButtonMobile: document.querySelector("#elapsedInfoButtonMobile"),
   elapsedInfoDialog: document.querySelector("#elapsedInfoDialog"),
   elapsedInfoCloseButton: document.querySelector("#elapsedInfoCloseButton"),
-  toggleCabinCrewButton: document.querySelector("#toggleCabinCrewButton"),
-  crewTabs: document.querySelector("#crewTabs"),
+  addCabinCrewButton: document.querySelector("#addCabinCrewButton"),
+  removeCabinCrewButton: document.querySelector("#removeCabinCrewButton"),
+  crewTabsRow: document.querySelector("#crewTabsRow"),
   flightCrewTab: document.querySelector("#flightCrewTab"),
   cabinCrewTab: document.querySelector("#cabinCrewTab"),
   flightCrewInputs: document.querySelector("#flightCrewInputs"),
@@ -448,7 +447,7 @@ function setOfflineReadOnly(isReadOnly) {
   isOfflineReadOnly = isReadOnly;
   document.body.classList.toggle("offline-readonly", isReadOnly);
   elements.offlineBanner.classList.toggle("hidden", !isReadOnly);
-  elements.addTab.disabled = isReadOnly;
+  elements.openAddRequestButton.disabled = isReadOnly;
   elements.refreshCloudButton.disabled = isReadOnly;
   elements.ftlRefreshCloudButton.disabled = isReadOnly;
   elements.settingsRefreshCloudButton.disabled = isReadOnly;
@@ -482,7 +481,6 @@ function startOfflineMode(message = "Offline: viewing saved data") {
 
 function setAppVisible(isVisible) {
   elements.toolMenu.classList.toggle("hidden", !isVisible);
-  elements.appTabs.classList.toggle("hidden", !isVisible);
   elements.layout.classList.toggle("hidden", !isVisible);
 }
 
@@ -524,22 +522,16 @@ function setActiveTab(tabName) {
   elements.addView.setAttribute("aria-hidden", String(isHome));
   elements.ftlView.setAttribute("aria-hidden", "true");
   elements.settingsView.setAttribute("aria-hidden", "true");
-  elements.appTabs.classList.remove("hidden");
   elements.jumpseatToolTab.classList.add("active");
   elements.ftlToolTab.classList.remove("active");
   elements.jumpseatToolTab.setAttribute("aria-selected", "true");
   elements.ftlToolTab.setAttribute("aria-selected", "false");
-  elements.homeTab.classList.toggle("active", isHome);
-  elements.addTab.classList.toggle("active", !isHome);
-  elements.homeTab.setAttribute("aria-selected", String(isHome));
-  elements.addTab.setAttribute("aria-selected", String(!isHome));
 }
 
 function setActiveTool(toolName) {
   const isFtl = toolName === "ftl";
   const isJumpseat = !isFtl;
 
-  elements.appTabs.classList.toggle("hidden", !isJumpseat);
   elements.homeView.classList.toggle("hidden", !isJumpseat);
   elements.addView.classList.add("hidden");
   elements.ftlView.classList.toggle("hidden", !isFtl);
@@ -557,7 +549,6 @@ function setActiveTool(toolName) {
 }
 
 function openSettings() {
-  elements.appTabs.classList.add("hidden");
   elements.homeView.classList.add("hidden");
   elements.addView.classList.add("hidden");
   elements.ftlView.classList.add("hidden");
@@ -1448,8 +1439,9 @@ function crewResultTime(result, property) {
 }
 
 function updateCrewComparison(comparison) {
-  const showComparison = comparison.results.length > 1;
+  const showComparison = comparison.results.length > 1 && comparison.comparisonComplete;
   elements.crewResults.classList.toggle("hidden", !showComparison);
+  elements.crewResults.setAttribute("aria-hidden", String(!showComparison));
   elements.crewResultRows.replaceChildren();
   if (!showComparison) return;
 
@@ -1476,9 +1468,11 @@ function updateCrewComparison(comparison) {
       name.append(badge);
     }
     dutyStart.setAttribute("role", "cell");
+    dutyStart.dataset.label = "Duty start";
     dutyStart.textContent = Number.isFinite(result.dutyStartMinutes) ? formatZuluTime(result.dutyStartMinutes) : "--:--Z";
     allowable.className = "crew-result-fdp";
     allowable.setAttribute("role", "cell");
+    allowable.dataset.label = "Allowable FDP";
     allowableValue.textContent = Number.isFinite(result.calculation.maximumAllowableFdpMinutes)
       ? formatDurationWithZeroMinutes(result.calculation.maximumAllowableFdpMinutes)
       : "--";
@@ -1487,6 +1481,7 @@ function updateCrewComparison(comparison) {
       : "No discretion";
     allowable.append(allowableValue, discretion);
     onChocks.setAttribute("role", "cell");
+    onChocks.dataset.label = "On-chocks";
     onChocks.textContent = crewResultTime(result, "latestOnChocksMinutes");
     row.append(name, dutyStart, allowable, onChocks);
     elements.crewResultRows.append(row);
@@ -1616,9 +1611,9 @@ function calculateFtl(shouldPersist = true) {
 
 function renderFtlCrewMode() {
   const showCabin = cabinCrewEnabled;
-  elements.crewTabs.classList.toggle("hidden", !showCabin);
-  elements.toggleCabinCrewButton.textContent = showCabin ? "Remove cabin crew" : "Add cabin crew";
-  elements.toggleCabinCrewButton.setAttribute("aria-expanded", String(showCabin));
+  elements.crewTabsRow.classList.toggle("hidden", !showCabin);
+  elements.addCabinCrewButton.classList.toggle("hidden", showCabin);
+  elements.addCabinCrewButton.setAttribute("aria-expanded", String(showCabin));
 
   const cabinActive = showCabin && activeFtlCrew === "cabin";
   elements.flightCrewTab.classList.toggle("active", !cabinActive);
@@ -1638,20 +1633,25 @@ function setActiveFtlCrew(crewKey) {
   updateFdpReferenceSelection();
 }
 
-function toggleCabinCrew() {
+function addCabinCrew() {
+  if (cabinCrewEnabled) return;
   const state = serializeCalculatorState();
-  if (!cabinCrewEnabled) {
-    state.crewLimits.push(createDefaultCrewLimitRecord("cabin"));
-    activeFtlCrew = "cabin";
-  } else {
-    const cabinControls = crewLimitRecords
-      .filter((record) => record.category === "cabin")
-      .map((record) => ftlCrewControls[record.id]);
-    const hasCabinData = cabinControls.some(crewLimitHasData);
-    if (hasCabinData && !window.confirm("Remove the Cabin crew limit and its FDP inputs?")) return;
-    state.crewLimits = state.crewLimits.filter((record) => record.category !== "cabin");
-    activeFtlCrew = "flight";
-  }
+  state.crewLimits.push(createDefaultCrewLimitRecord("cabin"));
+  activeFtlCrew = "cabin";
+  renderCrewLimitRecords(state.crewLimits);
+  calculateFtl();
+}
+
+function removeCabinCrew() {
+  if (!cabinCrewEnabled) return;
+  const state = serializeCalculatorState();
+  const cabinControls = crewLimitRecords
+    .filter((record) => record.category === "cabin")
+    .map((record) => ftlCrewControls[record.id]);
+  const hasCabinData = cabinControls.some(crewLimitHasData);
+  if (hasCabinData && !window.confirm("Remove the Cabin crew limit and its FDP inputs?")) return;
+  state.crewLimits = state.crewLimits.filter((record) => record.category !== "cabin");
+  activeFtlCrew = "flight";
   renderCrewLimitRecords(state.crewLimits);
   calculateFtl();
 }
@@ -1666,7 +1666,8 @@ function setupFtlCalculator() {
   applySectorTimingState(saved.state.sectorTiming);
   renderCrewLimitRecords(saved.state.crewLimits);
   renderFdpReferenceTables();
-  elements.toggleCabinCrewButton.addEventListener("click", toggleCabinCrew);
+  elements.addCabinCrewButton.addEventListener("click", addCabinCrew);
+  elements.removeCabinCrewButton.addEventListener("click", removeCabinCrew);
   elements.flightCrewTab.addEventListener("click", () => setActiveFtlCrew("flight"));
   elements.cabinCrewTab.addEventListener("click", () => setActiveFtlCrew("cabin"));
   renderFtlCrewMode();
@@ -2283,7 +2284,6 @@ function clearForm(keepDate = true) {
   elements.availableSeats.value = "";
   elements.formTitle.textContent = "Add request";
   elements.saveButton.textContent = "Save request";
-  elements.cancelEditButton.classList.add("hidden");
   renderStaffFields();
   clearValidation();
 }
@@ -2432,16 +2432,10 @@ function render() {
   if (dayRequests.length === 0) {
     const empty = document.createElement("div");
     const copy = document.createElement("p");
-    const action = document.createElement("button");
 
     empty.className = "empty-state";
     copy.innerHTML = "<strong>No requests for this day</strong>Add the first jumpseat request for the selected date.";
-    action.className = "primary-button empty-state-action";
-    action.type = "button";
-    action.textContent = "Add request";
-    action.disabled = isOfflineReadOnly;
-    action.addEventListener("click", startAdd);
-    empty.append(copy, action);
+    empty.append(copy);
     elements.requestList.append(empty);
     return;
   }
@@ -2517,7 +2511,6 @@ function startEdit(id) {
   elements.notes.value = request.notes || "";
   elements.formTitle.textContent = "Edit request";
   elements.saveButton.textContent = "Update request";
-  elements.cancelEditButton.classList.remove("hidden");
   setActiveTab("add");
   elements.flightNumber.focus();
 }
@@ -2962,8 +2955,7 @@ elements.elapsedInfoCloseButton?.addEventListener("click", closeElapsedInfo);
 elements.elapsedInfoDialog?.addEventListener("click", (event) => {
   if (event.target === elements.elapsedInfoDialog) closeElapsedInfo();
 });
-elements.homeTab.addEventListener("click", () => setActiveTab("home"));
-elements.addTab.addEventListener("click", startAdd);
+elements.openAddRequestButton.addEventListener("click", startAdd);
 [elements.requestDate, elements.flightNumber, elements.routeFrom, elements.routeTo, elements.departureTime]
   .forEach((field) => field.addEventListener("input", clearValidation));
 elements.selectedDate.addEventListener("change", () => setSelectedDate(elements.selectedDate.value));
@@ -2976,9 +2968,10 @@ elements.todayButton.addEventListener("click", () => setSelectedDate(todayIso())
 elements.globalSearch.addEventListener("input", renderGlobalSearch);
 elements.availableSeatsUp.addEventListener("click", () => stepAvailableSeats(1));
 elements.availableSeatsDown.addEventListener("click", () => stepAvailableSeats(-1));
-elements.cancelEditButton.addEventListener("click", () => {
+elements.backToRequestsButton.addEventListener("click", () => {
   clearForm();
   setActiveTab("home");
+  elements.openAddRequestButton.focus();
 });
 elements.addSeatButton.addEventListener("click", () => {
   const values = getStaffValues();
