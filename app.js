@@ -2,6 +2,7 @@ const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 1;
 const MAGIC_LINK_SENT_KEY = "jumpseat-calendar-magic-link-sent-at";
+const APPEARANCE_STORAGE_KEY = "opsdeck-appearance-v1";
 const MAX_REQUESTS_PER_FLIGHT = 10;
 const MAX_FLIGHT_CREW_LIMITS = 2;
 const MAX_CABIN_CREW_LIMITS = 6;
@@ -9,8 +10,10 @@ const MAGIC_LINK_COOLDOWN_SECONDS = 75;
 const MAGIC_LINK_RATE_LIMIT_SECONDS = 60 * 60;
 const CLOUD_FRESH_HOURS = 1;
 const CLOUD_STALE_HOURS = 24;
+const PAGE_QUERY = new URLSearchParams(window.location.search);
 const IS_LOCAL_PREVIEW = ["127.0.0.1", "localhost"].includes(window.location.hostname) &&
-  new URLSearchParams(window.location.search).has("preview");
+  PAGE_QUERY.has("preview");
+const LOCAL_PREVIEW_VIEW = IS_LOCAL_PREVIEW ? PAGE_QUERY.get("view") : null;
 
 // Shared DOM handles and app state.
 const elements = {
@@ -130,6 +133,7 @@ const elements = {
   checkPairingButton: document.querySelector("#checkPairingButton"),
   sendTelegramTestButton: document.querySelector("#sendTelegramTestButton"),
   sendSampleReminderButton: document.querySelector("#sendSampleReminderButton"),
+  appearanceInputs: document.querySelectorAll('input[name="appearance"]'),
 };
 
 const ftlDurationControls = {
@@ -245,6 +249,72 @@ const hasCloudConfig = Boolean(
 const supabaseClient = hasCloudConfig && window.supabase
   ? window.supabase.createClient(cloudConfig.url, cloudConfig.anonKey)
   : null;
+
+const systemAppearanceQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+function readAppearancePreference() {
+  try {
+    const preference = localStorage.getItem(APPEARANCE_STORAGE_KEY);
+    return ["automatic", "light", "night"].includes(preference) ? preference : "automatic";
+  } catch (_error) {
+    return "automatic";
+  }
+}
+
+function resolveAppearance(preference) {
+  if (preference === "automatic") return systemAppearanceQuery.matches ? "night" : "light";
+  return preference;
+}
+
+function applyAppearance(preference, persist = false) {
+  const safePreference = ["automatic", "light", "night"].includes(preference)
+    ? preference
+    : "automatic";
+  const resolvedTheme = resolveAppearance(safePreference);
+
+  document.documentElement.dataset.appearance = safePreference;
+  document.documentElement.dataset.theme = resolvedTheme;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute(
+    "content",
+    resolvedTheme === "night" ? "#10171c" : "#102f47"
+  );
+
+  elements.appearanceInputs.forEach((input) => {
+    input.checked = input.value === safePreference;
+  });
+
+  if (!persist) return;
+
+  try {
+    localStorage.setItem(APPEARANCE_STORAGE_KEY, safePreference);
+  } catch (_error) {
+    // The selected appearance still applies for this session.
+  }
+}
+
+function initialiseAppearance() {
+  applyAppearance(readAppearancePreference());
+
+  elements.appearanceInputs.forEach((input) => {
+    input.addEventListener("change", () => {
+      if (input.checked) applyAppearance(input.value, true);
+    });
+  });
+
+  const updateAutomaticAppearance = () => {
+    if (document.documentElement.dataset.appearance === "automatic") applyAppearance("automatic");
+  };
+
+  if (typeof systemAppearanceQuery.addEventListener === "function") {
+    systemAppearanceQuery.addEventListener("change", updateAutomaticAppearance);
+  } else {
+    systemAppearanceQuery.addListener(updateAutomaticAppearance);
+  }
+
+  window.addEventListener("storage", (event) => {
+    if (event.key === APPEARANCE_STORAGE_KEY) applyAppearance(readAppearancePreference());
+  });
+}
 
 function setAuthStatus(message, isError = false, isSuccess = false) {
   elements.authStatus.textContent = message;
@@ -3050,14 +3120,16 @@ window.addEventListener("keydown", (event) => {
   }
 });
 
+initialiseAppearance();
 setSelectedDate(todayIso());
 clearForm();
 setupFtlCalculator();
 strengthenCredentialPaste(elements.authEmail);
 strengthenCredentialPaste(elements.authPassword);
 initCloud();
+if (LOCAL_PREVIEW_VIEW === "settings") openSettings();
 
-if ("serviceWorker" in navigator) {
+if ("serviceWorker" in navigator && !IS_LOCAL_PREVIEW) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./service-worker.js").catch(() => {});
   });

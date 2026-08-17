@@ -2247,3 +2247,512 @@ form label {
     width: 100%;
   }
 }
+
+/* Refined light and night appearance system. */
+:root {
+  color-scheme: light;
+  --bg: #eef1f2;
+  --panel: #ffffff;
+  --panel-soft: #f5f7f8;
+  --ink: #172733;
+  --muted: #68737b;
+  --line: #d4dade;
+  --field: #ffffff;
+  --navy: #102f47;
+  --navy-strong: #081d2c;
+  --accent: #274b63;
+  --accent-strong: #15364c;
+  --sky: #dbe8ee;
+  --amber: #a97824;
+  --amber-soft: #f6eedf;
+  --silver: #c8ced2;
+  --silver-soft: rgba(166, 176, 182, 0.24);
+  --gold: #b89552;
+  --gold-soft: rgba(184, 149, 82, 0.17);
+  --taupe: #786d63;
+  --taupe-soft: rgba(120, 109, 99, 0.1);
+  --good: #2f7048;
+  --good-soft: #e9f5ed;
+  --warn: #a84235;
+  --warn-soft: #f8e8e5;
+  --blue-soft: #e9f1f5;
+  --control-surface: #ffffff;
+  --active-surface: #102f47;
+  --active-surface-strong: #081d2c;
+  --shadow: 0 16px 42px rgba(19, 36, 48, 0.1);
+  --soft-shadow: 0 6px 18px rgba(19, 36, 48, 0.065);
+}
+
+html[data-theme="night"] {
+  color-scheme: dark;
+  --bg: #101417;
+  --panel: #1a1f23;
+  --panel-soft: #22282c;
+  --ink: #f1f0ec;
+  --muted: #aeb6bc;
+  --line: #3a4349;
+  --field: #151a1e;
+  --navy: #dce9f0;
+  --navy-strong: #f3f7f9;
+  --accent: #8db4ca;
+  --accent-strong: #c0d8e5;
+  --sky: #223743;
+  --amber: #efbd62;
+  --amber-soft: #40351f;
+  --silver: #69747b;
+  --silver-soft: rgba(158, 170, 177, 0.15);
+  --gold: #c4a367;
+  --gold-soft: rgba(196, 163, 103, 0.17);
+  --taupe: #b6a89c;
+  --taupe-soft: rgba(182, 168, 156, 0.1);
+  --good: #8ed0a6;
+  --good-soft: #1e3528;
+  --warn: #ff9084;
+  --warn-soft: #442825;
+  --blue-soft: #20333e;
+  --control-surface: #1d2327;
+  --active-surface: #18384d;
+  --active-surface-strong: #102a3b;
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.32);
+  --soft-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+}
+
+body {
+  background: var(--bg);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.app-shell {
+  padding-top: 20px;
+}
+
+.topbar {
+  min-height: 78px;
+  margin-bottom: 14px;
+  border-color: rgba(184, 149, 82, 0.46);
+  background: var(--active-surface);
+  box-shadow: 0 12px 28px rgba(8, 29, 44, 0.18);
+  padding: 18px 22px;
+}
+
+h1 {
+  font-size: 2.35rem;
+  font-weight: 720;
+}
+
+label,
+legend {
+  font-weight: 650;
+}
+
+.tool-button,
+.tab-button,
+.crew-tab,
+.icon-button,
+.text-button,
+.fdp-table-button,
+.baid-toggle {
+  border-color: var(--line);
+  background: var(--control-surface);
+  color: var(--navy);
+  box-shadow: none;
+}
+
+.tool-button,
+.tab-button,
+.crew-tab {
+  font-weight: 760;
+}
+
+.tool-button.active,
+.tab-button.active,
+.crew-tab.active {
+  border-color: var(--active-surface);
+  background: var(--active-surface);
+  box-shadow: inset 0 -3px 0 var(--gold);
+  color: #fff;
+}
+
+.primary-button {
+  border-color: rgba(184, 149, 82, 0.42);
+  background: var(--active-surface);
+  color: #fff;
+  font-weight: 760;
+}
+
+.primary-button:hover {
+  background: var(--active-surface-strong);
+}
+
+.icon-button:hover,
+.text-button:hover,
+.fdp-table-button:hover {
+  border-color: rgba(184, 149, 82, 0.48);
+  background: var(--panel-soft);
+}
+
+.day-panel,
+.entry-panel,
+.ftl-panel,
+.settings-panel,
+.auth-panel {
+  border-color: var(--line);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.day-summary,
+.requests-panel,
+.settings-section,
+.notification-card,
+.notification-section,
+.duration-section,
+.crew-results,
+.guidance-panel,
+.account-panel {
+  border-color: var(--line);
+  background: var(--panel-soft);
+}
+
+.summary-counts span,
+.ftl-result-card,
+.crew-limit-card,
+.calculation-strip,
+.fdp-workflow div,
+.fdp-reference-legend,
+.pairing-code,
+.upcoming-item,
+.global-result,
+.empty-state,
+.request-card,
+.sector-duration-grid .required-duration {
+  border-color: var(--line);
+  background: var(--panel);
+}
+
+.duration-control.required-duration {
+  background: var(--panel);
+}
+
+.ftl-result-card {
+  border-top: 3px solid var(--gold);
+  box-shadow: var(--soft-shadow);
+}
+
+.ftl-result-card.is-warning {
+  border-color: rgba(196, 143, 43, 0.72);
+  background: var(--amber-soft);
+}
+
+.ftl-result-card.is-overdue {
+  border-color: rgba(182, 66, 46, 0.82);
+  background: var(--warn-soft);
+}
+
+.ftl-results strong {
+  font-size: 1.9rem;
+  font-weight: 760;
+}
+
+.ftl-results span,
+.ftl-results small,
+.ftl-context,
+.account-panel span,
+.notification-copy,
+.telegram-status,
+.calculation-strip span,
+.crew-result-fdp small {
+  font-weight: 650;
+}
+
+.form-heading h2,
+.section-heading h2,
+.duration-section h3,
+.crew-limit-card-heading h4,
+.guidance-panel summary,
+.guidance-content h3,
+.compact-heading h3,
+.notification-card strong {
+  font-weight: 720;
+}
+
+input,
+textarea,
+.duration-control select {
+  border-color: var(--line);
+  background: var(--field);
+  color: var(--ink);
+}
+
+input:focus,
+textarea:focus,
+.duration-control select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(39, 75, 99, 0.16);
+}
+
+input.invalid,
+textarea.invalid,
+.duration-control select.is-incomplete,
+.form-error {
+  background: var(--warn-soft);
+}
+
+.name-list li,
+.zulu-field span,
+.stepper-controls,
+.stepper-controls button {
+  border-color: var(--line);
+  background: var(--panel-soft);
+  color: var(--navy);
+}
+
+.stepper-controls button + button {
+  border-top-color: var(--line);
+}
+
+.seat-badge {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.seat-badge.availability-spare,
+.baid-badge {
+  background: var(--good-soft);
+  color: var(--good);
+}
+
+.seat-badge.availability-full {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.seat-badge.availability-over,
+.zulu-field input.invalid + span {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.request-card {
+  border-left-color: var(--gold);
+  box-shadow: var(--soft-shadow), inset 0 0 0 1px var(--silver-soft);
+}
+
+.request-card::after {
+  box-shadow: inset 0 0 0 1px var(--silver-soft);
+}
+
+.info-button::before {
+  border-color: var(--line);
+  background: var(--panel);
+}
+
+.fdp-table-scroll {
+  border-color: var(--line);
+  background: var(--panel);
+}
+
+.fdp-reference-table th,
+.fdp-reference-table td {
+  border-bottom-color: var(--line);
+}
+
+.fdp-reference-table thead th {
+  background: var(--panel-soft);
+  color: var(--navy);
+}
+
+.fdp-reference-table tbody th {
+  border-right-color: var(--line);
+  background: var(--panel);
+}
+
+.fdp-table-button.is-selected {
+  border-color: rgba(184, 149, 82, 0.72);
+  background: var(--gold-soft);
+}
+
+.fdp-state-table tbody tr.fdp-local-row th,
+.fdp-state-table tbody tr.fdp-local-row td {
+  background: var(--blue-soft);
+}
+
+.info-modal {
+  border-color: var(--line);
+  background: var(--panel);
+}
+
+.fdp-target-banner,
+.fdp-reference-status {
+  background: var(--active-surface);
+  color: #fff;
+}
+
+.app-version {
+  color: var(--muted);
+  font-weight: 650;
+  opacity: 0.72;
+}
+
+.status-success {
+  color: var(--good) !important;
+}
+
+.status-warning {
+  color: var(--amber) !important;
+}
+
+.offline-banner {
+  border-color: rgba(184, 149, 82, 0.48);
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+}
+
+.appearance-section {
+  margin-bottom: 13px;
+}
+
+.appearance-control {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 4px;
+}
+
+.appearance-option {
+  position: relative;
+  min-width: 0;
+}
+
+.appearance-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.appearance-option span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 720;
+  text-align: center;
+}
+
+.appearance-option input:checked + span {
+  border-color: var(--active-surface);
+  background: var(--active-surface);
+  box-shadow: inset 0 -2px 0 var(--gold);
+  color: #fff;
+}
+
+.appearance-option input:focus-visible + span {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+html[data-theme="night"] .topbar {
+  background: #142b3a;
+  box-shadow: var(--shadow);
+}
+
+html[data-theme="night"] .primary-button {
+  background: #234b64;
+}
+
+html[data-theme="night"] .primary-button:hover {
+  background: #2b5a77;
+}
+
+html[data-theme="night"] .ftl-results .fdp-limit {
+  background: #293238;
+  border-color: var(--line);
+  color: #dce9f0;
+}
+
+html[data-theme="night"] .ftl-results .soft-limit {
+  color: var(--amber);
+}
+
+html[data-theme="night"] .fdp-state-table td.fdp-state-b-cell,
+html[data-theme="night"] strong.fdp-state-b-label {
+  color: #8ed0a6;
+}
+
+html[data-theme="night"] .fdp-state-table td.fdp-state-d-cell,
+html[data-theme="night"] strong.fdp-state-d-label,
+html[data-theme="night"] .fdp-local-row th small {
+  color: #88bfe0;
+}
+
+html[data-theme="night"] .fdp-state-table tbody tr.fdp-local-row td {
+  color: #88bfe0;
+}
+
+html[data-theme="night"] .fdp-state-table td.fdp-state-x-cell,
+html[data-theme="night"] strong.fdp-state-x-label {
+  color: var(--amber);
+}
+
+html[data-theme="night"] input[type="date"],
+html[data-theme="night"] input[type="time"] {
+  color-scheme: dark;
+}
+
+@media (max-width: 880px) {
+  h1 {
+    font-size: 2.1rem;
+  }
+
+  .ftl-results strong {
+    font-size: 1.65rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .app-shell {
+    padding-top: 12px;
+  }
+
+  .topbar {
+    min-height: 68px;
+    padding: 16px;
+  }
+
+  h1 {
+    font-size: 1.95rem;
+  }
+
+  .appearance-option span {
+    min-height: 44px;
+    font-size: 0.78rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
+}
