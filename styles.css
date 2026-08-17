@@ -2267,6 +2267,7 @@ form label {
   --amber-soft: #f6eedf;
   --silver: #c8ced2;
   --silver-soft: rgba(166, 176, 182, 0.24);
+  --nav-silver: #aab4ba;
   --gold: #b89552;
   --gold-soft: rgba(184, 149, 82, 0.17);
   --taupe: #786d63;
@@ -2301,6 +2302,7 @@ html[data-theme="night"] {
   --amber-soft: #40351f;
   --silver: #69747b;
   --silver-soft: rgba(158, 170, 177, 0.15);
+  --nav-silver: #8f9ba2;
   --gold: #c4a367;
   --gold-soft: rgba(196, 163, 103, 0.17);
   --taupe: #b6a89c;
@@ -2366,7 +2368,13 @@ legend {
 }
 
 .tool-button.active,
-.tab-button.active,
+.tab-button.active {
+  border-color: var(--nav-silver);
+  background: var(--active-surface);
+  box-shadow: inset 0 -3px 0 var(--nav-silver);
+  color: #fff;
+}
+
 .crew-tab.active {
   border-color: var(--active-surface);
   background: var(--active-surface);

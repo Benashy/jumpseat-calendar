@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.30.
+- Current visible app version: v2.31.
 - The top navigation has been simplified to `Jumpseat` and `FDP & LTOT`, with Jumpseat sub-tabs now `Today` and `Add`.
 - Empty Jumpseat days now use a compact message with a direct `Add request` shortcut.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -18,6 +18,7 @@
 - v2.28 limits the touch target for FDP and final-sector time selectors to the controls themselves, so tapping unused space in a timing row dismisses rather than reopens the iOS picker.
 - v2.29 adds persistent individual crew limits while preserving the simple Flight crew/Cabin crew flow: up to 2 Flight crew and 6 Cabin crew records, individual Commander's discretion, joint-limit handling, targeted FDP-table selection, a named limiting-crew comparison and Telegram summary, plus protected local/cloud synchronisation.
 - v2.30 introduces the refined executive light appearance and a matching graphite Night appearance. Automatic, Light and Night are selectable in Settings and remembered locally on each device without entering cloud data.
+- v2.31 replaces the gold selected-state detail on the Jumpseat, FDP & LTOT, Today and Add controls with a restrained silver finish.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
