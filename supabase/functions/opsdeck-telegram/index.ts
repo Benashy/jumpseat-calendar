@@ -29,6 +29,7 @@ type LtotSummary = {
   latest_pushback?: string;
   latest_takeoff?: string;
   latest_on_chocks?: string;
+  limiting_crew?: string;
   duty_start?: string;
   maximum_fdp?: string;
   commander_discretion?: string;
@@ -262,6 +263,7 @@ function buildLtotSummaryMessage(summary: LtotSummary) {
     `Latest pushback: ${latestPushback} (soft limit)`,
     `Latest takeoff: ${latestTakeoff} (hard limit)`,
     `Latest on-chocks: ${latestOnChocks} (FDP limit)`,
+    `Limiting crew: ${cleanSummaryText(summary.limiting_crew)}`,
     "",
     "FDP",
     `Duty start: ${cleanSummaryText(summary.duty_start)}`,

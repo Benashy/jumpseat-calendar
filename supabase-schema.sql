@@ -32,6 +32,41 @@ to authenticated
 using ((select auth.uid()) = user_id)
 with check ((select auth.uid()) = user_id);
 
+create table if not exists public.opsdeck_calculator_state (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  state jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.opsdeck_calculator_state enable row level security;
+
+revoke all on public.opsdeck_calculator_state from anon;
+revoke all on public.opsdeck_calculator_state from authenticated;
+grant select, insert, update on public.opsdeck_calculator_state to authenticated;
+
+drop policy if exists "Users can read their own calculator state" on public.opsdeck_calculator_state;
+drop policy if exists "Users can insert their own calculator state" on public.opsdeck_calculator_state;
+drop policy if exists "Users can update their own calculator state" on public.opsdeck_calculator_state;
+
+create policy "Users can read their own calculator state"
+on public.opsdeck_calculator_state
+for select
+to authenticated
+using ((select auth.uid()) = user_id);
+
+create policy "Users can insert their own calculator state"
+on public.opsdeck_calculator_state
+for insert
+to authenticated
+with check ((select auth.uid()) = user_id);
+
+create policy "Users can update their own calculator state"
+on public.opsdeck_calculator_state
+for update
+to authenticated
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
+
 create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists public.opsdeck_telegram_settings (
@@ -108,3 +143,11 @@ on public.jumpseat_reminder_runs
 for select
 to authenticated
 using ((select auth.uid()) = user_id);
+
+do $$
+begin
+  if to_regprocedure('public.rls_auto_enable()') is not null then
+    execute 'revoke execute on function public.rls_auto_enable() from public, anon, authenticated';
+  end if;
+end
+$$;

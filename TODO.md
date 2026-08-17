@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.28.
+- Current visible app version: v2.29.
 - The top navigation has been simplified to `Jumpseat` and `FDP & LTOT`, with Jumpseat sub-tabs now `Today` and `Add`.
 - Empty Jumpseat days now use a compact message with a direct `Add request` shortcut.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -16,6 +16,7 @@
 - v2.26 releases focus from LTOT time and duration selectors when the user taps elsewhere, preventing a completed selector from remaining active on iPad.
 - v2.27 adds an optional cabin crew FDP calculation. Flight crew and cabin crew retain independent duty start, Maximum FDP and Commander's discretion inputs, while shared final-sector timings produce an explicit limiting-crew comparison, including split reports either side of midnight.
 - v2.28 limits the touch target for FDP and final-sector time selectors to the controls themselves, so tapping unused space in a timing row dismisses rather than reopens the iOS picker.
+- v2.29 adds persistent individual crew limits while preserving the simple Flight crew/Cabin crew flow: up to 2 Flight crew and 6 Cabin crew records, individual Commander's discretion, joint-limit handling, targeted FDP-table selection, a named limiting-crew comparison and Telegram summary, plus protected local/cloud synchronisation.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
@@ -31,9 +32,9 @@
 - Operational testing: use the app non-operationally alongside the normal BA/manual process, then note anything that slows the user down, is easy to misread, or feels clumsy.
 - Backup system: add a daily GitHub Actions backup of Supabase data, ideally into a private or otherwise secure backup location.
 - LTOT reference data: add the exact BA AOMA reference wording/numbering if it differs from `OMA 7.7 Table 2`.
+- Multi-crew operational testing: verify real split-report and individual-discretion scenarios on iPad and confirm that the comparison identifies the expected limiting crew member.
 - FDP lookup redesign: later consider a guided OMA lookup beside Maximum FDP, while retaining the full tables for manual verification.
 - FDP elapsed-time helper: consider optional first-report and next-report date/time inputs that calculate the elapsed Table 1 column without attempting to automate complex acclimatisation states.
-- Supabase deployment: deploy the updated `opsdeck-telegram` Edge Function before expecting the live `Send LTOT` button to appear.
 - Jumpseat real-use polish: review whether BA ID, queue ordering, search, and daily view are showing exactly what is needed during actual requests.
 - Login reliability: keep watching Supabase magic-link rate limits and mobile sign-in behaviour; consider tuning settings or relying more on password sign-in if magic links remain awkward.
 - Day export/copy option: consider copying a clean text summary of jumpseat requests for messaging or email.
@@ -45,3 +46,4 @@
 - BA form status: optionally add a single `BA form submitted` status per flight, shown discreetly in green on the flight card.
 - Telegram behaviour: if BA form status is added, decide whether a completed flight should suppress the 75-minute reminder or receive a brief confirmation instead.
 - LTOT scope: retain one agreed calculation snapshot without revision history unless operational experience demonstrates a genuine need for multiple revisions.
+- Multi-crew date scope: clock-only report times currently use nearest-day alignment and assume all final-sector crew reports are no more than 12 hours apart. Add explicit dates before extending this workflow to long-haul patterns outside that assumption.

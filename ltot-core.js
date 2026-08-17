@@ -81,67 +81,89 @@
     };
   }
 
-  function calculateCrewLtot(input) {
+  function calculateCrewLimits(input) {
     const sectorTiming = input.sectorTiming || {};
-    const flightCrewInput = { ...(input.flightCrew || {}) };
-    const cabinCrewInput = { ...(input.cabinCrew || {}) };
-    if (isFiniteMinute(flightCrewInput.dutyStartMinutes) && isFiniteMinute(cabinCrewInput.dutyStartMinutes)) {
-      cabinCrewInput.dutyStartMinutes = alignToNearestOperationalDay(
-        cabinCrewInput.dutyStartMinutes,
-        flightCrewInput.dutyStartMinutes
-      );
-    }
+    const crewLimits = Array.isArray(input.crewLimits)
+      ? input.crewLimits.filter((crewLimit) => crewLimit && crewLimit.enabled !== false)
+      : [];
+    const preferredAnchor = crewLimits.find((crewLimit) => (
+      crewLimit.id === input.anchorId && isFiniteMinute(crewLimit.dutyStartMinutes)
+    ));
+    const anchor = preferredAnchor || crewLimits.find((crewLimit) => isFiniteMinute(crewLimit.dutyStartMinutes));
+    const anchorDutyStart = anchor?.dutyStartMinutes;
+    const results = crewLimits.map((crewLimit) => {
+      const dutyStartMinutes = isFiniteMinute(anchorDutyStart) && isFiniteMinute(crewLimit.dutyStartMinutes)
+        ? alignToNearestOperationalDay(crewLimit.dutyStartMinutes, anchorDutyStart)
+        : crewLimit.dutyStartMinutes;
+      const calculation = calculateLtot({
+        ...sectorTiming,
+        ...crewLimit,
+        dutyStartMinutes,
+      });
 
-    const flightCrew = calculateLtot({ ...sectorTiming, ...flightCrewInput });
-    const cabinCrewEnabled = Boolean(input.cabinCrewEnabled);
-    const cabinCrew = cabinCrewEnabled
-      ? calculateLtot({ ...sectorTiming, ...cabinCrewInput })
-      : null;
-    const flightComplete = isFiniteMinute(flightCrew.latestOnChocksMinutes);
-    const cabinComplete = Boolean(cabinCrew && isFiniteMinute(cabinCrew.latestOnChocksMinutes));
-
-    if (!cabinCrewEnabled) {
       return {
-        flightCrew,
-        cabinCrew,
-        comparisonComplete: flightComplete,
-        controllingCrew: flightComplete ? "flight" : null,
-        controllingResult: flightComplete ? flightCrew : null,
+        id: crewLimit.id,
+        category: crewLimit.category,
+        name: crewLimit.name || "",
+        dutyStartMinutes,
+        maximumFdpMinutes: crewLimit.maximumFdpMinutes,
+        discretionMinutes: isFiniteMinute(crewLimit.discretionMinutes) ? crewLimit.discretionMinutes : 0,
+        calculation,
+        complete: isFiniteMinute(calculation.latestOnChocksMinutes),
       };
-    }
+    });
+    const comparisonComplete = results.length > 0 && results.every((result) => result.complete);
 
-    if (!flightComplete || !cabinComplete) {
+    if (!comparisonComplete) {
       return {
-        flightCrew,
-        cabinCrew,
+        results,
         comparisonComplete: false,
-        controllingCrew: null,
+        controllingIds: [],
         controllingResult: null,
       };
     }
 
-    if (flightCrew.latestOnChocksMinutes === cabinCrew.latestOnChocksMinutes) {
-      return {
-        flightCrew,
-        cabinCrew,
-        comparisonComplete: true,
-        controllingCrew: "joint",
-        controllingResult: flightCrew,
-      };
-    }
+    const earliestOnChocks = Math.min(...results.map((result) => result.calculation.latestOnChocksMinutes));
+    const controlling = results.filter((result) => result.calculation.latestOnChocksMinutes === earliestOnChocks);
 
-    const flightControls = flightCrew.latestOnChocksMinutes < cabinCrew.latestOnChocksMinutes;
+    return {
+      results,
+      comparisonComplete: true,
+      controllingIds: controlling.map((result) => result.id),
+      controllingResult: controlling[0].calculation,
+    };
+  }
+
+  function calculateCrewLtot(input) {
+    const cabinCrewEnabled = Boolean(input.cabinCrewEnabled);
+    const comparison = calculateCrewLimits({
+      anchorId: "flight",
+      crewLimits: [
+        { id: "flight", category: "flight", ...(input.flightCrew || {}) },
+        ...(cabinCrewEnabled ? [{ id: "cabin", category: "cabin", ...(input.cabinCrew || {}) }] : []),
+      ],
+      sectorTiming: input.sectorTiming,
+    });
+    const flightCrew = comparison.results.find((result) => result.id === "flight")?.calculation || null;
+    const cabinCrew = comparison.results.find((result) => result.id === "cabin")?.calculation || null;
+    let controllingCrew = null;
+
+    if (comparison.controllingIds.length === 2) controllingCrew = "joint";
+    else if (comparison.controllingIds[0] === "flight") controllingCrew = "flight";
+    else if (comparison.controllingIds[0] === "cabin") controllingCrew = "cabin";
+
     return {
       flightCrew,
       cabinCrew,
-      comparisonComplete: true,
-      controllingCrew: flightControls ? "flight" : "cabin",
-      controllingResult: flightControls ? flightCrew : cabinCrew,
+      comparisonComplete: comparison.comparisonComplete,
+      controllingCrew,
+      controllingResult: comparison.controllingResult,
     };
   }
 
   const api = {
     MINUTES_IN_DAY,
+    calculateCrewLimits,
     calculateCrewLtot,
     calculateLtot,
     formatZuluTime,

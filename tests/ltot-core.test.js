@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { calculateCrewLtot, calculateLtot, formatZuluTime } = require("../ltot-core");
+const { calculateCrewLimits, calculateCrewLtot, calculateLtot, formatZuluTime } = require("../ltot-core");
 
 const hr = (hours) => hours * 60;
 
@@ -208,4 +208,104 @@ test("compares split crew reports correctly across midnight", () => {
   assert.equal(formatZuluTime(result.flightCrew.latestOnChocksMinutes), "12:30Z +1");
   assert.equal(formatZuluTime(result.cabinCrew.latestOnChocksMinutes), "11:45Z +1");
   assert.equal(result.controllingCrew, "cabin");
+});
+
+test("selects the earliest limit from two pilots and six cabin crew records", () => {
+  const crewLimits = [
+    { id: "flight-1", category: "flight", name: "Ben", dutyStartMinutes: hr(6), maximumFdpMinutes: hr(13), discretionMinutes: 0 },
+    { id: "flight-2", category: "flight", name: "Pilot 2", dutyStartMinutes: hr(6), maximumFdpMinutes: hr(12) + 45, discretionMinutes: 0 },
+    { id: "cabin-1", category: "cabin", name: "Cabin 1", dutyStartMinutes: hr(6), maximumFdpMinutes: hr(12) + 30, discretionMinutes: 0 },
+    { id: "cabin-2", category: "cabin", name: "Cabin 2", dutyStartMinutes: hr(5), maximumFdpMinutes: hr(13), discretionMinutes: 0 },
+    { id: "cabin-3", category: "cabin", name: "Cabin 3", dutyStartMinutes: hr(4), maximumFdpMinutes: hr(13), discretionMinutes: 30 },
+    { id: "cabin-4", category: "cabin", name: "Cabin 4", dutyStartMinutes: hr(4) + 30, maximumFdpMinutes: hr(12), discretionMinutes: 0 },
+    { id: "cabin-5", category: "cabin", name: "Cabin 5", dutyStartMinutes: hr(5) + 30, maximumFdpMinutes: hr(11), discretionMinutes: 0 },
+    { id: "cabin-6", category: "cabin", name: "Cabin 6", dutyStartMinutes: hr(7), maximumFdpMinutes: hr(10), discretionMinutes: 0 },
+  ];
+  const result = calculateCrewLimits({ crewLimits, anchorId: "flight-1" });
+
+  assert.equal(result.results.length, 8);
+  assert.equal(result.comparisonComplete, true);
+  assert.deepEqual(result.controllingIds, ["cabin-4", "cabin-5"]);
+  assert.equal(formatZuluTime(result.controllingResult.latestOnChocksMinutes), "16:30Z");
+});
+
+test("applies Commander's discretion independently to each crew limit", () => {
+  const result = calculateCrewLimits({
+    crewLimits: [
+      { id: "flight-1", category: "flight", dutyStartMinutes: hr(6), maximumFdpMinutes: hr(12), discretionMinutes: hr(1) },
+      { id: "cabin-1", category: "cabin", dutyStartMinutes: hr(6), maximumFdpMinutes: hr(12), discretionMinutes: 30 },
+    ],
+  });
+
+  assert.deepEqual(result.controllingIds, ["cabin-1"]);
+  assert.equal(formatZuluTime(result.results[0].calculation.latestOnChocksMinutes), "19:00Z");
+  assert.equal(formatZuluTime(result.results[1].calculation.latestOnChocksMinutes), "18:30Z");
+});
+
+test("blocks the controlling output while any enabled crew limit is incomplete", () => {
+  const result = calculateCrewLimits({
+    crewLimits: [
+      { id: "flight-1", category: "flight", dutyStartMinutes: hr(6), maximumFdpMinutes: hr(13), discretionMinutes: 0 },
+      { id: "cabin-1", category: "cabin", name: "Outlier", dutyStartMinutes: hr(5), maximumFdpMinutes: null, discretionMinutes: 0 },
+      { id: "cabin-disabled", category: "cabin", enabled: false, dutyStartMinutes: null, maximumFdpMinutes: null },
+    ],
+  });
+
+  assert.equal(result.results.length, 2);
+  assert.equal(result.comparisonComplete, false);
+  assert.deepEqual(result.controllingIds, []);
+  assert.equal(result.controllingResult, null);
+});
+
+test("reports all equal earliest limits as joint controllers", () => {
+  const result = calculateCrewLimits({
+    crewLimits: [
+      { id: "flight-1", category: "flight", name: "Pilot", dutyStartMinutes: hr(6), maximumFdpMinutes: hr(12), discretionMinutes: 0 },
+      { id: "cabin-1", category: "cabin", name: "Cabin A", dutyStartMinutes: hr(5), maximumFdpMinutes: hr(13), discretionMinutes: 0 },
+      { id: "cabin-2", category: "cabin", name: "Cabin B", dutyStartMinutes: hr(7), maximumFdpMinutes: hr(12), discretionMinutes: 0 },
+    ],
+  });
+
+  assert.deepEqual(result.controllingIds, ["flight-1", "cabin-1"]);
+  assert.equal(formatZuluTime(result.controllingResult.latestOnChocksMinutes), "18:00Z");
+});
+
+test("aligns several crew reports across midnight within the short-haul 12-hour scope", () => {
+  const result = calculateCrewLimits({
+    anchorId: "flight-1",
+    crewLimits: [
+      { id: "flight-1", category: "flight", dutyStartMinutes: hr(23) + 30, maximumFdpMinutes: hr(13), discretionMinutes: 0 },
+      { id: "flight-2", category: "flight", dutyStartMinutes: 15, maximumFdpMinutes: hr(12), discretionMinutes: 0 },
+      { id: "cabin-1", category: "cabin", dutyStartMinutes: hr(22) + 45, maximumFdpMinutes: hr(12), discretionMinutes: 0 },
+      { id: "cabin-2", category: "cabin", dutyStartMinutes: 45, maximumFdpMinutes: hr(10), discretionMinutes: 0 },
+    ],
+  });
+
+  assert.equal(formatZuluTime(result.results[0].calculation.latestOnChocksMinutes), "12:30Z +1");
+  assert.equal(formatZuluTime(result.results[1].calculation.latestOnChocksMinutes), "12:15Z +1");
+  assert.equal(formatZuluTime(result.results[2].calculation.latestOnChocksMinutes), "10:45Z +1");
+  assert.equal(formatZuluTime(result.results[3].calculation.latestOnChocksMinutes), "10:45Z +1");
+  assert.deepEqual(result.controllingIds, ["cabin-1", "cabin-2"]);
+});
+
+test("uses the same limiting crew for shared pushback, takeoff and on-chocks offsets", () => {
+  const result = calculateCrewLimits({
+    crewLimits: [
+      { id: "flight-1", category: "flight", dutyStartMinutes: hr(6), maximumFdpMinutes: hr(13), discretionMinutes: 0 },
+      { id: "cabin-1", category: "cabin", dutyStartMinutes: hr(5), maximumFdpMinutes: hr(12), discretionMinutes: 0 },
+    ],
+    sectorTiming: {
+      taxiOutMinutes: 15,
+      flightTimeMinutes: hr(2),
+      holdingMinutes: 15,
+      taxiInMinutes: 15,
+      contingencyMinutes: 5,
+    },
+  });
+
+  assert.deepEqual(result.controllingIds, ["cabin-1"]);
+  const controlling = result.results.find((entry) => entry.id === "cabin-1").calculation;
+  assert.equal(result.controllingResult.latestOnChocksMinutes, controlling.latestOnChocksMinutes);
+  assert.equal(result.controllingResult.latestTakeoffMinutes, controlling.latestTakeoffMinutes);
+  assert.equal(result.controllingResult.latestPushbackMinutes, controlling.latestPushbackMinutes);
 });

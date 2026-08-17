@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="Flight deck tools for jumpseat requests and latest takeoff time calculations." />
     <title>Ben's OpsDeck</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-76" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-77" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-76" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-77" />
   </head>
   <body>
     <div class="app-shell">
@@ -108,7 +108,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.28</small>
+            <small class="app-version">v2.29</small>
           </section>
 
         </section>
@@ -217,30 +217,19 @@
             </div>
           </section>
 
-          <section class="crew-results hidden" id="crewResults" aria-label="Flight crew and cabin crew limit comparison">
+          <section class="crew-results hidden" id="crewResults" aria-label="Crew limit comparison">
             <div class="crew-results-heading">
               <strong>Crew comparison</strong>
-              <small id="crewComparisonStatus">Complete both crew limits</small>
+              <small id="crewComparisonStatus">Complete all crew limits</small>
             </div>
-            <div class="crew-result-grid" role="table" aria-label="Calculated times by crew group">
+            <div class="crew-result-grid" role="table" aria-label="Calculated limits by crew member or group">
               <div class="crew-result-row crew-result-header" role="row">
                 <span role="columnheader">Crew</span>
-                <span role="columnheader">Pushback</span>
-                <span role="columnheader">Takeoff</span>
+                <span role="columnheader">Duty start</span>
+                <span role="columnheader">Allowable FDP</span>
                 <span role="columnheader">On-chocks</span>
               </div>
-              <div class="crew-result-row" id="flightCrewResultRow" role="row">
-                <span class="crew-result-name" role="rowheader">Flight crew <small id="flightCrewLimitBadge"></small></span>
-                <strong id="flightCrewPushback" role="cell">--:--Z</strong>
-                <strong id="flightCrewTakeoff" role="cell">--:--Z</strong>
-                <strong id="flightCrewOnChocks" role="cell">--:--Z</strong>
-              </div>
-              <div class="crew-result-row" id="cabinCrewResultRow" role="row">
-                <span class="crew-result-name" role="rowheader">Cabin crew <small id="cabinCrewLimitBadge"></small></span>
-                <strong id="cabinCrewPushback" role="cell">--:--Z</strong>
-                <strong id="cabinCrewTakeoff" role="cell">--:--Z</strong>
-                <strong id="cabinCrewOnChocks" role="cell">--:--Z</strong>
-              </div>
+              <div id="crewResultRows" role="rowgroup"></div>
             </div>
           </section>
 
@@ -257,70 +246,16 @@
               </div>
 
               <div class="crew-input-panel" id="flightCrewInputs" role="tabpanel" aria-labelledby="flightCrewTab" aria-hidden="false">
-                <div class="duration-grid">
-                  <div class="duration-control required-duration native-time-control">
-                    <span class="duration-label">Duty start time (Zulu)</span>
-                    <span class="time-input-shell is-empty" id="dutyStartShell">
-                      <input class="native-time-input" id="dutyStartTime" type="time" aria-label="Flight crew duty start time Zulu" />
-                      <span class="time-placeholder" aria-hidden="true">Select time</span>
-                    </span>
-                  </div>
-                  <div class="duration-control required-duration">
-                    <span class="duration-label">Maximum FDP</span>
-                    <span class="duration-picker">
-                      <select id="maxFdpHours" aria-label="Flight crew Maximum FDP hours"></select>
-                      <small>hr</small>
-                      <select id="maxFdpMinutes" aria-label="Flight crew Maximum FDP minutes"></select>
-                      <small>min</small>
-                    </span>
-                  </div>
-                  <div class="duration-control">
-                    <span class="duration-label">Commander's discretion</span>
-                    <span class="duration-picker">
-                      <select id="discretionHours" aria-label="Flight crew Commander's discretion hours"></select>
-                      <small>hr</small>
-                      <select id="discretionMinutes" aria-label="Flight crew Commander's discretion minutes"></select>
-                      <small>min</small>
-                    </span>
-                  </div>
-                </div>
-                <div class="calculation-strip">
-                  <span>Maximum allowable FDP</span>
-                  <strong id="maxAllowableFdp">--</strong>
+                <div class="crew-limit-list" id="flightCrewLimits"></div>
+                <div class="crew-limit-add-row">
+                  <button class="text-button secondary compact-button" id="addFlightCrewLimitButton" type="button">Add pilot limit</button>
                 </div>
               </div>
 
               <div class="crew-input-panel hidden" id="cabinCrewInputs" role="tabpanel" aria-labelledby="cabinCrewTab" aria-hidden="true">
-                <div class="duration-grid">
-                  <div class="duration-control required-duration native-time-control">
-                    <span class="duration-label">Duty start time (Zulu)</span>
-                    <span class="time-input-shell is-empty" id="cabinDutyStartShell">
-                      <input class="native-time-input" id="cabinDutyStartTime" type="time" aria-label="Cabin crew duty start time Zulu" />
-                      <span class="time-placeholder" aria-hidden="true">Select time</span>
-                    </span>
-                  </div>
-                  <div class="duration-control required-duration">
-                    <span class="duration-label">Maximum FDP</span>
-                    <span class="duration-picker">
-                      <select id="cabinMaxFdpHours" aria-label="Cabin crew Maximum FDP hours"></select>
-                      <small>hr</small>
-                      <select id="cabinMaxFdpMinutes" aria-label="Cabin crew Maximum FDP minutes"></select>
-                      <small>min</small>
-                    </span>
-                  </div>
-                  <div class="duration-control">
-                    <span class="duration-label">Commander's discretion</span>
-                    <span class="duration-picker">
-                      <select id="cabinDiscretionHours" aria-label="Cabin crew Commander's discretion hours"></select>
-                      <small>hr</small>
-                      <select id="cabinDiscretionMinutes" aria-label="Cabin crew Commander's discretion minutes"></select>
-                      <small>min</small>
-                    </span>
-                  </div>
-                </div>
-                <div class="calculation-strip">
-                  <span>Maximum allowable FDP</span>
-                  <strong id="cabinMaxAllowableFdp">--</strong>
+                <div class="crew-limit-list" id="cabinCrewLimits"></div>
+                <div class="crew-limit-add-row">
+                  <button class="text-button secondary compact-button" id="addCabinCrewLimitButton" type="button">Add individual limit</button>
                 </div>
               </div>
             </section>
@@ -375,9 +310,10 @@
 
           <p class="ftl-telegram-status hidden" id="ftlTelegramStatus" aria-live="polite"></p>
 
-          <details class="guidance-panel fdp-reference-panel">
+          <details class="guidance-panel fdp-reference-panel" id="fdpReferencePanel">
             <summary>FDP Tables</summary>
             <div class="guidance-content fdp-reference-content">
+              <div class="fdp-target-banner" id="fdpTargetBanner" role="status">Selecting Maximum FDP for Flight crew</div>
               <section>
                 <h3>FDP lookup workflow</h3>
                 <p class="fdp-time-context"><strong>Time reference:</strong> the LTOT calculator uses Zulu, while FDP table start times use the applicable local or reference report time.</p>
@@ -566,7 +502,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.28</small>
+            <small class="app-version">v2.29</small>
           </section>
         </section>
 
@@ -631,7 +567,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.28</small>
+            <small class="app-version">v2.29</small>
           </section>
         </section>
       </main>
@@ -655,9 +591,75 @@
       </article>
     </template>
 
+    <template id="crewLimitTemplate">
+      <article class="crew-limit-card">
+        <div class="crew-limit-card-heading">
+          <div>
+            <h4 class="crew-limit-title"></h4>
+            <small class="crew-limit-subtitle"></small>
+          </div>
+          <button class="icon-button crew-limit-remove hidden" type="button" aria-label="Remove crew limit">×</button>
+        </div>
+
+        <details class="crew-identity-details">
+          <summary class="crew-identity-summary">Identify this limit (optional)</summary>
+          <div class="crew-identity-grid">
+            <label>
+              Name or identifier
+              <input class="crew-limit-name" type="text" maxlength="60" autocomplete="off" placeholder="Optional" />
+            </label>
+            <label>
+              Staff number
+              <input class="crew-limit-staff-number" type="text" maxlength="30" autocomplete="off" placeholder="Optional" />
+            </label>
+            <label class="crew-code-field">
+              Crew code
+              <input class="crew-limit-crew-code" type="text" maxlength="30" autocomplete="off" placeholder="Optional" />
+            </label>
+          </div>
+        </details>
+
+        <div class="duration-grid crew-limit-duration-grid">
+          <div class="duration-control required-duration native-time-control">
+            <span class="duration-label">Duty start time (Zulu)</span>
+            <span class="time-input-shell is-empty">
+              <input class="native-time-input crew-limit-duty-start" type="time" />
+              <span class="time-placeholder" aria-hidden="true">Select time</span>
+            </span>
+          </div>
+          <div class="duration-control required-duration">
+            <span class="duration-label">Maximum FDP</span>
+            <span class="duration-picker">
+              <select class="crew-limit-max-hours"></select>
+              <small>hr</small>
+              <select class="crew-limit-max-minutes"></select>
+              <small>min</small>
+            </span>
+          </div>
+          <div class="duration-control">
+            <span class="duration-label">Commander's discretion</span>
+            <span class="duration-picker">
+              <select class="crew-limit-discretion-hours"></select>
+              <small>hr</small>
+              <select class="crew-limit-discretion-minutes"></select>
+              <small>min</small>
+            </span>
+          </div>
+        </div>
+
+        <div class="crew-limit-card-footer">
+          <div class="calculation-strip">
+            <span>Maximum allowable FDP</span>
+            <strong class="crew-limit-allowable">--</strong>
+          </div>
+          <button class="text-button secondary fdp-lookup-button" type="button">Select from FDP table</button>
+        </div>
+      </article>
+    </template>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-76"></script>
-    <script src="./ltot-core.js?v=cloud-sync-76"></script>
-    <script src="./app.js?v=cloud-sync-76"></script>
+    <script src="./supabase-config.js?v=cloud-sync-77"></script>
+    <script src="./ltot-core.js?v=cloud-sync-77"></script>
+    <script src="./app.js?v=cloud-sync-77"></script>
   </body>
 </html>
