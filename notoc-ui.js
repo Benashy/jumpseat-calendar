@@ -23,7 +23,6 @@
     emaStepLabel: document.querySelector("#emaStepLabel"),
     emaStepContext: document.querySelector("#emaStepContext"),
     emaQuestionTitle: document.querySelector("#emaQuestionTitle"),
-    emaQuestionHint: document.querySelector("#emaQuestionHint"),
     emaQuestionOptions: document.querySelector("#emaQuestionOptions"),
     emaQuestionInput: document.querySelector("#emaQuestionInput"),
     emaWizardBack: document.querySelector("#emaWizardBackButton"),
@@ -50,7 +49,6 @@
       label: "Mobility aid",
       context: "Item",
       question: "Is this a wheelchair or electric mobility aid used by a person with reduced mobility?",
-      hint: "Use only information that is written or has been confirmed.",
       type: "choice",
       choices: [
         { value: "YES", label: "Yes, confirmed" },
@@ -63,7 +61,6 @@
       label: "Battery type",
       context: "Battery",
       question: "What battery type is shown or confirmed?",
-      hint: "Do not infer the battery type from the appearance of the mobility aid.",
       type: "choice",
       choices: [
         { value: "LITHIUM", label: "Lithium-ion" },
@@ -77,7 +74,6 @@
       label: "Battery configuration",
       context: "Battery",
       question: "How is the battery configured?",
-      hint: "Installed, removed and spare batteries follow different branches.",
       type: "choice",
       choices: [
         { value: "INSTALLED", label: "Installed in mobility aid" },
@@ -91,7 +87,6 @@
       label: "Securely attached",
       context: "Installed battery",
       question: "Is the installed battery securely attached?",
-      hint: "Answer only from the confirmed loading information.",
       type: "choice",
       choices: yesNoUnknown,
     },
@@ -100,7 +95,6 @@
       label: "Isolation",
       context: "Installed battery",
       question: "Is the mobility aid isolated against inadvertent activation?",
-      hint: "This concerns unintended operation during carriage.",
       type: "choice",
       choices: yesNoUnknown,
     },
@@ -109,7 +103,6 @@
       label: "Battery rating",
       context: "Battery",
       question: "What watt-hour rating is shown?",
-      hint: "Enter the exact value. Do not round it down.",
       type: "number",
       min: 0.01,
       step: 0.01,
@@ -123,7 +116,6 @@
       label: "Spare batteries",
       context: "Spare battery",
       question: "How many spare batteries are shown?",
-      hint: "Enter the exact number of spares.",
       type: "number",
       min: 1,
       step: 1,
@@ -136,7 +128,6 @@
       label: "Terminal protection",
       context: "Battery",
       question: "Are the battery terminals protected against short circuit?",
-      hint: "Use the configuration that has been confirmed for carriage.",
       type: "choice",
       choices: yesNoUnknown,
     },
@@ -145,7 +136,6 @@
       label: "Operator approval",
       context: "Approval",
       question: "Has operator approval been confirmed?",
-      hint: "If this is not known, leave it as unconfirmed.",
       type: "choice",
       choices: yesNoUnknown,
     },
@@ -154,7 +144,6 @@
       label: "Location shown",
       context: "Location",
       question: "What location is shown?",
-      hint: "Select the location stated in the loading information.",
       type: "choice",
       choices: [
         { value: "CABIN", label: "Cabin" },
@@ -169,7 +158,6 @@
       label: "Location exactly as written",
       context: "Location",
       question: "What location is written?",
-      hint: "Optional. This is retained in the answer summary only.",
       type: "text",
       placeholder: "For example, CPT 5 or cabin",
       unknownLabel: "Skip",
@@ -515,7 +503,6 @@
     elements.emaStepLabel.textContent = `Question ${emaStepIndex + 1}`;
     elements.emaStepContext.textContent = step.context;
     elements.emaQuestionTitle.textContent = step.question;
-    elements.emaQuestionHint.textContent = step.hint;
     clearNode(elements.emaQuestionOptions);
     elements.emaQuestionOptions.classList.remove("is-three-options");
     clearNode(elements.emaQuestionInput);

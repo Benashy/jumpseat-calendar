@@ -2489,6 +2489,7 @@ form label {
   --good-soft: #e9f5ed;
   --warn: #a84235;
   --warn-soft: #f8e8e5;
+  --cold-profile: #2f78a6;
   --blue-soft: #e9f1f5;
   --control-surface: #ffffff;
   --active-surface: #102f47;
@@ -2524,6 +2525,7 @@ html[data-theme="night"] {
   --good-soft: #1e3528;
   --warn: #ff9084;
   --warn-soft: #442825;
+  --cold-profile: #69b7e8;
   --blue-soft: #20333e;
   --control-surface: #1d2327;
   --active-surface: #18384d;
@@ -3396,6 +3398,24 @@ html[data-theme="night"] input[type="time"] {
   stroke: var(--amber);
 }
 
+.ra-geometry-card.is-cold .ra-path-line.is-affected,
+.ra-geometry-card.is-cold .ra-baro-marker {
+  stroke: var(--cold-profile);
+}
+
+.ra-geometry-card.is-cold .ra-legend-line.is-affected {
+  border-top-color: var(--cold-profile);
+}
+
+.ra-geometry-card.is-warm .ra-path-line.is-affected,
+.ra-geometry-card.is-warm .ra-baro-marker {
+  stroke: var(--warn);
+}
+
+.ra-geometry-card.is-warm .ra-legend-line.is-affected {
+  border-top-color: var(--warn);
+}
+
 .ra-baro-comparison {
   margin: 2px 0 4px;
   color: var(--navy);
@@ -3411,11 +3431,11 @@ html[data-theme="night"] input[type="time"] {
 }
 
 .ra-geometry-card.is-cold .ra-baro-comparison {
-  color: var(--amber);
+  color: var(--cold-profile);
 }
 
 .ra-geometry-card.is-warm .ra-baro-comparison {
-  color: var(--accent);
+  color: var(--warn);
 }
 
 .conditional-warning {

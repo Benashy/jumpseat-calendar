@@ -69,7 +69,7 @@
   function resetDiagram() {
     elements.geometry.classList.add("is-empty");
     elements.geometry.classList.remove("is-warning", "is-cold", "is-warm", "is-neutral");
-    elements.diagramDescription.textContent = "Nominal and temperature-affected approach profiles will appear when the required inputs are valid.";
+    elements.diagramDescription.textContent = "Nominal and temperature-affected approach profiles will appear when the required inputs are valid. The visual separation between profiles is enlarged for clarity.";
     elements.nominalLegend.textContent = "Nominal 3.0 degree profile";
     elements.diagramAltitudeLabel.textContent = "2,500 ft RA";
     elements.diagramDistanceLabel.textContent = "Select valid inputs";
@@ -81,7 +81,7 @@
     const maximumDistanceNm = 9.3;
     const thresholdX = 34;
     const runwayY = 184;
-    const nominalY = 44;
+    const nominalY = 52;
     const minimumX = 230;
     const maximumX = 360;
     const clampedDistance = Math.min(maximumDistanceNm, Math.max(minimumDistanceNm, result.slantDistanceNmRaw));
@@ -90,9 +90,10 @@
       (maximumDistanceNm - minimumDistanceNm)
     ) * (maximumX - minimumX);
     const affectedRatio = result.indicatedHeightAboveThresholdFtRaw / core.CONSTANTS.RA_TRIGGER_FT;
+    const visualAffectedRatio = 1 + ((affectedRatio - 1) * 1.55);
     const affectedY = Math.min(
       runwayY - 5,
-      Math.max(18, runwayY - ((runwayY - nominalY) * affectedRatio))
+      Math.max(20, runwayY - ((runwayY - nominalY) * visualAffectedRatio))
     );
     const labelX = (thresholdX + aircraftX) / 2;
     const formattedDistance = core.formatSlantDistance(result.slantDistanceNmRaw);
@@ -127,7 +128,7 @@
     elements.diagramAltitudeLabel.textContent = "2,500 ft RA";
     elements.diagramDistanceLabel.textContent = `${formattedAngle} degrees / ${formattedDistance}`;
     elements.baroComparison.textContent = comparison;
-    elements.diagramDescription.textContent = `The nominal ${formattedAngle} degree profile reaches 2,500 feet radio altitude at ${formattedDistance} slant distance from the threshold. ${descriptionComparison}`;
+    elements.diagramDescription.textContent = `The nominal ${formattedAngle} degree profile reaches 2,500 feet radio altitude at ${formattedDistance} slant distance from the threshold. ${descriptionComparison} The visual separation between profiles is enlarged for clarity.`;
     elements.geometry.classList.remove("is-empty");
     elements.geometry.classList.toggle("is-warning", result.coldWeatherWarning);
     elements.geometry.classList.toggle("is-cold", !isNeutral && isOverReading);

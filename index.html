@@ -34,17 +34,17 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-90" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-91" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-90" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-91" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-90" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-91" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -78,7 +78,7 @@
       <nav class="tool-menu" aria-label="Flight tools" role="tablist">
         <button class="tool-button active" id="jumpseatToolTab" type="button" role="tab" aria-controls="homeView addView" aria-selected="true">Jumpseat</button>
         <button class="tool-button" id="ftlToolTab" type="button" role="tab" aria-controls="ftlView" aria-selected="false">FDP &amp; LTOT</button>
-        <button class="tool-button" id="checksToolTab" type="button" role="tab" aria-controls="checksView raView notocView" aria-selected="false">Checks</button>
+        <button class="tool-button" id="checksToolTab" type="button" role="tab" aria-controls="checksView raView notocView" aria-selected="false">Tools</button>
       </nav>
 
       <main class="layout">
@@ -151,7 +151,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.42</small>
+            <small class="app-version">v2.43</small>
           </section>
 
         </section>
@@ -552,14 +552,14 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.42</small>
+            <small class="app-version">v2.43</small>
           </section>
         </section>
 
         <section class="checks-panel view-panel hidden" id="checksView" role="tabpanel" aria-labelledby="checksToolTab" aria-hidden="true">
           <div class="form-heading">
             <div>
-              <h2>Checks</h2>
+              <h2>Tools</h2>
               <p class="ftl-context">Operational reference tools</p>
             </div>
           </div>
@@ -588,7 +588,7 @@
               </span>
               <span class="checks-action-copy">
                 <strong>NOTOC</strong>
-                <small>SHC/DG lookup and mobility-aid battery checks</small>
+                <small>SHC/DG lookup and mobility-aid battery guidance</small>
               </span>
               <svg class="ui-icon checks-action-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
             </button>
@@ -606,14 +606,14 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.42</small>
+            <small class="app-version">v2.43</small>
           </section>
         </section>
 
         <section class="ra-panel view-panel hidden" id="raView" role="tabpanel" aria-labelledby="checksToolTab" aria-hidden="true">
           <div class="form-heading tool-heading">
             <div class="tool-title-row">
-              <button class="icon-button checks-back-button" id="raBackToChecks" type="button" title="Back to Checks" aria-label="Back to Checks">
+              <button class="icon-button checks-back-button" id="raBackToChecks" type="button" title="Back to Tools" aria-label="Back to Tools">
                 <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
               </button>
               <div>
@@ -631,13 +631,13 @@
           <div class="ra-workspace">
             <form class="ra-form" id="raForm" novalidate>
               <label for="raThresholdElevation">
-                Landing threshold elevation (ft)
+                Landing threshold elevation <span class="field-unit">feet</span>
                 <input id="raThresholdElevation" type="number" min="-1500" max="15000" step="1" inputmode="numeric" autocomplete="off" value="0" aria-describedby="raThresholdError" required />
                 <small class="field-error" id="raThresholdError"></small>
               </label>
 
               <label for="raAirportTemperature">
-                Airport temperature (degrees Celsius)
+                Airport temperature <span class="field-unit">degrees Celsius</span>
                 <select id="raAirportTemperature" aria-describedby="raTemperatureError" required></select>
                 <small class="field-error" id="raTemperatureError"></small>
               </label>
@@ -671,7 +671,6 @@
               <figure class="ra-geometry-card">
                 <figcaption>
                   <span>Approach profiles</span>
-                  <small>Not to scale</small>
                 </figcaption>
                 <div class="ra-geometry-legend" aria-hidden="true">
                   <span><i class="ra-legend-line is-nominal"></i><b id="raNominalLegend">Nominal 3.0 degree profile</b></span>
@@ -679,13 +678,13 @@
                 </div>
                 <svg class="ra-geometry" viewBox="0 0 400 230" role="img" aria-labelledby="raDiagramTitle raDiagramDescription">
                   <title id="raDiagramTitle">Radio-altimeter position geometry</title>
-                  <desc id="raDiagramDescription">Nominal and temperature-affected approach profiles will appear when the required inputs are valid.</desc>
+                  <desc id="raDiagramDescription">Nominal and temperature-affected approach profiles will appear when the required inputs are valid. The visual separation between profiles is enlarged for clarity.</desc>
                   <line class="ra-runway-line" x1="18" y1="184" x2="382" y2="184" />
-                  <line class="ra-path-line is-nominal" id="raDiagramNominalPath" x1="34" y1="184" x2="306" y2="44" />
-                  <line class="ra-path-line is-affected" id="raDiagramAffectedPath" x1="34" y1="184" x2="306" y2="44" />
-                  <line class="ra-height-line" id="raDiagramHeight" x1="306" y1="44" x2="306" y2="184" />
-                  <circle class="ra-aircraft-marker" id="raDiagramMarker" cx="306" cy="44" r="6" />
-                  <circle class="ra-baro-marker" id="raDiagramBaroMarker" cx="306" cy="44" r="4" />
+                  <line class="ra-path-line is-nominal" id="raDiagramNominalPath" x1="34" y1="184" x2="306" y2="52" />
+                  <line class="ra-path-line is-affected" id="raDiagramAffectedPath" x1="34" y1="184" x2="306" y2="52" />
+                  <line class="ra-height-line" id="raDiagramHeight" x1="306" y1="52" x2="306" y2="184" />
+                  <circle class="ra-aircraft-marker" id="raDiagramMarker" cx="306" cy="52" r="6" />
+                  <circle class="ra-baro-marker" id="raDiagramBaroMarker" cx="306" cy="52" r="4" />
                   <line class="ra-threshold-line" x1="34" y1="173" x2="34" y2="193" />
                   <text class="ra-diagram-label" x="20" y="213">Threshold</text>
                   <text class="ra-diagram-label is-strong" id="raDiagramAltitudeLabel" x="314" y="114" text-anchor="start">2,500 ft RA</text>
@@ -722,14 +721,14 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.42</small>
+            <small class="app-version">v2.43</small>
           </section>
         </section>
 
         <section class="notoc-panel view-panel hidden" id="notocView" role="tabpanel" aria-labelledby="checksToolTab" aria-hidden="true">
           <div class="form-heading tool-heading">
             <div class="tool-title-row">
-              <button class="icon-button checks-back-button" id="notocBackToChecks" type="button" title="Back to Checks" aria-label="Back to Checks">
+              <button class="icon-button checks-back-button" id="notocBackToChecks" type="button" title="Back to Tools" aria-label="Back to Tools">
                 <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
               </button>
               <div>
@@ -748,11 +747,11 @@
             <div class="notoc-action-grid">
               <button class="notoc-action-card" type="button" data-notoc-screen="lookup">
                 <strong>Look up an SHC/DG code</strong>
-                <span>Check what the available BA policy pack can reliably say about a code.</span>
+                <span>Check the available BA policy guidance for an SHC/DG code.</span>
               </button>
               <button class="notoc-action-card" type="button" data-notoc-screen="ema">
                 <strong>Wheelchair or mobility-aid battery</strong>
-                <span>Follow the configuration-specific lithium and wet-battery cross-check.</span>
+                <span>Guidance on BA policy for lithium and wet-battery mobility aids.</span>
               </button>
             </div>
           </section>
@@ -784,7 +783,6 @@
               </button>
               <div>
                 <h3>Wheelchair or mobility-aid battery</h3>
-                <p>Enter only what is written or has been confirmed. Missing facts remain unknown.</p>
               </div>
             </div>
 
@@ -796,7 +794,6 @@
                 </div>
                 <fieldset class="ema-question-fieldset">
                   <legend id="emaQuestionTitle">Is this a wheelchair or electric mobility aid used by a person with reduced mobility?</legend>
-                  <p id="emaQuestionHint">Use only information that is written or has been confirmed.</p>
                   <div class="ema-choice-grid" id="emaQuestionOptions"></div>
                   <div class="ema-input-control hidden" id="emaQuestionInput"></div>
                 </fieldset>
@@ -832,7 +829,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.42</small>
+            <small class="app-version">v2.43</small>
           </section>
         </section>
 
@@ -939,7 +936,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.42</small>
+            <small class="app-version">v2.43</small>
           </section>
         </section>
       </main>
@@ -1022,15 +1019,15 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-90"></script>
-    <script src="./ltot-core.js?v=cloud-sync-90"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-90"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-90"></script>
-    <script src="./notoc-core.js?v=cloud-sync-90"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-90"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-90"></script>
-    <script src="./data-portability.js?v=cloud-sync-90"></script>
-    <script src="./request-retention.js?v=cloud-sync-90"></script>
-    <script src="./app.js?v=cloud-sync-90"></script>
+    <script src="./supabase-config.js?v=cloud-sync-91"></script>
+    <script src="./ltot-core.js?v=cloud-sync-91"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-91"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-91"></script>
+    <script src="./notoc-core.js?v=cloud-sync-91"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-91"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-91"></script>
+    <script src="./data-portability.js?v=cloud-sync-91"></script>
+    <script src="./request-retention.js?v=cloud-sync-91"></script>
+    <script src="./app.js?v=cloud-sync-91"></script>
   </body>
 </html>

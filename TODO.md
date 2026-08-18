@@ -2,8 +2,8 @@
 
 ## Current Status
 
-- Current visible app version: v2.42.
-- The top navigation contains `Jumpseat`, `FDP & LTOT` and `Checks`. Checks opens a dedicated landing view for the Radio Altimeter Position Check and NOTOC, while Jumpseat retains contextual `Add request` and `Back to requests` actions.
+- Current visible app version: v2.43.
+- The top navigation contains `Jumpseat`, `FDP & LTOT` and `Tools`. Tools opens a dedicated landing view for the Radio Altimeter Position Check and NOTOC, while Jumpseat retains contextual `Add request` and `Back to requests` actions.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
 - LTOT calculation logic has been extracted into a shared helper with automated tests for rollover, standalone on-chocks, discretion, contingency, and missing FDP input.
@@ -36,6 +36,7 @@
 - v2.40 simplifies the development RA and NOTOC tools: RA uses defaulted elevation and temperature selectors, geometric slant distance and a strict below-ISA-minus-25 warning; NOTOC retains only code lookup and mobility-aid battery checks, with the removed journeys and internal policy version no longer shown.
 - v2.41 adds a responsive RA geometry diagram, a guided one-question-at-a-time mobility-aid battery check with review summary, and searchable SHC/DG suggestions that remain limited to verified policy-pack entries while unsupported codes continue to refer.
 - v2.42 consolidates RA and NOTOC under a responsive Checks landing view, restricts RA temperature input to -25 through +50 degrees Celsius, and compares the selected nominal glidepath with the temperature-affected barometric indication. Repetitive NOTOC lookup caveats have been removed without changing the cautious unknown-code referral logic.
+- v2.43 renames Checks to Tools, standardises RA input-unit labels, gives cold and warm temperature profiles distinct blue and red treatments with clearer visual separation, and removes repetitive helper copy from the NOTOC battery journey.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
