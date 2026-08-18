@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.43.
+- Current visible app version: v2.44.
 - The top navigation contains `Jumpseat`, `FDP & LTOT` and `Tools`. Tools opens a dedicated landing view for the Radio Altimeter Position Check and NOTOC, while Jumpseat retains contextual `Add request` and `Back to requests` actions.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -37,6 +37,7 @@
 - v2.41 adds a responsive RA geometry diagram, a guided one-question-at-a-time mobility-aid battery check with review summary, and searchable SHC/DG suggestions that remain limited to verified policy-pack entries while unsupported codes continue to refer.
 - v2.42 consolidates RA and NOTOC under a responsive Checks landing view, restricts RA temperature input to -25 through +50 degrees Celsius, and compares the selected nominal glidepath with the temperature-affected barometric indication. Repetitive NOTOC lookup caveats have been removed without changing the cautious unknown-code referral logic.
 - v2.43 renames Checks to Tools, standardises RA input-unit labels, gives cold and warm temperature profiles distinct blue and red treatments with clearer visual separation, and removes repetitive helper copy from the NOTOC battery journey.
+- v2.44 adds a fixed dashed 3.0-degree RA reference, hides temperature-profile differences below 50 ft at 2,500 ft RA, clarifies that the displayed DME is measured on the selected glidepath, and simplifies the mobility-aid battery journey with a neutral Yes/No opening and only decision-relevant stowage information.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.

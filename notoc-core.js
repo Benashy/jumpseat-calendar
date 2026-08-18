@@ -2,6 +2,7 @@
   "use strict";
 
   const STATES = Object.freeze({
+    NOT_APPLICABLE: "NOT_APPLICABLE",
     NO_OBVIOUS_INCONSISTENCY: "NO_OBVIOUS_INCONSISTENCY",
     ACTION_OR_INFORMATION_REQUIRED: "ACTION_OR_INFORMATION_REQUIRED",
     UNABLE_TO_DETERMINE_REFER: "UNABLE_TO_DETERMINE_REFER",
@@ -14,12 +15,14 @@
     UNKNOWN: "UNKNOWN",
   });
   const STATE_HEADINGS = Object.freeze({
+    [STATES.NOT_APPLICABLE]: "This guidance does not apply",
     [STATES.NO_OBVIOUS_INCONSISTENCY]: "No obvious inconsistency identified",
     [STATES.ACTION_OR_INFORMATION_REQUIRED]: "More information or action required",
     [STATES.UNABLE_TO_DETERMINE_REFER]: "Unable to determine, refer",
     [STATES.POSSIBLE_DISCREPANCY_QUERY]: "Possible discrepancy, query before signing",
   });
   const SEVERITY = Object.freeze({
+    [STATES.NOT_APPLICABLE]: 0,
     [STATES.NO_OBVIOUS_INCONSISTENCY]: 0,
     [STATES.ACTION_OR_INFORMATION_REQUIRED]: 1,
     [STATES.UNABLE_TO_DETERMINE_REFER]: 2,
@@ -119,6 +122,14 @@
   function evaluateEma(entry, policyPack) {
     const entryId = entry?.id || "ema";
     const shared = { entryId };
+    if (entry?.mobilityAidConfirmed === "NO") {
+      return simpleResult(policyPack, {
+        ...shared,
+        ruleId: "OPSDECK-NOTOC-INDICATOR-CROSSCHECK",
+        state: STATES.NOT_APPLICABLE,
+        explanation: "The item is confirmed not to be a wheelchair or electric mobility aid used by a person with reduced mobility.",
+      });
+    }
     if (entry?.mobilityAidConfirmed !== "YES") {
       return simpleResult(policyPack, {
         ...shared,

@@ -4,6 +4,8 @@
   const core = globalScope.OpsDeckRadioAltimeter;
   const form = document.querySelector("#raForm");
   if (!core || !form) return;
+  const REFERENCE_GLIDEPATH_ANGLE_DEG = 3;
+  const PROFILE_DISPLAY_THRESHOLD_FT = 50;
 
   const elements = {
     threshold: document.querySelector("#raThresholdElevation"),
@@ -20,6 +22,9 @@
     geometry: document.querySelector(".ra-geometry-card"),
     diagramDescription: document.querySelector("#raDiagramDescription"),
     nominalLegend: document.querySelector("#raNominalLegend"),
+    selectedLegendItem: document.querySelector("#raSelectedLegendItem"),
+    affectedLegendItem: document.querySelector("#raAffectedLegendItem"),
+    diagramThreeDegreePath: document.querySelector("#raDiagramThreeDegreePath"),
     diagramNominalPath: document.querySelector("#raDiagramNominalPath"),
     diagramAffectedPath: document.querySelector("#raDiagramAffectedPath"),
     diagramHeight: document.querySelector("#raDiagramHeight"),
@@ -69,8 +74,13 @@
   function resetDiagram() {
     elements.geometry.classList.add("is-empty");
     elements.geometry.classList.remove("is-warning", "is-cold", "is-warm", "is-neutral");
-    elements.diagramDescription.textContent = "Nominal and temperature-affected approach profiles will appear when the required inputs are valid. The visual separation between profiles is enlarged for clarity.";
-    elements.nominalLegend.textContent = "Nominal 3.0 degree profile";
+    elements.diagramDescription.textContent = "A fixed dashed 3.0 degree reference is shown. Selected and temperature-affected approach profiles will appear when required.";
+    elements.nominalLegend.textContent = "Selected glidepath";
+    elements.selectedLegendItem.classList.add("hidden");
+    elements.affectedLegendItem.classList.add("hidden");
+    elements.diagramNominalPath.classList.add("hidden");
+    elements.diagramAffectedPath.classList.add("hidden");
+    elements.diagramBaroMarker.classList.add("hidden");
     elements.diagramAltitudeLabel.textContent = "2,500 ft RA";
     elements.diagramDistanceLabel.textContent = "Select valid inputs";
     elements.baroComparison.textContent = "Enter valid inputs to compare the profiles.";
@@ -84,11 +94,17 @@
     const nominalY = 52;
     const minimumX = 230;
     const maximumX = 360;
-    const clampedDistance = Math.min(maximumDistanceNm, Math.max(minimumDistanceNm, result.slantDistanceNmRaw));
-    const aircraftX = minimumX + (
-      (clampedDistance - minimumDistanceNm) /
-      (maximumDistanceNm - minimumDistanceNm)
-    ) * (maximumX - minimumX);
+    const distanceToX = (distanceNm) => {
+      const clampedDistance = Math.min(maximumDistanceNm, Math.max(minimumDistanceNm, distanceNm));
+      return minimumX + (
+        (clampedDistance - minimumDistanceNm) /
+        (maximumDistanceNm - minimumDistanceNm)
+      ) * (maximumX - minimumX);
+    };
+    const aircraftX = distanceToX(result.slantDistanceNmRaw);
+    const referenceDistanceNm = (core.CONSTANTS.RA_TRIGGER_FT - core.CONSTANTS.ASSUMED_TCH_FT) /
+      (core.CONSTANTS.FT_PER_NM * Math.sin(REFERENCE_GLIDEPATH_ANGLE_DEG * Math.PI / 180));
+    const referenceX = distanceToX(referenceDistanceNm);
     const affectedRatio = result.indicatedHeightAboveThresholdFtRaw / core.CONSTANTS.RA_TRIGGER_FT;
     const visualAffectedRatio = 1 + ((affectedRatio - 1) * 1.55);
     const affectedY = Math.min(
@@ -99,15 +115,18 @@
     const formattedDistance = core.formatSlantDistance(result.slantDistanceNmRaw);
     const formattedAngle = Number(glidepathAngleDeg).toFixed(1);
     const roundedError = Math.round(Math.abs(result.barometricErrorFtRaw));
-    const isNeutral = Math.abs(result.barometricErrorFtRaw) < 0.5;
+    const isMaterial = Math.abs(result.barometricErrorFtRaw) >= PROFILE_DISPLAY_THRESHOLD_FT;
     const isOverReading = result.barometricErrorFtRaw > 0;
-    const comparison = isNeutral
-      ? "Barometric indication matches nominal"
+    const selectedDiffersFromReference = Math.abs(Number(glidepathAngleDeg) - REFERENCE_GLIDEPATH_ANGLE_DEG) > 0.001;
+    const comparison = !isMaterial
+      ? `Difference below ${PROFILE_DISPLAY_THRESHOLD_FT} ft at 2,500 ft RA`
       : `Baro ${isOverReading ? "over-reads" : "under-reads"} by ${new Intl.NumberFormat("en-GB").format(roundedError)} ft`;
-    const descriptionComparison = isNeutral
-      ? "The temperature-affected indication coincides with the nominal profile."
+    const descriptionComparison = !isMaterial
+      ? `The temperature-related difference is below ${PROFILE_DISPLAY_THRESHOLD_FT} feet at 2,500 feet radio altitude, so no separate affected profile is shown.`
       : `The barometric indication ${isOverReading ? "over-reads" : "under-reads"} by approximately ${roundedError} feet.`;
 
+    elements.diagramThreeDegreePath.setAttribute("x2", referenceX.toFixed(1));
+    elements.diagramThreeDegreePath.setAttribute("y2", String(nominalY));
     elements.diagramNominalPath.setAttribute("x2", aircraftX.toFixed(1));
     elements.diagramNominalPath.setAttribute("y2", String(nominalY));
     elements.diagramAffectedPath.setAttribute("x2", aircraftX.toFixed(1));
@@ -124,16 +143,21 @@
     elements.diagramAltitudeLabel.setAttribute("y", String((nominalY + runwayY) / 2));
     elements.diagramAltitudeLabel.setAttribute("text-anchor", putAltitudeLabelLeft ? "end" : "start");
     elements.diagramDistanceLabel.setAttribute("x", labelX.toFixed(1));
-    elements.nominalLegend.textContent = `Nominal ${formattedAngle} degree profile`;
+    elements.nominalLegend.textContent = `Selected ${formattedAngle} degree glidepath`;
+    elements.selectedLegendItem.classList.toggle("hidden", !selectedDiffersFromReference);
+    elements.affectedLegendItem.classList.toggle("hidden", !isMaterial);
+    elements.diagramNominalPath.classList.toggle("hidden", !selectedDiffersFromReference);
+    elements.diagramAffectedPath.classList.toggle("hidden", !isMaterial);
+    elements.diagramBaroMarker.classList.toggle("hidden", !isMaterial);
     elements.diagramAltitudeLabel.textContent = "2,500 ft RA";
-    elements.diagramDistanceLabel.textContent = `${formattedAngle} degrees / ${formattedDistance}`;
+    elements.diagramDistanceLabel.textContent = `Selected ${formattedAngle} degrees / ${formattedDistance}`;
     elements.baroComparison.textContent = comparison;
-    elements.diagramDescription.textContent = `The nominal ${formattedAngle} degree profile reaches 2,500 feet radio altitude at ${formattedDistance} slant distance from the threshold. ${descriptionComparison} The visual separation between profiles is enlarged for clarity.`;
+    elements.diagramDescription.textContent = `The dashed reference shows 3.0 degrees. The selected ${formattedAngle} degree glidepath reaches 2,500 feet radio altitude at ${formattedDistance} slant distance from the threshold. ${descriptionComparison}${isMaterial ? " The visual separation between profiles is enlarged for clarity." : ""}`;
     elements.geometry.classList.remove("is-empty");
     elements.geometry.classList.toggle("is-warning", result.coldWeatherWarning);
-    elements.geometry.classList.toggle("is-cold", !isNeutral && isOverReading);
-    elements.geometry.classList.toggle("is-warm", !isNeutral && !isOverReading);
-    elements.geometry.classList.toggle("is-neutral", isNeutral);
+    elements.geometry.classList.toggle("is-cold", isMaterial && isOverReading);
+    elements.geometry.classList.toggle("is-warm", isMaterial && !isOverReading);
+    elements.geometry.classList.toggle("is-neutral", !isMaterial);
   }
 
   function render() {

@@ -145,6 +145,16 @@ test("installed lithium above 300 Wh is not failed by the removed-battery limit"
   assert.equal(result.expectation, EXPECTATIONS.CONDITIONAL);
 });
 
+test("a confirmed non-mobility aid ends as not applicable", () => {
+  const result = evaluateEma({
+    id: "ema-1",
+    mobilityAidConfirmed: "NO",
+  }, POLICY_PACK);
+
+  assert.equal(result.overallState, STATES.NOT_APPLICABLE);
+  assert.equal(result.findings[0].heading, "This guidance does not apply");
+});
+
 test("installed lithium does not require Wh as a decisive input", () => {
   const result = evaluateEma(installedLithium({ wattHours: undefined }), POLICY_PACK);
   assert.equal(result.logicState, STATES.NO_OBVIOUS_INCONSISTENCY);

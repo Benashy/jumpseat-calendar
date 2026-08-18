@@ -3309,6 +3309,10 @@ html[data-theme="night"] input[type="time"] {
   line-height: 1.25;
 }
 
+.ra-geometry-legend span.hidden {
+  display: none;
+}
+
 .ra-geometry-legend b {
   font-weight: 700;
 }
@@ -3317,6 +3321,15 @@ html[data-theme="night"] input[type="time"] {
   display: inline-block;
   width: 20px;
   border-top: 3px solid var(--silver);
+}
+
+.ra-legend-line.is-reference {
+  border-top-style: dashed;
+  border-top-width: 2px;
+}
+
+.ra-legend-line.is-nominal {
+  border-top-color: var(--navy);
 }
 
 .ra-legend-line.is-affected {
@@ -3346,9 +3359,15 @@ html[data-theme="night"] input[type="time"] {
   stroke-linecap: round;
 }
 
-.ra-path-line.is-nominal {
+.ra-path-line.is-reference {
   stroke: var(--silver);
-  stroke-width: 5;
+  stroke-dasharray: 7 6;
+  stroke-width: 2;
+}
+
+.ra-path-line.is-nominal {
+  stroke: var(--navy);
+  stroke-width: 3.25;
 }
 
 .ra-path-line.is-affected {
@@ -3726,11 +3745,8 @@ html[data-theme="night"] input[type="time"] {
   line-height: 1.35;
 }
 
-.ema-question-fieldset > p {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 650;
-  line-height: 1.45;
+.ema-question-fieldset legend:focus {
+  outline: none;
 }
 
 .ema-choice-grid {
@@ -3756,10 +3772,14 @@ html[data-theme="night"] input[type="time"] {
   padding: 10px 12px;
 }
 
-.ema-choice-button:hover,
-.ema-choice-button:focus-visible {
+.ema-choice-button:hover {
   border-color: var(--accent);
   background: var(--blue-soft);
+}
+
+.ema-choice-button:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
   outline: none;
 }
 

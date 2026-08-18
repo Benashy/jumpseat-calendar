@@ -51,9 +51,8 @@
       question: "Is this a wheelchair or electric mobility aid used by a person with reduced mobility?",
       type: "choice",
       choices: [
-        { value: "YES", label: "Yes, confirmed" },
+        { value: "YES", label: "Yes" },
         { value: "NO", label: "No" },
-        { value: "UNKNOWN", label: "Not confirmed" },
       ],
     },
     batteryType: {
@@ -141,9 +140,9 @@
     },
     locationType: {
       id: "locationType",
-      label: "Location shown",
+      label: "Stowage location",
       context: "Location",
-      question: "What location is shown?",
+      question: "Where is the battery or mobility aid shown as stowed?",
       type: "choice",
       choices: [
         { value: "CABIN", label: "Cabin" },
@@ -152,15 +151,6 @@
         { value: "NOT_SHOWN", label: "Not shown" },
         { value: "UNCLEAR", label: "Unclear" },
       ],
-    },
-    locationText: {
-      id: "locationText",
-      label: "Location exactly as written",
-      context: "Location",
-      question: "What location is written?",
-      type: "text",
-      placeholder: "For example, CPT 5 or cabin",
-      unknownLabel: "Skip",
     },
   };
 
@@ -179,7 +169,6 @@
       terminalsProtected: null,
       operatorApprovalConfirmed: null,
       locationType: null,
-      locationText: "",
     };
   }
 
@@ -206,6 +195,7 @@
 
   function stateClass(state) {
     return {
+      [core.STATES.NOT_APPLICABLE]: "is-neutral",
       [core.STATES.NO_OBVIOUS_INCONSISTENCY]: "is-clear",
       [core.STATES.ACTION_OR_INFORMATION_REQUIRED]: "is-action",
       [core.STATES.UNABLE_TO_DETERMINE_REFER]: "is-refer",
@@ -215,6 +205,7 @@
 
   function stateLabel(state) {
     return {
+      [core.STATES.NOT_APPLICABLE]: "Not applicable",
       [core.STATES.NO_OBVIOUS_INCONSISTENCY]: "Cross-check complete",
       [core.STATES.ACTION_OR_INFORMATION_REQUIRED]: "Action or information",
       [core.STATES.UNABLE_TO_DETERMINE_REFER]: "Referral required",
@@ -377,7 +368,7 @@
     if (emaAnswers.installedStatus === "SPARE") {
       steps.push(stepCatalog.spareCount, stepCatalog.wattHours, stepCatalog.terminalsProtected);
     }
-    steps.push(stepCatalog.operatorApprovalConfirmed, stepCatalog.locationType, stepCatalog.locationText);
+    steps.push(stepCatalog.operatorApprovalConfirmed, stepCatalog.locationType);
     return steps;
   }
 
@@ -388,7 +379,7 @@
     const retained = new Set(branchOrder.slice(0, branchIndex + 1));
     Object.keys(emaAnswers).forEach((key) => {
       if (retained.has(key)) return;
-      emaAnswers[key] = key === "locationText" ? "" : null;
+      emaAnswers[key] = null;
     });
   }
 
@@ -406,7 +397,6 @@
     if (step.type === "choice") return choiceLabel(step, value);
     if (step.id === "wattHours") return Number.isFinite(value) ? `${value} Wh` : "Not known";
     if (step.id === "spareCount") return Number.isInteger(value) ? String(value) : "Not known";
-    if (step.id === "locationText") return value || "Not entered";
     return value || "Not known";
   }
 
@@ -417,8 +407,8 @@
   function focusCurrentQuestion() {
     window.requestAnimationFrame(() => {
       const target = elements.emaQuestionOptions.querySelector("[aria-pressed='true']") ||
-        elements.emaQuestionOptions.querySelector("button") ||
-        elements.emaQuestionInput.querySelector("input");
+        elements.emaQuestionInput.querySelector("input") ||
+        elements.emaQuestionTitle;
       target?.focus?.({ preventScroll: true });
     });
   }
@@ -560,7 +550,7 @@
       operatorApprovalConfirmed: emaAnswers.operatorApprovalConfirmed || "UNKNOWN",
       location: {
         type: emaAnswers.locationType || "NOT_SHOWN",
-        rawText: emaAnswers.locationText.trim(),
+        rawText: "",
       },
     };
   }
@@ -570,7 +560,9 @@
     const evaluation = core.evaluateEma(buildEmaEntry(), policyPack);
     elements.emaForm.classList.add("hidden");
     const card = renderEvaluation(elements.emaResult, evaluation, {
-      summary: evaluation.expectation ? expectationLabel(evaluation.expectation) : undefined,
+      summary: evaluation.overallState === core.STATES.NOT_APPLICABLE
+        ? undefined
+        : expectationLabel(evaluation.expectation),
       answerRows: rows,
     });
     const actions = document.createElement("div");
