@@ -49,7 +49,19 @@
 - Login reliability: keep watching Supabase magic-link rate limits and mobile sign-in behaviour; consider tuning settings or relying more on password sign-in if magic links remain awkward.
 - Day export/copy option: consider copying a clean text summary of jumpseat requests for messaging or email.
 - Code organisation audit: separate Jumpseat and LTOT logic more clearly before adding more tools.
-- Security and automated backups: handle authentication settings, database permissions, secrets, and any scheduled private Supabase backup as a separate approved phase.
+
+## Security Workstream (Separate Approval Required)
+
+- Supabase access: review every app table and Row Level Security policy, then verify with two test accounts that each user can only read, create, update and delete their own records.
+- Account access: decide whether to disable public sign-up or restrict access to Ben and his wife, while retaining a reliable recovery route if either account becomes inaccessible.
+- Authentication and sessions: review password, magic-link, redirect URL, session lifetime, sign-out and lost-device behaviour on iPhone and iPad.
+- Telegram protection: review the browser-to-Edge-Function authentication path, Cron authentication, permitted origins and pairing behaviour without exposing the bot token or Cron secret.
+- Secrets: inventory and rotate sensitive Supabase, Telegram and deployment credentials where appropriate; confirm that privileged keys exist only in protected server-side or GitHub secret storage.
+- Personal data: document what names, BA ID status, notes and account details are stored; review retention, deletion, export and log content so only necessary information is kept.
+- Front-end protection: review third-party scripts, dependency pinning, Content Security Policy and available GitHub Pages security headers without reducing iPhone or iPad reliability.
+- Private automated backup: design a daily encrypted or private Supabase backup using protected credentials, with clear retention and no personal data committed to the public repository.
+- Recovery test: restore a backup into an isolated test environment and verify record counts, calculator state and Jumpseat data before treating the backup system as complete.
+- Security verification: run a focused post-change review of database policies, authentication, Edge Functions, browser code and realistic attack paths, then record any accepted residual risks.
 
 ## Future Considerations (Deliberately Deferred)
 
