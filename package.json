@@ -1,9 +1,9 @@
 {
   "name": "bens-opsdeck",
-  "version": "2.34.0",
+  "version": "2.35.0",
   "private": true,
   "scripts": {
-    "check": "node --check app.js && node --check ltot-core.js && node --check data-portability.js && node scripts/check-dom-contract.mjs && node scripts/check-release.mjs && node --test tests/*.test.js",
+    "check": "node --check app.js && node --check ltot-core.js && node --check data-portability.js && node --check request-retention.js && node scripts/check-dom-contract.mjs && node scripts/check-release.mjs && node --test tests/*.test.js",
     "release": "node scripts/set-release.mjs"
   }
 }

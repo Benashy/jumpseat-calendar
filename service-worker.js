@@ -1,13 +1,14 @@
-const CACHE_NAME = "jumpseat-calendar-v98";
+const CACHE_NAME = "jumpseat-calendar-v99";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=cloud-sync-82",
-  "./supabase-config.js?v=cloud-sync-82",
-  "./ltot-core.js?v=cloud-sync-82",
-  "./data-portability.js?v=cloud-sync-82",
-  "./app.js?v=cloud-sync-82",
-  "./manifest.webmanifest?v=cloud-sync-82",
+  "./styles.css?v=cloud-sync-83",
+  "./supabase-config.js?v=cloud-sync-83",
+  "./ltot-core.js?v=cloud-sync-83",
+  "./data-portability.js?v=cloud-sync-83",
+  "./request-retention.js?v=cloud-sync-83",
+  "./app.js?v=cloud-sync-83",
+  "./manifest.webmanifest?v=cloud-sync-83",
   "./icons/icon-192.png?v=ba-1",
   "./icons/icon-512.png?v=ba-1",
   "./icons/apple-touch-icon.png?v=ba-1"

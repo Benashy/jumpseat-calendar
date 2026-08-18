@@ -1,6 +1,6 @@
 const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
-const APP_VERSION = "2.34";
+const APP_VERSION = "2.35";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 2;
 const MAGIC_LINK_SENT_KEY = "jumpseat-calendar-magic-link-sent-at";
@@ -11,6 +11,7 @@ const MAGIC_LINK_RATE_LIMIT_SECONDS = 60 * 60;
 const CLOUD_FRESH_HOURS = 1;
 const CLOUD_STALE_HOURS = 24;
 const CALCULATION_STALE_SECONDS = 12 * 60 * 60;
+const REQUEST_RETENTION_DAYS = 7;
 const PAGE_QUERY = new URLSearchParams(window.location.search);
 const IS_LOCAL_PREVIEW = ["127.0.0.1", "localhost"].includes(window.location.hostname) &&
   PAGE_QUERY.has("preview");
@@ -1832,23 +1833,36 @@ function loadRequests() {
   return loadRequestEnvelope().requests;
 }
 
+function persistLoadedRequestEnvelope(envelope) {
+  try {
+    localStorage.setItem(REQUESTS_ENVELOPE_KEY, JSON.stringify(envelope));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(envelope.requests));
+  } catch {
+    // Loading can continue with the retained in-memory copy if device storage is unavailable.
+  }
+}
+
 function loadRequestEnvelope() {
   try {
     const saved = JSON.parse(localStorage.getItem(REQUESTS_ENVELOPE_KEY) || "null");
     if (saved && Array.isArray(saved.requests)) {
-      return {
+      const envelope = {
         requests: sanitizeRequests(saved.requests),
         dirty: Boolean(saved.dirty),
         baseUpdatedAt: saved.baseUpdatedAt || null,
       };
+      persistLoadedRequestEnvelope(envelope);
+      return envelope;
     }
 
     const legacy = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    return {
+    const envelope = {
       requests: sanitizeRequests(Array.isArray(legacy) ? legacy : []),
       dirty: false,
       baseUpdatedAt: null,
     };
+    persistLoadedRequestEnvelope(envelope);
+    return envelope;
   } catch {
     return { requests: [], dirty: false, baseUpdatedAt: null };
   }
@@ -1910,7 +1924,7 @@ function staffHasBaid(entry) {
 function sanitizeRequests(value) {
   if (!Array.isArray(value)) return [];
 
-  return value
+  const sanitized = value
     .filter((request) => request.date && request.flightNumber && Array.isArray(request.staff))
     .map((request) => ({
       id: request.id || createId(),
@@ -1924,6 +1938,10 @@ function sanitizeRequests(value) {
       notes: normalizeText(String(request.notes || "")),
       updatedAt: request.updatedAt || new Date().toISOString(),
     }));
+
+  return window.OpsDeckRetention.partitionRequests(sanitized, {
+    retentionDays: REQUEST_RETENTION_DAYS,
+  }).retained;
 }
 
 function queueCloudSave(delay = 350) {

@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.34.
+- Current visible app version: v2.35.
 - The top navigation is limited to `Jumpseat` and `FDP & LTOT`. Jumpseat opens the daily view by default, with contextual `Add request` and `Back to requests` actions instead of a second navigation row.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -27,6 +27,7 @@
 - v2.34 adds bounded Telegram reminder retries, a wider recovery window, and persistent attempt tracking for short-lived delivery failures.
 - v2.34 adds a repeatable release manifest, automated DOM/release/calculation checks on GitHub, and a documented rollback point at v2.33.
 - v2.34 gives sign-in fields persistent visible labels and replaces infrastructure wording in Telegram Settings with plain service status wording.
+- v2.35 automatically deletes Jumpseat requests and OpsDeck Telegram delivery records after seven complete days. The app applies the same Zulu-date rule to local and offline copies, while delivered Telegram messages remain in the user's Telegram account.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
@@ -52,12 +53,13 @@
 
 ## Security Workstream (Separate Approval Required)
 
-- Supabase access: review every app table and Row Level Security policy, then verify with two test accounts that each user can only read, create, update and delete their own records.
-- Account access: decide whether to disable public sign-up or restrict access to Ben and his wife, while retaining a reliable recovery route if either account becomes inaccessible.
+- Supabase access: review every app table and Row Level Security policy, then verify that anonymous visitors and any unrelated account cannot read, create, update or delete Ben's records.
+- Account access: disable public sign-up after confirming Ben's existing login and account-recovery route work correctly.
 - Authentication and sessions: review password, magic-link, redirect URL, session lifetime, sign-out and lost-device behaviour on iPhone and iPad.
 - Telegram protection: review the browser-to-Edge-Function authentication path, Cron authentication, permitted origins and pairing behaviour without exposing the bot token or Cron secret.
 - Secrets: inventory and rotate sensitive Supabase, Telegram and deployment credentials where appropriate; confirm that privileged keys exist only in protected server-side or GitHub secret storage.
-- Personal data: document what names, BA ID status, notes and account details are stored; review retention, deletion, export and log content so only necessary information is kept.
+- Personal data: seven-day active retention is implemented for Jumpseat requests and OpsDeck reminder records; review exported backups and any remaining logs so they do not retain unnecessary personal information.
+- Password protection: review the Supabase warning that leaked-password protection is disabled and decide whether to enable it during the separate authentication phase.
 - Front-end protection: review third-party scripts, dependency pinning, Content Security Policy and available GitHub Pages security headers without reducing iPhone or iPad reliability.
 - Private automated backup: design a daily encrypted or private Supabase backup using protected credentials, with clear retention and no personal data committed to the public repository.
 - Recovery test: restore a backup into an isolated test environment and verify record counts, calculator state and Jumpseat data before treating the backup system as complete.

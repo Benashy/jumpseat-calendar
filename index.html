@@ -34,10 +34,10 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-82" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-83" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-82" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-83" />
   </head>
   <body>
     <div class="app-shell">
@@ -148,7 +148,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.34</small>
+            <small class="app-version">v2.35</small>
           </section>
 
         </section>
@@ -551,7 +551,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.34</small>
+            <small class="app-version">v2.35</small>
           </section>
         </section>
 
@@ -592,6 +592,7 @@
               <span>Backup and restore</span>
             </div>
             <p class="settings-copy">Download a portable copy of your Jumpseat requests and FDP and LTOT inputs. JSON can restore OpsDeck; CSV opens in spreadsheet software.</p>
+            <p class="settings-copy"><strong>Retention:</strong> Past Jumpseat requests and OpsDeck reminder records are deleted after seven complete days. Messages already delivered to Telegram are not removed.</p>
             <div class="data-actions">
               <button class="text-button secondary" id="exportJsonButton" type="button">Export JSON</button>
               <button class="text-button secondary" id="exportCsvButton" type="button">Export CSV</button>
@@ -657,7 +658,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.34</small>
+            <small class="app-version">v2.35</small>
           </section>
         </section>
       </main>
@@ -740,9 +741,10 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-82"></script>
-    <script src="./ltot-core.js?v=cloud-sync-82"></script>
-    <script src="./data-portability.js?v=cloud-sync-82"></script>
-    <script src="./app.js?v=cloud-sync-82"></script>
+    <script src="./supabase-config.js?v=cloud-sync-83"></script>
+    <script src="./ltot-core.js?v=cloud-sync-83"></script>
+    <script src="./data-portability.js?v=cloud-sync-83"></script>
+    <script src="./request-retention.js?v=cloud-sync-83"></script>
+    <script src="./app.js?v=cloud-sync-83"></script>
   </body>
 </html>
