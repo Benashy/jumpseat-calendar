@@ -34,10 +34,10 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-83" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-84" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ba-1" />
     <link rel="icon" href="./icons/icon-192.png?v=ba-1" sizes="192x192" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-83" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-84" />
   </head>
   <body>
     <div class="app-shell">
@@ -148,7 +148,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.35</small>
+            <small class="app-version">v2.36</small>
           </section>
 
         </section>
@@ -284,7 +284,7 @@
             <section class="duration-section" aria-label="FDP limit">
               <div class="duration-section-heading">
                 <h3>FDP limit</h3>
-                <button class="text-button secondary compact-button" id="addCabinCrewButton" type="button" aria-expanded="false">Add cabin crew</button>
+                <button class="text-button secondary compact-button" id="addCabinCrewButton" type="button" aria-expanded="false">Separate crew limits</button>
               </div>
 
               <div class="crew-tabs-row hidden" id="crewTabsRow">
@@ -292,9 +292,7 @@
                   <button class="crew-tab active" id="flightCrewTab" type="button" role="tab" aria-controls="flightCrewInputs" aria-selected="true">Flight crew</button>
                   <button class="crew-tab" id="cabinCrewTab" type="button" role="tab" aria-controls="cabinCrewInputs" aria-selected="false">Cabin crew</button>
                 </div>
-                <button class="icon-button crew-remove-button" id="removeCabinCrewButton" type="button" title="Remove cabin crew" aria-label="Remove cabin crew">
-                  <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
-                </button>
+                <button class="text-button secondary compact-button crew-remove-button" id="removeCabinCrewButton" type="button">Use shared crew limit</button>
               </div>
 
               <div class="crew-input-panel" id="flightCrewInputs" role="tabpanel" aria-labelledby="flightCrewTab" aria-hidden="false">
@@ -359,7 +357,7 @@
           <details class="guidance-panel fdp-reference-panel" id="fdpReferencePanel">
             <summary>FDP Tables</summary>
             <div class="guidance-content fdp-reference-content">
-              <div class="fdp-target-banner" id="fdpTargetBanner" role="status">Selecting Maximum FDP for Flight crew</div>
+              <div class="fdp-target-banner" id="fdpTargetBanner" role="status">Selecting Maximum FDP for all crew</div>
               <section>
                 <h3>FDP lookup workflow</h3>
                 <p class="fdp-time-context"><strong>Time reference:</strong> the LTOT calculator uses Zulu, while FDP table start times use the applicable local or reference report time.</p>
@@ -551,7 +549,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.35</small>
+            <small class="app-version">v2.36</small>
           </section>
         </section>
 
@@ -658,7 +656,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.35</small>
+            <small class="app-version">v2.36</small>
           </section>
         </section>
       </main>
@@ -741,10 +739,10 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-83"></script>
-    <script src="./ltot-core.js?v=cloud-sync-83"></script>
-    <script src="./data-portability.js?v=cloud-sync-83"></script>
-    <script src="./request-retention.js?v=cloud-sync-83"></script>
-    <script src="./app.js?v=cloud-sync-83"></script>
+    <script src="./supabase-config.js?v=cloud-sync-84"></script>
+    <script src="./ltot-core.js?v=cloud-sync-84"></script>
+    <script src="./data-portability.js?v=cloud-sync-84"></script>
+    <script src="./request-retention.js?v=cloud-sync-84"></script>
+    <script src="./app.js?v=cloud-sync-84"></script>
   </body>
 </html>

@@ -757,11 +757,13 @@ input[type="time"],
 }
 
 .fdp-reference-content {
+  border-top-color: var(--silver);
   gap: 12px;
+  padding-top: 10px;
 }
 
 .fdp-target-banner {
-  border: 1px solid rgba(198, 161, 90, 0.48);
+  border: 1px solid var(--silver);
   border-radius: 7px;
   background: var(--navy);
   color: #fff;
@@ -1320,7 +1322,7 @@ strong.fdp-state-x-label {
 
 .crew-tabs-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px;
+  grid-template-columns: minmax(0, 1fr) max-content;
   gap: 7px;
 }
 
@@ -1342,7 +1344,8 @@ strong.fdp-state-x-label {
 }
 
 .crew-remove-button {
-  color: var(--warn);
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 .crew-tab.active {
@@ -2231,6 +2234,14 @@ form label {
 }
 
 @media (max-width: 560px) {
+  .crew-tabs-row {
+    grid-template-columns: 1fr;
+  }
+
+  .crew-remove-button {
+    justify-self: stretch;
+  }
+
   .app-shell {
     width: min(100% - 22px, 1180px);
     padding-top: 14px;
@@ -2578,7 +2589,7 @@ legend {
 }
 
 .crew-remove-button {
-  color: var(--warn);
+  color: var(--muted);
 }
 
 .primary-button {

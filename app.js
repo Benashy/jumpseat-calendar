@@ -1,6 +1,6 @@
 const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
-const APP_VERSION = "2.35";
+const APP_VERSION = "2.36";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 2;
 const MAGIC_LINK_SENT_KEY = "jumpseat-calendar-magic-link-sent-at";
@@ -1003,6 +1003,10 @@ function updateFdpReferenceSelection() {
 
 function updateFdpTargetBanner() {
   if (!elements.fdpTargetBanner) return;
+  if (!cabinCrewEnabled) {
+    elements.fdpTargetBanner.textContent = "Selecting Maximum FDP for all crew";
+    return;
+  }
   const control = ftlCrewControls[activeFdpTargetId] || ftlCrewControls.flight;
   elements.fdpTargetBanner.textContent = control
     ? `Selecting Maximum FDP for ${crewLimitDisplayLabel(control)}`
@@ -1710,7 +1714,7 @@ function removeCabinCrew() {
     .filter((record) => record.category === "cabin")
     .map((record) => ftlCrewControls[record.id]);
   const hasCabinData = cabinControls.some(crewLimitHasData);
-  if (hasCabinData && !window.confirm("Remove the Cabin crew limit and its FDP inputs?")) return;
+  if (hasCabinData && !window.confirm("Use shared crew limit? Cabin crew inputs will be removed and the Flight crew values retained.")) return;
   state.crewLimits = state.crewLimits.filter((record) => record.category !== "cabin");
   activeFtlCrew = "flight";
   renderCrewLimitRecords(state.crewLimits);

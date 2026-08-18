@@ -28,6 +28,7 @@
 - v2.34 adds a repeatable release manifest, automated DOM/release/calculation checks on GitHub, and a documented rollback point at v2.33.
 - v2.34 gives sign-in fields persistent visible labels and replaces infrastructure wording in Telegram Settings with plain service status wording.
 - v2.35 automatically deletes Jumpseat requests and OpsDeck Telegram delivery records after seven complete days. The app applies the same Zulu-date rule to local and offline copies, while delivered Telegram messages remain in the user's Telegram account.
+- v2.36 clarifies the optional split-crew FDP workflow with shared/separate crew wording and gives the FDP table target banner a cleaner silver divider and spacing in Light and Night appearances.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
