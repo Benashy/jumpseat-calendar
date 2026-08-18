@@ -7,21 +7,12 @@
   if (!core || !policyPack || !view) return;
 
   const elements = {
-    policyVersion: document.querySelector("#notocPolicyVersion"),
     clearSession: document.querySelector("#clearNotocSessionButton"),
     home: document.querySelector("#notocHomeScreen"),
-    crosscheck: document.querySelector("#notocCrosscheckScreen"),
     lookup: document.querySelector("#notocLookupScreen"),
     ema: document.querySelector("#notocEmaScreen"),
-    signature: document.querySelector("#notocSignatureScreen"),
     actionButtons: document.querySelectorAll("[data-notoc-screen]"),
     backButtons: document.querySelectorAll(".notoc-back-button"),
-    crosscheckForm: document.querySelector("#notocCrosscheckForm"),
-    codes: document.querySelector("#notocCodes"),
-    allCodesEntered: document.querySelector("#notocAllCodesEntered"),
-    linkedEmaStatus: document.querySelector("#notocLinkedEmaStatus"),
-    openEmaFromCrosscheck: document.querySelector("#openEmaFromCrosscheckButton"),
-    crosscheckResult: document.querySelector("#notocCrosscheckResult"),
     lookupForm: document.querySelector("#notocLookupForm"),
     lookupCode: document.querySelector("#notocLookupCode"),
     lookupResult: document.querySelector("#notocLookupResult"),
@@ -43,12 +34,9 @@
   };
   const screens = {
     home: elements.home,
-    crosscheck: elements.crosscheck,
     lookup: elements.lookup,
     ema: elements.ema,
-    signature: elements.signature,
   };
-  let currentEmaResult = null;
 
   function showScreen(name, focus = true) {
     Object.entries(screens).forEach(([screenName, screen]) => {
@@ -157,23 +145,7 @@
       findings.append(item);
     });
     card.append(findings);
-    card.append(textElement("p", "result-boundary", "This tool is a Captain's cross-check. It does not replace Dangerous Goods acceptance, the NOTOC, the loadsheet, BA manuals or specialist advice."));
-    card.append(textElement("small", "policy-version", `Policy pack ${evaluation.policyPackVersion}`));
     region.append(card);
-  }
-
-  function parseCodes(value) {
-    return value.split(/[\n,;]+/).map((code) => code.trim()).filter(Boolean);
-  }
-
-  function updateLinkedEmaStatus() {
-    if (!currentEmaResult) {
-      elements.linkedEmaStatus.textContent = "No mobility-aid assessment is included in this session.";
-      elements.linkedEmaStatus.classList.remove("has-assessment");
-      return;
-    }
-    elements.linkedEmaStatus.textContent = `Mobility-aid assessment included: ${core.STATE_HEADINGS[currentEmaResult.overallState]}.`;
-    elements.linkedEmaStatus.classList.add("has-assessment");
   }
 
   function updateEmaFields() {
@@ -212,28 +184,22 @@
 
   function clearEmaAssessment() {
     elements.emaForm.reset();
-    currentEmaResult = null;
     clearNode(elements.emaResult);
     updateEmaFields();
-    updateLinkedEmaStatus();
   }
 
   function clearSession() {
-    elements.crosscheckForm.reset();
     elements.lookupForm.reset();
-    clearNode(elements.crosscheckResult);
     clearNode(elements.lookupResult);
     clearEmaAssessment();
     showScreen("home");
   }
 
-  elements.policyVersion.textContent = `Policy pack ${policyPack.version}`;
   elements.actionButtons.forEach((button) => {
     button.addEventListener("click", () => showScreen(button.dataset.notocScreen));
   });
   elements.backButtons.forEach((button) => button.addEventListener("click", () => showScreen("home")));
   elements.clearSession.addEventListener("click", clearSession);
-  elements.openEmaFromCrosscheck.addEventListener("click", () => showScreen("ema"));
   elements.batteryType.addEventListener("change", updateEmaFields);
   elements.installedStatus.addEventListener("change", updateEmaFields);
 
@@ -253,36 +219,13 @@
 
   elements.emaForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    currentEmaResult = core.evaluateEma(buildEmaEntry(), policyPack);
-    renderEvaluation(elements.emaResult, currentEmaResult, {
-      summary: currentEmaResult.expectation ? expectationLabel(currentEmaResult.expectation) : undefined,
+    const evaluation = core.evaluateEma(buildEmaEntry(), policyPack);
+    renderEvaluation(elements.emaResult, evaluation, {
+      summary: evaluation.expectation ? expectationLabel(evaluation.expectation) : undefined,
     });
-    updateLinkedEmaStatus();
   });
   elements.clearEma.addEventListener("click", clearEmaAssessment);
 
-  elements.crosscheckForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const selectedIndicator = elements.crosscheckForm.querySelector('input[name="notocIndicator"]:checked')?.value || "UNCLEAR";
-    const rawCodes = parseCodes(elements.codes.value);
-    const evaluation = core.evaluateNotocSession({
-      policyPackVersion: policyPack.version,
-      loadsheetNotocIndicator: selectedIndicator,
-      allRelevantVisibleCodesEntered: elements.allCodesEntered.checked,
-      rawCodes,
-    }, currentEmaResult ? [currentEmaResult] : [], policyPack);
-    const titles = [
-      ...evaluation.codeLookups.map((lookup) => `${lookup.normalisedCode}: ${lookup.description}`),
-      ...(currentEmaResult ? ["Mobility-aid battery"] : []),
-      ["Final loadsheet NOTOC field"],
-    ].flat();
-    renderEvaluation(elements.crosscheckResult, evaluation, {
-      summary: `${rawCodes.length} ${rawCodes.length === 1 ? "code" : "codes"} entered${currentEmaResult ? ", plus one mobility-aid assessment" : ""}.`,
-      findingTitles: titles,
-    });
-  });
-
   updateEmaFields();
-  updateLinkedEmaStatus();
   showScreen("home", false);
 })(typeof globalThis !== "undefined" ? globalThis : window);

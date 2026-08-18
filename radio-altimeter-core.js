@@ -82,8 +82,8 @@
       (airportTemperatureC + CONSTANTS.KELVIN_OFFSET);
     const expectedBaroAltitudeFtRaw = thresholdElevationFt + indicatedHeightAboveThresholdFt;
     const verticalHeightAboveThresholdFt = CONSTANTS.RA_TRIGGER_FT - CONSTANTS.ASSUMED_TCH_FT;
-    const horizontalDistanceNmRaw = verticalHeightAboveThresholdFt /
-      (CONSTANTS.FT_PER_NM * Math.tan(glidepathAngleDeg * Math.PI / 180));
+    const slantDistanceNmRaw = verticalHeightAboveThresholdFt /
+      (CONSTANTS.FT_PER_NM * Math.sin(glidepathAngleDeg * Math.PI / 180));
     const isaDeviationC = airportTemperatureC - isaTemperatureAtThresholdC;
 
     return {
@@ -91,10 +91,10 @@
       errors: {},
       result: {
         expectedBaroAltitudeFtRaw,
-        horizontalDistanceNmRaw,
+        slantDistanceNmRaw,
         isaTemperatureAtThresholdC,
         isaDeviationC,
-        coldWeatherWarning: isaDeviationC <= CONSTANTS.COLD_WARNING_ISA_DEVIATION_C,
+        coldWeatherWarning: isaDeviationC < CONSTANTS.COLD_WARNING_ISA_DEVIATION_C,
       },
     };
   }
@@ -105,7 +105,7 @@
     return `~${new Intl.NumberFormat("en-GB", { maximumFractionDigits: 0 }).format(rounded)} ft`;
   }
 
-  function formatHorizontalDistance(value) {
+  function formatSlantDistance(value) {
     if (!finiteNumber(value)) return "";
     return `${value.toFixed(1)} NM`;
   }
@@ -114,7 +114,7 @@
     CONSTANTS,
     calculateRadioAltimeterPosition,
     formatBaroAltitude,
-    formatHorizontalDistance,
+    formatSlantDistance,
     validateRadioAltimeterInput,
   };
 

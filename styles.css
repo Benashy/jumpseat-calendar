@@ -3184,6 +3184,10 @@ html[data-theme="night"] input[type="time"] {
   padding: 11px 12px;
 }
 
+.conditional-warning.hidden {
+  display: none;
+}
+
 .conditional-warning strong {
   color: var(--amber);
   font-size: 0.8rem;

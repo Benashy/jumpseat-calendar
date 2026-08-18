@@ -22,6 +22,15 @@
   const touched = new Set();
   let renderTimer = null;
 
+  for (let temperature = -60; temperature <= 60; temperature += 1) {
+    const option = document.createElement("option");
+    option.value = String(temperature);
+    option.textContent = temperature > 0 ? `+${temperature}` : String(temperature);
+    option.defaultSelected = temperature === 15;
+    elements.temperature.append(option);
+  }
+  elements.temperature.value = "15";
+
   function numberOrNull(field) {
     if (field.value.trim() === "") return null;
     const value = Number(field.value);
@@ -64,10 +73,10 @@
     const result = calculation.result;
     elements.resultPanel.classList.remove("is-empty");
     elements.resultPanel.dataset.baroRaw = String(result.expectedBaroAltitudeFtRaw);
-    elements.resultPanel.dataset.distanceRaw = String(result.horizontalDistanceNmRaw);
+    elements.resultPanel.dataset.distanceRaw = String(result.slantDistanceNmRaw);
     elements.baro.textContent = core.formatBaroAltitude(result.expectedBaroAltitudeFtRaw);
-    elements.distance.textContent = core.formatHorizontalDistance(result.horizontalDistanceNmRaw);
-    elements.support.textContent = "Assumes 2,500 ft RA, 50 ft threshold crossing height and terrain near threshold elevation.";
+    elements.distance.textContent = core.formatSlantDistance(result.slantDistanceNmRaw);
+    elements.support.textContent = "Uses 2,500 ft RA and a 50 ft threshold crossing height.";
     elements.coldWarning.classList.toggle("hidden", !result.coldWeatherWarning);
   }
 
@@ -93,6 +102,8 @@
     window.clearTimeout(renderTimer);
     touched.clear();
     form.reset();
+    elements.threshold.value = "0";
+    elements.temperature.value = "15";
     elements.angle.value = "3.0";
     render();
     elements.threshold.focus();
