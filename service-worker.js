@@ -1,24 +1,24 @@
-const CACHE_NAME = "jumpseat-calendar-v102";
+const CACHE_NAME = "jumpseat-calendar-v103";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=cloud-sync-86",
-  "./supabase-config.js?v=cloud-sync-86",
-  "./ltot-core.js?v=cloud-sync-86",
-  "./radio-altimeter-core.js?v=cloud-sync-86",
-  "./radio-altimeter-ui.js?v=cloud-sync-86",
-  "./notoc-policy.js?v=cloud-sync-86",
-  "./notoc-core.js?v=cloud-sync-86",
-  "./notoc-ui.js?v=cloud-sync-86",
-  "./data-portability.js?v=cloud-sync-86",
-  "./request-retention.js?v=cloud-sync-86",
-  "./app.js?v=cloud-sync-86",
-  "./manifest.webmanifest?v=cloud-sync-86",
-  "./icons/opsdeck-logo.svg?v=opsdeck-wings-1",
-  "./icons/opsdeck-wordmark.svg?v=cloud-sync-86",
-  "./icons/icon-192.png?v=opsdeck-wings-1",
-  "./icons/icon-512.png?v=opsdeck-wings-1",
-  "./icons/apple-touch-icon.png?v=opsdeck-wings-1"
+  "./styles.css?v=cloud-sync-87",
+  "./supabase-config.js?v=cloud-sync-87",
+  "./ltot-core.js?v=cloud-sync-87",
+  "./radio-altimeter-core.js?v=cloud-sync-87",
+  "./radio-altimeter-ui.js?v=cloud-sync-87",
+  "./notoc-policy.js?v=cloud-sync-87",
+  "./notoc-core.js?v=cloud-sync-87",
+  "./notoc-ui.js?v=cloud-sync-87",
+  "./data-portability.js?v=cloud-sync-87",
+  "./request-retention.js?v=cloud-sync-87",
+  "./app.js?v=cloud-sync-87",
+  "./manifest.webmanifest?v=cloud-sync-87",
+  "./icons/opsdeck-logo.svg?v=opsdeck-wings-2",
+  "./icons/opsdeck-wordmark.svg?v=cloud-sync-87",
+  "./icons/icon-192.png?v=opsdeck-wings-2",
+  "./icons/icon-512.png?v=opsdeck-wings-2",
+  "./icons/apple-touch-icon.png?v=opsdeck-wings-2"
 ];
 
 self.addEventListener("install", (event) => {

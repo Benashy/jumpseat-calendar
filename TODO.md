@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.38.
+- Current visible app version: v2.39.
 - The top navigation contains `Jumpseat`, `FDP & LTOT`, `RA Check` and `NOTOC`. Jumpseat opens the daily view by default, with contextual `Add request` and `Back to requests` actions instead of a second navigation row.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -32,6 +32,7 @@
 - v2.37 introduces the BA pilot-wings identity across the app header, favicon and iPhone/iPad home-screen icons, using flat vector artwork and a fresh cache marker.
 - v2.38 adds a development-only Radio Altimeter Position Check for a flat-terrain estimate at the first 2,500 ft RA indication. It stores no data, remains available offline and is explicitly not an altitude to fly.
 - v2.38 adds a development-only NOTOC Assistant with separate cross-check, code lookup, mobility-aid battery and signature-explanation journeys. Unknown or unverified information is referred rather than inferred, and operational session data is not persisted.
+- v2.39 corrects the right pilot-wing geometry in the header wordmark, favicon and iPhone/iPad home-screen icons so every wing bar meets the sloping `A` cleanly.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
