@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="OpsDeck" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="description" content="Flight deck tools for jumpseat requests and latest takeoff time calculations." />
+    <meta name="description" content="Private flight deck tools for jumpseat requests, FDP and LTOT planning, radio-altimeter position checks and NOTOC cross-checks." />
     <title>Ben's OpsDeck</title>
     <script>
       (() => {
@@ -34,17 +34,17 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-85" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-86" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-1" />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-1" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-1" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-85" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-86" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-85" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-86" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -72,12 +72,14 @@
       </section>
 
       <section class="offline-banner hidden" id="offlineBanner" aria-live="polite">
-        Offline mode: viewing saved data. Connect to the internet to add, edit or delete requests.
+        Offline: Jumpseat is view only. FDP, LTOT, RA Check and NOTOC tools remain available on this device.
       </section>
 
       <nav class="tool-menu" aria-label="Flight tools" role="tablist">
         <button class="tool-button active" id="jumpseatToolTab" type="button" role="tab" aria-controls="homeView addView" aria-selected="true">Jumpseat</button>
         <button class="tool-button" id="ftlToolTab" type="button" role="tab" aria-controls="ftlView" aria-selected="false">FDP &amp; LTOT</button>
+        <button class="tool-button" id="raToolTab" type="button" role="tab" aria-controls="raView" aria-selected="false">RA Check</button>
+        <button class="tool-button" id="notocToolTab" type="button" role="tab" aria-controls="notocView" aria-selected="false">NOTOC</button>
       </nav>
 
       <main class="layout">
@@ -150,7 +152,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.37</small>
+            <small class="app-version">v2.38</small>
           </section>
 
         </section>
@@ -551,7 +553,411 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.37</small>
+            <small class="app-version">v2.38</small>
+          </section>
+        </section>
+
+        <section class="ra-panel view-panel hidden" id="raView" role="tabpanel" aria-labelledby="raToolTab" aria-hidden="true">
+          <div class="form-heading tool-heading">
+            <div>
+              <h2>Radio Altimeter Position Check</h2>
+              <p class="ftl-context">Flat-terrain estimate at the first radio-altimeter indication</p>
+            </div>
+            <button class="text-button secondary" id="clearRaButton" type="button">Reset</button>
+          </div>
+
+          <div class="development-banner" role="note">
+            <strong>Development model</strong>
+            <span>Manual references and comparison with the BA Cold Weather Calculator remain validation gates. Do not use this as an altitude to fly.</span>
+          </div>
+
+          <div class="ra-workspace">
+            <form class="ra-form" id="raForm" novalidate>
+              <label for="raThresholdElevation">
+                Landing threshold elevation <span class="field-unit">ft AMSL</span>
+                <input id="raThresholdElevation" type="number" min="-1500" max="15000" step="1" inputmode="numeric" autocomplete="off" placeholder="Required" aria-describedby="raThresholdError" required />
+                <small class="field-error" id="raThresholdError"></small>
+              </label>
+
+              <label for="raAirportTemperature">
+                Airport temperature <span class="field-unit">degrees Celsius</span>
+                <input id="raAirportTemperature" type="number" min="-60" max="60" step="1" inputmode="decimal" autocomplete="off" placeholder="Required" aria-describedby="raTemperatureError" required />
+                <small class="field-error" id="raTemperatureError"></small>
+              </label>
+
+              <label for="raGlidepathAngle">
+                Glidepath angle <span class="field-unit">degrees</span>
+                <select id="raGlidepathAngle" aria-describedby="raAngleError" required>
+                  <option value="2.5">2.5</option>
+                  <option value="2.6">2.6</option>
+                  <option value="2.7">2.7</option>
+                  <option value="2.8">2.8</option>
+                  <option value="2.9">2.9</option>
+                  <option value="3.0" selected>3.0</option>
+                  <option value="3.1">3.1</option>
+                  <option value="3.2">3.2</option>
+                  <option value="3.3">3.3</option>
+                  <option value="3.4">3.4</option>
+                  <option value="3.5">3.5</option>
+                  <option value="3.6">3.6</option>
+                  <option value="3.7">3.7</option>
+                  <option value="3.8">3.8</option>
+                  <option value="3.9">3.9</option>
+                  <option value="4.0">4.0</option>
+                </select>
+                <small class="field-error" id="raAngleError"></small>
+              </label>
+            </form>
+
+            <section class="ra-result-panel is-empty" id="raResultPanel" aria-live="polite" aria-atomic="true">
+              <span class="result-eyebrow">Flat-terrain estimate at first RA indication</span>
+              <div class="ra-result-grid">
+                <article>
+                  <span>Baro altitude on QNH</span>
+                  <strong id="raBaroResult">-- ft</strong>
+                </article>
+                <article>
+                  <span>Horizontal distance from threshold</span>
+                  <strong id="raDistanceResult">-- NM</strong>
+                </article>
+              </div>
+              <p id="raResultSupport">Enter threshold elevation and airport temperature to calculate.</p>
+              <div class="conditional-warning hidden" id="raColdWeatherWarning">
+                <strong>Cold-weather procedures may apply</strong>
+                <span>Use the current BA procedure and company Cold Weather Calculator. This estimate is not a cold-temperature correction.</span>
+              </div>
+            </section>
+          </div>
+
+          <div class="permanent-boundary-note">
+            <strong>Planning and gross-error check only.</strong>
+            <span>Confirm QNH, charted terrain and the published approach profile. The estimate assumes 2,500 ft RA, a 50 ft threshold crossing height and terrain near threshold elevation. It is not a navigation source or an altitude to fly.</span>
+          </div>
+
+          <section class="account-panel hidden" id="raAccountPanel" aria-label="Account">
+            <span id="raSyncStatus" aria-live="polite">Cloud ready</span>
+            <div class="account-actions">
+              <button class="icon-button" id="raRefreshCloudButton" type="button" title="Refresh cloud data" aria-label="Refresh cloud data">
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8" />
+                  <path d="M21 3v5h-5" />
+                </svg>
+              </button>
+              <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
+              <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
+            </div>
+            <small class="app-version">v2.38</small>
+          </section>
+        </section>
+
+        <section class="notoc-panel view-panel hidden" id="notocView" role="tabpanel" aria-labelledby="notocToolTab" aria-hidden="true">
+          <div class="form-heading tool-heading">
+            <div>
+              <h2>NOTOC Assistant</h2>
+              <p class="ftl-context">Understand what you are being asked to sign and identify anything worth querying</p>
+            </div>
+            <button class="text-button secondary" id="clearNotocSessionButton" type="button">Clear session</button>
+          </div>
+
+          <div class="development-banner is-notoc" role="note">
+            <strong>Development policy pack</strong>
+            <span>Current manual revisions and the complete CDGM code mapping have not yet been independently verified in this build.</span>
+            <small id="notocPolicyVersion">Policy pack loading</small>
+          </div>
+
+          <section class="notoc-screen" id="notocHomeScreen" aria-label="NOTOC Assistant home">
+            <div class="notoc-action-grid">
+              <button class="notoc-action-card" type="button" data-notoc-screen="crosscheck">
+                <strong>Cross-check a NOTOC</strong>
+                <span>Compare the final loadsheet field with every relevant visible code or item.</span>
+              </button>
+              <button class="notoc-action-card" type="button" data-notoc-screen="lookup">
+                <strong>Look up an SHC/DG code</strong>
+                <span>Check what the available BA policy pack can reliably say about a code.</span>
+              </button>
+              <button class="notoc-action-card" type="button" data-notoc-screen="ema">
+                <strong>Wheelchair or mobility-aid battery</strong>
+                <span>Follow the configuration-specific lithium and wet-battery cross-check.</span>
+              </button>
+              <button class="notoc-action-card" type="button" data-notoc-screen="signature">
+                <strong>What am I signing?</strong>
+                <span>Review the acknowledgement, practical cross-check and referral route.</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="notoc-screen hidden" id="notocCrosscheckScreen" aria-label="Cross-check a NOTOC">
+            <div class="subscreen-heading">
+              <button class="icon-button notoc-back-button" type="button" aria-label="Back to NOTOC Assistant home">
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+              </button>
+              <div>
+                <h3>Cross-check a NOTOC</h3>
+                <p>Start with what is written on the final loadsheet and enter every relevant visible code.</p>
+              </div>
+            </div>
+
+            <form class="notoc-form" id="notocCrosscheckForm">
+              <fieldset class="choice-fieldset">
+                <legend>What does the final loadsheet show?</legend>
+                <div class="segmented-options four-options">
+                  <label><input type="radio" name="notocIndicator" value="YES" /><span>NOTOC: YES</span></label>
+                  <label><input type="radio" name="notocIndicator" value="NO" /><span>NOTOC: NO</span></label>
+                  <label><input type="radio" name="notocIndicator" value="NOT_SHOWN" /><span>Not shown</span></label>
+                  <label><input type="radio" name="notocIndicator" value="UNCLEAR" /><span>Unclear</span></label>
+                </div>
+              </fieldset>
+
+              <label for="notocCodes">
+                Relevant visible SHC/DG or special-load codes
+                <textarea id="notocCodes" rows="4" placeholder="Enter one code per line or separate with commas" autocapitalize="characters" autocomplete="off"></textarea>
+              </label>
+
+              <label class="confirmation-check">
+                <input id="notocAllCodesEntered" type="checkbox" />
+                <span>I have entered every relevant visible code</span>
+              </label>
+
+              <div class="linked-assessment" id="notocLinkedEmaStatus">No mobility-aid assessment is included in this session.</div>
+
+              <div class="form-actions">
+                <button class="primary-button" type="submit">Run cross-check</button>
+                <button class="text-button secondary" id="openEmaFromCrosscheckButton" type="button">Check mobility aid</button>
+              </div>
+            </form>
+            <div class="notoc-result-region" id="notocCrosscheckResult" aria-live="polite"></div>
+          </section>
+
+          <section class="notoc-screen hidden" id="notocLookupScreen" aria-label="Look up an SHC or Dangerous Goods code">
+            <div class="subscreen-heading">
+              <button class="icon-button notoc-back-button" type="button" aria-label="Back to NOTOC Assistant home">
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+              </button>
+              <div>
+                <h3>Look up an SHC/DG code</h3>
+                <p>Unknown or unverified codes remain unknown. The tool will not infer a NOTOC requirement from a description.</p>
+              </div>
+            </div>
+            <form class="notoc-form inline-lookup-form" id="notocLookupForm">
+              <label for="notocLookupCode">
+                Code
+                <input id="notocLookupCode" type="text" autocomplete="off" autocapitalize="characters" placeholder="Enter code" required />
+              </label>
+              <button class="primary-button" type="submit">Look up</button>
+            </form>
+            <div class="notoc-result-region" id="notocLookupResult" aria-live="polite"></div>
+          </section>
+
+          <section class="notoc-screen hidden" id="notocEmaScreen" aria-label="Wheelchair or mobility-aid battery cross-check">
+            <div class="subscreen-heading">
+              <button class="icon-button notoc-back-button" type="button" aria-label="Back to NOTOC Assistant home">
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+              </button>
+              <div>
+                <h3>Wheelchair or mobility-aid battery</h3>
+                <p>Enter only what is written or has been confirmed. Missing facts remain unknown.</p>
+              </div>
+            </div>
+
+            <form class="notoc-form ema-form" id="notocEmaForm">
+              <div class="notoc-field-grid">
+                <label for="emaMobilityAidConfirmed">
+                  Wheelchair or EMA for a person with reduced mobility
+                  <select id="emaMobilityAidConfirmed">
+                    <option value="UNKNOWN">Not confirmed</option>
+                    <option value="YES">Confirmed</option>
+                    <option value="NO">No</option>
+                  </select>
+                </label>
+
+                <label for="emaBatteryType">
+                  Battery type
+                  <select id="emaBatteryType">
+                    <option value="UNKNOWN">Unknown or unclear</option>
+                    <option value="LITHIUM">Lithium-ion</option>
+                    <option value="NON_SPILLABLE">Non-spillable wet battery</option>
+                    <option value="SPILLABLE">Spillable wet battery</option>
+                  </select>
+                </label>
+
+                <label for="emaInstalledStatus">
+                  Battery configuration
+                  <select id="emaInstalledStatus">
+                    <option value="UNKNOWN">Unknown or unclear</option>
+                    <option value="INSTALLED">Installed in mobility aid</option>
+                    <option value="REMOVED">Removed from mobility aid</option>
+                    <option value="SPARE">Spare battery</option>
+                  </select>
+                </label>
+
+                <label class="ema-branch-field" data-ema-branches="INSTALLED" for="emaSecurelyAttached">
+                  Securely attached
+                  <select id="emaSecurelyAttached">
+                    <option value="UNKNOWN">Unknown</option>
+                    <option value="YES">Yes</option>
+                    <option value="NO">No</option>
+                  </select>
+                </label>
+
+                <label class="ema-branch-field" data-ema-branches="INSTALLED" for="emaIsolated">
+                  Isolated against inadvertent activation
+                  <select id="emaIsolated">
+                    <option value="UNKNOWN">Unknown</option>
+                    <option value="YES">Yes</option>
+                    <option value="NO">No</option>
+                  </select>
+                </label>
+
+                <label class="ema-branch-field" data-ema-branches="REMOVED SPARE" for="emaWattHours">
+                  Battery rating <span class="field-unit">Wh</span>
+                  <input id="emaWattHours" type="number" min="0.01" step="0.01" inputmode="decimal" autocomplete="off" placeholder="Required for this branch" />
+                </label>
+
+                <label class="ema-branch-field" data-ema-branches="SPARE" for="emaSpareCount">
+                  Number of spare batteries
+                  <input id="emaSpareCount" type="number" min="1" step="1" inputmode="numeric" autocomplete="off" placeholder="Required for this branch" />
+                </label>
+
+                <label class="ema-branch-field" data-ema-branches="REMOVED SPARE" for="emaTerminalsProtected">
+                  Terminals protected against short circuit
+                  <select id="emaTerminalsProtected">
+                    <option value="UNKNOWN">Unknown</option>
+                    <option value="YES">Yes</option>
+                    <option value="NO">No</option>
+                  </select>
+                </label>
+
+                <label for="emaOperatorApproval">
+                  Operator approval confirmed
+                  <select id="emaOperatorApproval">
+                    <option value="UNKNOWN">Unknown</option>
+                    <option value="YES">Yes</option>
+                    <option value="NO">No</option>
+                  </select>
+                </label>
+
+                <label for="emaLocationType">
+                  What location is shown?
+                  <select id="emaLocationType">
+                    <option value="NOT_SHOWN">Not shown</option>
+                    <option value="CABIN">Cabin</option>
+                    <option value="HOLD">Hold</option>
+                    <option value="OTHER">Other</option>
+                    <option value="UNCLEAR">Unclear</option>
+                  </select>
+                </label>
+
+                <label for="emaLocationText">
+                  Location exactly as written <span class="field-optional">Optional</span>
+                  <input id="emaLocationText" type="text" autocomplete="off" placeholder="For example, CPT 5 or cabin" />
+                </label>
+              </div>
+
+              <div class="form-actions">
+                <button class="primary-button" type="submit">Run battery cross-check</button>
+                <button class="text-button secondary" id="clearEmaButton" type="button">Clear battery details</button>
+              </div>
+            </form>
+            <div class="notoc-result-region" id="notocEmaResult" aria-live="polite"></div>
+          </section>
+
+          <section class="notoc-screen hidden" id="notocSignatureScreen" aria-label="What the Captain signs">
+            <div class="subscreen-heading">
+              <button class="icon-button notoc-back-button" type="button" aria-label="Back to NOTOC Assistant home">
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+              </button>
+              <div>
+                <h3>What am I signing?</h3>
+                <p>The acknowledgement, what it does not itself certify, and the practical cross-check.</p>
+              </div>
+            </div>
+
+            <div class="captain-info-grid">
+              <article class="captain-info-card">
+                <span class="classification-badge">BA documented</span>
+                <h3>What your signature means</h3>
+                <blockquote>By signing the NOTOC the aircraft Commander is only acknowledging receipt of written notification of all Dangerous Goods and their location aboard the aircraft.</blockquote>
+                <ul>
+                  <li>You have received written notification.</li>
+                  <li>You are aware of the Dangerous Goods or restricted articles being carried.</li>
+                  <li>You are aware of their location aboard the aircraft.</li>
+                </ul>
+                <details class="source-drawer">
+                  <summary>Why and source</summary>
+                  <p>BA OM A, 9.1.5.a, Flight Crew Responsibilities. Supporting wording: BA OM B, 2.9.4, NOTOC Process.</p>
+                  <p class="verification-note">Carried forward, current manual check required.</p>
+                </details>
+              </article>
+
+              <article class="captain-info-card">
+                <span class="classification-badge is-inference">Inference from BA</span>
+                <h3>Your NOTOC signature does not itself certify these matters.</h3>
+                <ul>
+                  <li>Acceptance of the Dangerous Goods for carriage.</li>
+                  <li>Inspection of packaging.</li>
+                  <li>Verification of marking or labelling.</li>
+                  <li>Inspection for damage before loading.</li>
+                  <li>Correct completion of the ground acceptance process.</li>
+                </ul>
+                <details class="source-drawer">
+                  <summary>Why and source</summary>
+                  <p>BA OM A, 9.1.5.c allocates these acceptance checks to the aircraft operator. This explains the meaning of the signature; it does not say the Commander has no responsibility.</p>
+                  <p class="verification-note">Carried forward, current manual check required.</p>
+                </details>
+              </article>
+
+              <article class="captain-info-card">
+                <span class="classification-badge is-guidance">App guidance</span>
+                <h3>Practical cross-check before signing</h3>
+                <ul>
+                  <li>Correct flight, date and aircraft registration.</li>
+                  <li>Understand what is being carried.</li>
+                  <li>Understand where it is located.</li>
+                  <li>Note any stated flight-deck controlled heating or ventilation requirement.</li>
+                  <li>Query anything inconsistent or unclear.</li>
+                </ul>
+              </article>
+
+              <article class="captain-info-card is-query">
+                <span class="classification-badge">BA documented</span>
+                <h3>If something looks wrong</h3>
+                <blockquote>If an error is suspected in the NOTOC, inform the TRM/Coordinator or equivalent. They will obtain clarification from cargo specialists.</blockquote>
+                <details class="source-drawer">
+                  <summary>Why and source</summary>
+                  <p>BA OM A, 9.1.2.l, NOTOC Form.</p>
+                  <p class="verification-note">Carried forward, current manual check required.</p>
+                </details>
+              </article>
+            </div>
+
+            <details class="guidance-panel commander-position-panel">
+              <summary>Commander's position and load securing</summary>
+              <div class="guidance-content">
+                <p>Ground staff Dangerous Goods carriage guidance must be followed. The Commander cannot use discretion to onload contrary to that guidance and retains discretion to offload where there is doubt concerning carriage.</p>
+                <p>The Captain may wish to inspect how the load has been secured before departure.</p>
+                <p class="verification-note">Source location requires confirmation: BA OM A Dangerous Goods carriage guidance. Load securing: Airbus Load &amp; Balance Manual, Loading 3.7.1.</p>
+              </div>
+            </details>
+          </section>
+
+          <div class="permanent-boundary-note notoc-boundary">
+            <strong>This tool is a Captain's cross-check.</strong>
+            <span>It does not replace Dangerous Goods acceptance, the NOTOC, the loadsheet, BA manuals or specialist advice. Unknown codes, missing details and unsupported configurations are referred rather than inferred.</span>
+          </div>
+
+          <section class="account-panel hidden" id="notocAccountPanel" aria-label="Account">
+            <span id="notocSyncStatus" aria-live="polite">Cloud ready</span>
+            <div class="account-actions">
+              <button class="icon-button" id="notocRefreshCloudButton" type="button" title="Refresh cloud data" aria-label="Refresh cloud data">
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8" />
+                  <path d="M21 3v5h-5" />
+                </svg>
+              </button>
+              <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
+              <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
+            </div>
+            <small class="app-version">v2.38</small>
           </section>
         </section>
 
@@ -658,7 +1064,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.37</small>
+            <small class="app-version">v2.38</small>
           </section>
         </section>
       </main>
@@ -741,10 +1147,15 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-85"></script>
-    <script src="./ltot-core.js?v=cloud-sync-85"></script>
-    <script src="./data-portability.js?v=cloud-sync-85"></script>
-    <script src="./request-retention.js?v=cloud-sync-85"></script>
-    <script src="./app.js?v=cloud-sync-85"></script>
+    <script src="./supabase-config.js?v=cloud-sync-86"></script>
+    <script src="./ltot-core.js?v=cloud-sync-86"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-86"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-86"></script>
+    <script src="./notoc-core.js?v=cloud-sync-86"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-86"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-86"></script>
+    <script src="./data-portability.js?v=cloud-sync-86"></script>
+    <script src="./request-retention.js?v=cloud-sync-86"></script>
+    <script src="./app.js?v=cloud-sync-86"></script>
   </body>
 </html>

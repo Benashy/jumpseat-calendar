@@ -11,7 +11,8 @@ const [releaseText, html, serviceWorker, app] = await Promise.all([
 const release = JSON.parse(releaseText);
 
 const displayedVersions = [...html.matchAll(/class="app-version">v([^<]+)</g)].map((match) => match[1]);
-assert.equal(displayedVersions.length, 3, "Expected one version label in each account footer.");
+const accountFooterCount = [...html.matchAll(/<section class="account-panel/g)].length;
+assert.equal(displayedVersions.length, accountFooterCount, "Expected one version label in each account footer.");
 assert.ok(displayedVersions.every((version) => version === release.appVersion), "Visible version labels do not match release.json.");
 
 const appVersionMatch = app.match(/const APP_VERSION = "([^"]+)"/);

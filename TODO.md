@@ -2,8 +2,8 @@
 
 ## Current Status
 
-- Current visible app version: v2.37.
-- The top navigation is limited to `Jumpseat` and `FDP & LTOT`. Jumpseat opens the daily view by default, with contextual `Add request` and `Back to requests` actions instead of a second navigation row.
+- Current visible app version: v2.38.
+- The top navigation contains `Jumpseat`, `FDP & LTOT`, `RA Check` and `NOTOC`. Jumpseat opens the daily view by default, with contextual `Add request` and `Back to requests` actions instead of a second navigation row.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
 - LTOT calculation logic has been extracted into a shared helper with automated tests for rollover, standalone on-chocks, discretion, contingency, and missing FDP input.
@@ -30,6 +30,8 @@
 - v2.35 automatically deletes Jumpseat requests and OpsDeck Telegram delivery records after seven complete days. The app applies the same Zulu-date rule to local and offline copies, while delivered Telegram messages remain in the user's Telegram account.
 - v2.36 clarifies the optional split-crew FDP workflow with shared/separate crew wording and gives the FDP table target banner a cleaner silver divider and spacing in Light and Night appearances.
 - v2.37 introduces the BA pilot-wings identity across the app header, favicon and iPhone/iPad home-screen icons, using flat vector artwork and a fresh cache marker.
+- v2.38 adds a development-only Radio Altimeter Position Check for a flat-terrain estimate at the first 2,500 ft RA indication. It stores no data, remains available offline and is explicitly not an altitude to fly.
+- v2.38 adds a development-only NOTOC Assistant with separate cross-check, code lookup, mobility-aid battery and signature-explanation journeys. Unknown or unverified information is referred rather than inferred, and operational session data is not persisted.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
@@ -40,6 +42,10 @@
 - The current day-to-day workflow is considered well optimised; further functional additions should be driven by operational use rather than added speculatively.
 
 ## Next Priorities
+
+- Radio Altimeter release gate: independently verify the ten specified manual references, confirm the current OMA cold-weather trigger, compare the complete validation matrix with the BA Cold Weather Calculator, and obtain pilot/OMC review before removing the development label.
+- NOTOC release gate: verify every carried-forward source against current BA manuals, obtain the complete CDGM Chapter 12 SHC mapping, complete Dangerous Goods/SME review, and repeat offline/device testing before removing the development label.
+- NOTOC policy maintenance: retain stable rule and source IDs, record the effective date and revision of every verified source, and keep unsupported codes on the referral path until the mapping is complete.
 
 - Telegram testing: confirm an ordinary scheduled reminder still arrives once after the retry update, then keep observing delivery over several sectors.
 - Backup verification: download a JSON backup, retain it somewhere separate, and perform a controlled restore test using non-operational sample data.
