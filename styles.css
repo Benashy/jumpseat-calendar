@@ -3175,6 +3175,89 @@ html[data-theme="night"] input[type="time"] {
   color: var(--muted);
 }
 
+.ra-geometry-card {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 11px 12px 8px;
+}
+
+.ra-geometry-card figcaption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--navy);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.ra-geometry-card figcaption small {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.ra-geometry {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  aspect-ratio: 12 / 7;
+}
+
+.ra-runway-line,
+.ra-threshold-line {
+  stroke: var(--silver);
+  stroke-linecap: round;
+  stroke-width: 3;
+}
+
+.ra-threshold-line {
+  stroke-width: 4;
+}
+
+.ra-path-line {
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-width: 2.5;
+}
+
+.ra-height-line {
+  stroke: var(--muted);
+  stroke-dasharray: 5 5;
+  stroke-width: 1.25;
+}
+
+.ra-aircraft-marker {
+  fill: var(--navy);
+  stroke: var(--panel);
+  stroke-width: 3;
+}
+
+.ra-diagram-label {
+  fill: var(--muted);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.ra-diagram-label.is-strong {
+  fill: var(--navy);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ra-geometry-card.is-empty .ra-path-line,
+.ra-geometry-card.is-empty .ra-height-line,
+.ra-geometry-card.is-empty .ra-aircraft-marker {
+  opacity: 0.32;
+}
+
+.ra-geometry-card.is-warning .ra-aircraft-marker {
+  fill: var(--amber);
+}
+
 .conditional-warning {
   display: grid;
   gap: 3px;
@@ -3358,6 +3441,242 @@ html[data-theme="night"] input[type="time"] {
 .inline-lookup-form {
   grid-template-columns: minmax(0, 1fr) max-content;
   align-items: end;
+}
+
+.notoc-suggestions,
+.lookup-boundary {
+  grid-column: 1 / -1;
+}
+
+.notoc-suggestions {
+  display: grid;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--line);
+}
+
+.notoc-suggestions.hidden {
+  display: none;
+}
+
+.notoc-suggestion {
+  display: grid;
+  grid-template-columns: minmax(54px, max-content) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  border: 0;
+  background: var(--panel);
+  color: var(--ink);
+  padding: 9px 11px;
+  text-align: left;
+}
+
+.notoc-suggestion:hover,
+.notoc-suggestion:focus-visible {
+  background: var(--blue-soft);
+  outline: none;
+}
+
+.notoc-suggestion strong {
+  color: var(--navy);
+  font-size: 0.8rem;
+}
+
+.notoc-suggestion span,
+.lookup-boundary {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.ema-wizard {
+  min-height: 350px;
+  align-content: start;
+  border-top: 3px solid var(--silver);
+}
+
+.ema-question-stage,
+.ema-review-stage {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.ema-question-stage.hidden,
+.ema-review-stage.hidden,
+.ema-input-control.hidden {
+  display: none;
+}
+
+.ema-wizard-progress {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+
+.ema-wizard-progress span,
+.ema-wizard-progress small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.ema-question-fieldset {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.ema-question-fieldset legend {
+  width: 100%;
+  color: var(--navy);
+  font-size: 1.08rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.ema-question-fieldset > p {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.ema-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.ema-choice-grid.is-three-options {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ema-choice-button {
+  min-height: 54px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 750;
+  line-height: 1.25;
+  padding: 10px 12px;
+}
+
+.ema-choice-button:hover,
+.ema-choice-button:focus-visible {
+  border-color: var(--accent);
+  background: var(--blue-soft);
+  outline: none;
+}
+
+.ema-choice-button[aria-pressed="true"] {
+  border-color: var(--active-surface);
+  background: var(--active-surface);
+  color: #fff;
+}
+
+.ema-input-control {
+  display: grid;
+  gap: 6px;
+  max-width: 380px;
+  margin-top: 4px;
+}
+
+.ema-input-with-suffix {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: stretch;
+}
+
+.ema-input-with-suffix input {
+  border-radius: 7px 0 0 7px;
+}
+
+.ema-input-with-suffix span {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-left: 0;
+  border-radius: 0 7px 7px 0;
+  background: var(--silver-soft);
+  color: var(--navy);
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 0 14px;
+}
+
+.notoc-form input.invalid {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.ema-wizard-actions {
+  align-self: end;
+  margin-top: auto;
+  padding-top: 2px;
+}
+
+.ema-review-stage h4,
+.ema-result-answers h4 {
+  color: var(--navy);
+  font-size: 1rem;
+}
+
+.ema-answer-summary {
+  display: grid;
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+
+.ema-answer-summary > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.2fr);
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 9px 0;
+}
+
+.ema-answer-summary dt,
+.ema-answer-summary dd {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.ema-answer-summary dt {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.ema-answer-summary dd {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.ema-result-answers {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.ema-result-actions {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
 }
 
 .notoc-field-grid {
@@ -3628,6 +3947,24 @@ html[data-theme="night"] input[type="time"] {
 
   .notoc-action-card {
     min-height: 96px;
+  }
+
+  .ra-geometry-card {
+    padding-inline: 8px;
+  }
+
+  .ema-wizard {
+    min-height: 0;
+  }
+
+  .ema-choice-grid,
+  .ema-choice-grid.is-three-options,
+  .ema-answer-summary > div {
+    grid-template-columns: 1fr;
+  }
+
+  .ema-answer-summary > div {
+    gap: 2px;
   }
 
   .inline-lookup-form > button {

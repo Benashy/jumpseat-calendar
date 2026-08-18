@@ -459,6 +459,37 @@
     };
   }
 
+  function searchHandlingCodes(rawQuery, policyPack, limit = 6) {
+    const queryText = String(rawQuery || "").trim();
+    const normalisedQuery = normaliseCode(queryText);
+    if (!queryText || !normalisedQuery) return [];
+    const descriptionQuery = queryText.toLocaleLowerCase("en-GB");
+    const maximum = Number.isInteger(limit) && limit > 0 ? limit : 6;
+
+    return (policyPack?.handlingCodes || [])
+      .map((candidate) => {
+        const code = normaliseCode(candidate.code);
+        const aliases = (candidate.aliases || []).map(normaliseCode);
+        const description = String(candidate.description || "");
+        let score = Number.POSITIVE_INFINITY;
+        if (code === normalisedQuery || aliases.includes(normalisedQuery)) score = 0;
+        else if (code.startsWith(normalisedQuery)) score = 1;
+        else if (aliases.some((alias) => alias.startsWith(normalisedQuery))) score = 2;
+        else if (description.toLocaleLowerCase("en-GB").startsWith(descriptionQuery)) score = 3;
+        else if (description.toLocaleLowerCase("en-GB").includes(descriptionQuery)) score = 4;
+        return { candidate, code, score };
+      })
+      .filter((item) => Number.isFinite(item.score))
+      .sort((left, right) => left.score - right.score || left.code.localeCompare(right.code, "en-GB"))
+      .slice(0, maximum)
+      .map(({ candidate, code }) => ({
+        code,
+        description: candidate.description,
+        expectation: candidate.expectation,
+        verificationStatus: candidate.verificationStatus,
+      }));
+  }
+
   function aggregateFindings(findings) {
     if (!findings.length) return STATES.UNABLE_TO_DETERMINE_REFER;
     return findings.reduce((current, finding) => (
@@ -610,6 +641,7 @@
     isRuleVerified,
     lookupHandlingCode,
     normaliseCode,
+    searchHandlingCodes,
     validatePolicyPack,
   };
 

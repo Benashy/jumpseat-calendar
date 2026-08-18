@@ -9,6 +9,7 @@ const {
   evaluateNotocSession,
   lookupHandlingCode,
   normaliseCode,
+  searchHandlingCodes,
   validatePolicyPack,
 } = require("../notoc-core");
 
@@ -65,6 +66,45 @@ test("unknown code remains unknown and refers", () => {
   assert.equal(lookup.normalisedCode, "WCLB");
   assert.equal(lookup.expectation, EXPECTATIONS.UNKNOWN);
   assert.equal(lookup.finding.state, STATES.UNABLE_TO_DETERMINE_REFER);
+});
+
+test("an empty verified code library offers no suggestions", () => {
+  assert.deepEqual(searchHandlingCodes("wheelchair", POLICY_PACK), []);
+});
+
+test("search suggestions match code, alias and description in a useful order", () => {
+  const pack = JSON.parse(JSON.stringify(POLICY_PACK));
+  pack.handlingCodes.push(
+    {
+      code: "WCLB",
+      aliases: ["WC-LB"],
+      description: "Wheelchair with lithium battery",
+      expectation: EXPECTATIONS.REQUIRED,
+      verificationStatus: "VERIFIED_CURRENT_MANUAL",
+    },
+    {
+      code: "DG01",
+      aliases: ["BATTERY"],
+      description: "Lithium battery test entry",
+      expectation: EXPECTATIONS.CONDITIONAL,
+      verificationStatus: "VERIFIED_CURRENT_MANUAL",
+    }
+  );
+
+  assert.deepEqual(searchHandlingCodes("wcl", pack).map((entry) => entry.code), ["WCLB"]);
+  assert.deepEqual(searchHandlingCodes("wc-lb", pack).map((entry) => entry.code), ["WCLB"]);
+  assert.deepEqual(searchHandlingCodes("lithium", pack).map((entry) => entry.code), ["DG01", "WCLB"]);
+});
+
+test("search suggestions respect the result limit", () => {
+  const pack = JSON.parse(JSON.stringify(POLICY_PACK));
+  pack.handlingCodes.push(
+    { code: "AAA1", aliases: [], description: "First fixture" },
+    { code: "AAA2", aliases: [], description: "Second fixture" },
+    { code: "AAA3", aliases: [], description: "Third fixture" }
+  );
+
+  assert.deepEqual(searchHandlingCodes("aaa", pack, 2).map((entry) => entry.code), ["AAA1", "AAA2"]);
 });
 
 test("an exact verified code fixture returns its mapped description and expectation", () => {
