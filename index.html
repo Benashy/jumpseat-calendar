@@ -34,17 +34,17 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-93" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-94" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-93" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-94" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-93" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-94" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -151,7 +151,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.45</small>
+            <small class="app-version">v2.46</small>
           </section>
 
         </section>
@@ -552,7 +552,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.45</small>
+            <small class="app-version">v2.46</small>
           </section>
         </section>
 
@@ -606,7 +606,7 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.45</small>
+            <small class="app-version">v2.46</small>
           </section>
         </section>
 
@@ -673,33 +673,33 @@
                   <span>Approach profiles</span>
                 </figcaption>
                 <div class="ra-geometry-legend" aria-hidden="true">
-                  <span><i class="ra-legend-line is-reference"></i><b>3.0 degree reference</b></span>
+                  <span class="hidden" id="raReferenceLegendItem"><i class="ra-legend-line is-reference"></i><b>3.0&deg; reference</b></span>
                   <span class="hidden" id="raSelectedLegendItem"><i class="ra-legend-line is-nominal"></i><b id="raNominalLegend">Selected glidepath</b></span>
                   <span class="hidden" id="raAffectedLegendItem"><i class="ra-legend-line is-affected"></i><b>Temperature-affected indication</b></span>
                 </div>
-                <svg class="ra-geometry" viewBox="0 0 400 230" role="img" aria-labelledby="raDiagramTitle raDiagramDescription">
+                <svg class="ra-geometry" viewBox="0 0 520 250" role="img" aria-labelledby="raDiagramTitle raDiagramDescription">
                   <title id="raDiagramTitle">Radio-altimeter position geometry</title>
-                  <desc id="raDiagramDescription">A fixed dashed 3.0 degree reference is shown. Selected and temperature-affected approach profiles will appear when required.</desc>
-                  <line class="ra-runway-line" x1="18" y1="184" x2="382" y2="184" />
-                  <line class="ra-path-line is-reference" id="raDiagramThreeDegreePath" x1="34" y1="184" x2="306" y2="52" />
-                  <line class="ra-path-line is-nominal hidden" id="raDiagramNominalPath" x1="34" y1="184" x2="306" y2="52" />
-                  <line class="ra-path-line is-affected hidden" id="raDiagramAffectedPath" x1="34" y1="184" x2="306" y2="52" />
-                  <line class="ra-height-line" id="raDiagramHeight" x1="306" y1="52" x2="306" y2="184" />
-                  <circle class="ra-aircraft-marker" id="raDiagramMarker" cx="306" cy="52" r="6" />
-                  <circle class="ra-baro-marker hidden" id="raDiagramBaroMarker" cx="306" cy="52" r="4" />
-                  <line class="ra-threshold-line" x1="34" y1="173" x2="34" y2="193" />
-                  <text class="ra-diagram-label is-strong" id="raDiagramAltitudeLabel" x="314" y="114" text-anchor="start">2,500 ft RA</text>
-                  <text class="ra-diagram-label" id="raDiagramDistanceLabel" x="170" y="173" text-anchor="middle">Selected 3.0 degrees / 7.7 NM</text>
+                  <desc id="raDiagramDescription">Selected and temperature-affected approach profiles will appear when valid inputs are available.</desc>
+                  <line class="ra-runway-line" x1="20" y1="205" x2="500" y2="205" />
+                  <line class="ra-path-line is-reference hidden" id="raDiagramThreeDegreePath" x1="44" y1="205" x2="420" y2="48" />
+                  <line class="ra-path-line is-nominal hidden" id="raDiagramNominalPath" x1="44" y1="205" x2="420" y2="48" />
+                  <line class="ra-path-line is-affected hidden" id="raDiagramAffectedPath" x1="44" y1="205" x2="420" y2="48" />
+                  <line class="ra-height-line" id="raDiagramHeight" x1="420" y1="48" x2="420" y2="205" />
+                  <circle class="ra-aircraft-marker" id="raDiagramMarker" cx="420" cy="48" r="6" />
+                  <circle class="ra-baro-marker hidden" id="raDiagramBaroMarker" cx="420" cy="48" r="4" />
+                  <line class="ra-threshold-line" x1="44" y1="194" x2="44" y2="216" />
+                  <text class="ra-diagram-label is-strong" id="raDiagramAltitudeLabel" x="428" y="126" text-anchor="start">2,500 ft RA</text>
+                  <text class="ra-diagram-label" id="raDiagramDistanceLabel" x="232" y="191" text-anchor="middle">3.0&deg; GP | 7.7 NM</text>
                 </svg>
                 <p class="ra-baro-comparison" id="raBaroComparison">Enter valid inputs to compare the profiles.</p>
               </figure>
               <div class="ra-result-grid">
                 <article>
-                  <span>Baro altitude on QNH</span>
+                  <span>Expected baro altitude on QNH</span>
                   <strong id="raBaroResult">-- ft</strong>
                 </article>
                 <article>
-                  <span>DME distance from threshold on selected glidepath</span>
+                  <span>DME from threshold on selected GP</span>
                   <strong id="raDistanceResult">-- NM</strong>
                 </article>
               </div>
@@ -722,7 +722,7 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.45</small>
+            <small class="app-version">v2.46</small>
           </section>
         </section>
 
@@ -831,7 +831,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.45</small>
+            <small class="app-version">v2.46</small>
           </section>
         </section>
 
@@ -938,7 +938,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.45</small>
+            <small class="app-version">v2.46</small>
           </section>
         </section>
       </main>
@@ -1021,16 +1021,16 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-93"></script>
-    <script src="./ltot-core.js?v=cloud-sync-93"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-93"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-93"></script>
-    <script src="./notoc-policy-store.js?v=cloud-sync-93"></script>
-    <script src="./notoc-core.js?v=cloud-sync-93"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-93"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-93"></script>
-    <script src="./data-portability.js?v=cloud-sync-93"></script>
-    <script src="./request-retention.js?v=cloud-sync-93"></script>
-    <script src="./app.js?v=cloud-sync-93"></script>
+    <script src="./supabase-config.js?v=cloud-sync-94"></script>
+    <script src="./ltot-core.js?v=cloud-sync-94"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-94"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-94"></script>
+    <script src="./notoc-policy-store.js?v=cloud-sync-94"></script>
+    <script src="./notoc-core.js?v=cloud-sync-94"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-94"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-94"></script>
+    <script src="./data-portability.js?v=cloud-sync-94"></script>
+    <script src="./request-retention.js?v=cloud-sync-94"></script>
+    <script src="./app.js?v=cloud-sync-94"></script>
   </body>
 </html>

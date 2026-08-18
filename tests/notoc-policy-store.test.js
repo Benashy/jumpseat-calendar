@@ -31,7 +31,7 @@ function memoryStorage() {
 
 function policyRecord(mapping) {
   return {
-    policy_version: "2026-08-18.1",
+    policy_version: "2026-08-18.2",
     mapping_sha256: "a".repeat(64),
     updated_at: "2026-08-18T21:00:00.000Z",
     mapping,
@@ -58,12 +58,12 @@ test("cache is isolated by authenticated user id", () => {
 test("summary keeps unresolved codes explicit", () => {
   const summary = store.summarise([
     mappingEntry(),
-    mappingEntry({ code: "AVP", verificationStatus: "UNVERIFIED_NOT_FOUND", expectation: "UNKNOWN" }),
+    mappingEntry({ code: "ZZZ", verificationStatus: "UNVERIFIED_NOT_FOUND", expectation: "UNKNOWN" }),
   ]);
 
   assert.deepEqual(summary, {
     codeCount: 2,
     verifiedCount: 1,
-    unresolvedCodes: ["AVP"],
+    unresolvedCodes: ["ZZZ"],
   });
 });

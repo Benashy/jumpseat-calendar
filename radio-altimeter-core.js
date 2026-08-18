@@ -14,6 +14,9 @@
     MAX_AIRPORT_TEMPERATURE_C: 50,
     MIN_GLIDEPATH_ANGLE_DEG: 2.5,
     MAX_GLIDEPATH_ANGLE_DEG: 4.0,
+    REFERENCE_GLIDEPATH_ANGLE_DEG: 3.0,
+    REFERENCE_DISPLAY_MIN_ANGLE_DEG: 2.8,
+    REFERENCE_DISPLAY_MAX_ANGLE_DEG: 3.3,
     COLD_WARNING_ISA_DEVIATION_C: -25,
   });
 
@@ -115,11 +118,19 @@
     return `${value.toFixed(1)} NM`;
   }
 
+  function shouldShowThreeDegreeReference(glidepathAngleDeg) {
+    return finiteNumber(glidepathAngleDeg) && (
+      glidepathAngleDeg < CONSTANTS.REFERENCE_DISPLAY_MIN_ANGLE_DEG ||
+      glidepathAngleDeg > CONSTANTS.REFERENCE_DISPLAY_MAX_ANGLE_DEG
+    );
+  }
+
   const api = {
     CONSTANTS,
     calculateRadioAltimeterPosition,
     formatBaroAltitude,
     formatSlantDistance,
+    shouldShowThreeDegreeReference,
     validateRadioAltimeterInput,
   };
 

@@ -3130,7 +3130,7 @@ html[data-theme="night"] input[type="time"] {
 
 .ra-workspace {
   display: grid;
-  grid-template-columns: minmax(270px, 0.8fr) minmax(360px, 1.2fr);
+  grid-template-columns: minmax(250px, 0.64fr) minmax(520px, 1.36fr);
   gap: 14px;
   margin-bottom: 16px;
 }
@@ -3340,8 +3340,8 @@ html[data-theme="night"] input[type="time"] {
 .ra-geometry {
   display: block;
   width: 100%;
-  max-height: 220px;
-  aspect-ratio: 12 / 7;
+  max-height: 270px;
+  aspect-ratio: 52 / 25;
 }
 
 .ra-runway-line,
@@ -4119,6 +4119,16 @@ html[data-theme="night"] input[type="time"] {
 
   .ra-result-panel {
     min-height: 230px;
+  }
+}
+
+@media (min-width: 881px) and (max-width: 1366px) {
+  .ra-workspace {
+    grid-template-columns: minmax(245px, 0.58fr) minmax(560px, 1.42fr);
+  }
+
+  .ra-geometry {
+    max-height: 280px;
   }
 }
 

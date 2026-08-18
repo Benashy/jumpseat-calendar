@@ -5,6 +5,7 @@ const {
   calculateRadioAltimeterPosition,
   formatBaroAltitude,
   formatSlantDistance,
+  shouldShowThreeDegreeReference,
 } = require("../radio-altimeter-core");
 
 const CASES = [
@@ -58,6 +59,14 @@ test("keeps glidepath independent from barometric altitude", () => {
 
   assert.equal(shallow.result.expectedBaroAltitudeFtRaw, steep.result.expectedBaroAltitudeFtRaw);
   assert.notEqual(shallow.result.slantDistanceNmRaw, steep.result.slantDistanceNmRaw);
+});
+
+test("shows the 3 degree reference only outside the comparison band", () => {
+  assert.equal(shouldShowThreeDegreeReference(2.7), true);
+  assert.equal(shouldShowThreeDegreeReference(2.8), false);
+  assert.equal(shouldShowThreeDegreeReference(3.0), false);
+  assert.equal(shouldShowThreeDegreeReference(3.3), false);
+  assert.equal(shouldShowThreeDegreeReference(3.4), true);
 });
 
 test("uses threshold elevation when calculating ISA temperature, including below sea level", () => {

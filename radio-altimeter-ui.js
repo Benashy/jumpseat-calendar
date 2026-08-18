@@ -4,7 +4,6 @@
   const core = globalScope.OpsDeckRadioAltimeter;
   const form = document.querySelector("#raForm");
   if (!core || !form) return;
-  const REFERENCE_GLIDEPATH_ANGLE_DEG = 3;
   const PROFILE_DISPLAY_THRESHOLD_FT = 50;
 
   const elements = {
@@ -21,6 +20,7 @@
     coldWarning: document.querySelector("#raColdWeatherWarning"),
     geometry: document.querySelector(".ra-geometry-card"),
     diagramDescription: document.querySelector("#raDiagramDescription"),
+    referenceLegendItem: document.querySelector("#raReferenceLegendItem"),
     nominalLegend: document.querySelector("#raNominalLegend"),
     selectedLegendItem: document.querySelector("#raSelectedLegendItem"),
     affectedLegendItem: document.querySelector("#raAffectedLegendItem"),
@@ -74,10 +74,12 @@
   function resetDiagram() {
     elements.geometry.classList.add("is-empty");
     elements.geometry.classList.remove("is-warning", "is-cold", "is-warm", "is-neutral");
-    elements.diagramDescription.textContent = "A fixed dashed 3.0 degree reference is shown. Selected and temperature-affected approach profiles will appear when required.";
+    elements.diagramDescription.textContent = "Selected and temperature-affected approach profiles will appear when valid inputs are available.";
+    elements.referenceLegendItem.classList.add("hidden");
     elements.nominalLegend.textContent = "Selected glidepath";
     elements.selectedLegendItem.classList.add("hidden");
     elements.affectedLegendItem.classList.add("hidden");
+    elements.diagramThreeDegreePath.classList.add("hidden");
     elements.diagramNominalPath.classList.add("hidden");
     elements.diagramAffectedPath.classList.add("hidden");
     elements.diagramBaroMarker.classList.add("hidden");
@@ -89,11 +91,11 @@
   function renderDiagram(result, glidepathAngleDeg) {
     const minimumDistanceNm = 5.7;
     const maximumDistanceNm = 9.3;
-    const thresholdX = 34;
-    const runwayY = 184;
-    const nominalY = 52;
-    const minimumX = 230;
-    const maximumX = 360;
+    const thresholdX = 44;
+    const runwayY = 205;
+    const nominalY = 48;
+    const minimumX = 360;
+    const maximumX = 465;
     const distanceToX = (distanceNm) => {
       const clampedDistance = Math.min(maximumDistanceNm, Math.max(minimumDistanceNm, distanceNm));
       return minimumX + (
@@ -103,7 +105,7 @@
     };
     const aircraftX = distanceToX(result.slantDistanceNmRaw);
     const referenceDistanceNm = (core.CONSTANTS.RA_TRIGGER_FT - core.CONSTANTS.ASSUMED_TCH_FT) /
-      (core.CONSTANTS.FT_PER_NM * Math.sin(REFERENCE_GLIDEPATH_ANGLE_DEG * Math.PI / 180));
+      (core.CONSTANTS.FT_PER_NM * Math.sin(core.CONSTANTS.REFERENCE_GLIDEPATH_ANGLE_DEG * Math.PI / 180));
     const referenceX = distanceToX(referenceDistanceNm);
     const affectedRatio = result.indicatedHeightAboveThresholdFtRaw / core.CONSTANTS.RA_TRIGGER_FT;
     const visualAffectedRatio = 1 + ((affectedRatio - 1) * 1.55);
@@ -117,7 +119,7 @@
     const roundedError = Math.round(Math.abs(result.barometricErrorFtRaw));
     const isMaterial = Math.abs(result.barometricErrorFtRaw) >= PROFILE_DISPLAY_THRESHOLD_FT;
     const isOverReading = result.barometricErrorFtRaw > 0;
-    const selectedDiffersFromReference = Math.abs(Number(glidepathAngleDeg) - REFERENCE_GLIDEPATH_ANGLE_DEG) > 0.001;
+    const showReference = core.shouldShowThreeDegreeReference(Number(glidepathAngleDeg));
     const comparison = !isMaterial
       ? `Difference below ${PROFILE_DISPLAY_THRESHOLD_FT} ft at 2,500 ft RA`
       : `Baro ${isOverReading ? "over-reads" : "under-reads"} by ${new Intl.NumberFormat("en-GB").format(roundedError)} ft`;
@@ -138,21 +140,26 @@
     elements.diagramMarker.setAttribute("cy", String(nominalY));
     elements.diagramBaroMarker.setAttribute("cx", aircraftX.toFixed(1));
     elements.diagramBaroMarker.setAttribute("cy", affectedY.toFixed(1));
-    const putAltitudeLabelLeft = aircraftX > 325;
+    const putAltitudeLabelLeft = aircraftX > 445;
     elements.diagramAltitudeLabel.setAttribute("x", (aircraftX + (putAltitudeLabelLeft ? -8 : 8)).toFixed(1));
     elements.diagramAltitudeLabel.setAttribute("y", String((nominalY + runwayY) / 2));
     elements.diagramAltitudeLabel.setAttribute("text-anchor", putAltitudeLabelLeft ? "end" : "start");
     elements.diagramDistanceLabel.setAttribute("x", labelX.toFixed(1));
-    elements.nominalLegend.textContent = `Selected ${formattedAngle} degree glidepath`;
-    elements.selectedLegendItem.classList.toggle("hidden", !selectedDiffersFromReference);
+    elements.referenceLegendItem.classList.toggle("hidden", !showReference);
+    elements.diagramThreeDegreePath.classList.toggle("hidden", !showReference);
+    elements.nominalLegend.textContent = `Selected ${formattedAngle}\u00b0 GP`;
+    elements.selectedLegendItem.classList.remove("hidden");
     elements.affectedLegendItem.classList.toggle("hidden", !isMaterial);
-    elements.diagramNominalPath.classList.toggle("hidden", !selectedDiffersFromReference);
+    elements.diagramNominalPath.classList.remove("hidden");
     elements.diagramAffectedPath.classList.toggle("hidden", !isMaterial);
     elements.diagramBaroMarker.classList.toggle("hidden", !isMaterial);
     elements.diagramAltitudeLabel.textContent = "2,500 ft RA";
-    elements.diagramDistanceLabel.textContent = `Selected ${formattedAngle} degrees / ${formattedDistance}`;
+    elements.diagramDistanceLabel.textContent = `${formattedAngle}\u00b0 GP | ${formattedDistance}`;
     elements.baroComparison.textContent = comparison;
-    elements.diagramDescription.textContent = `The dashed reference shows 3.0 degrees. The selected ${formattedAngle} degree glidepath reaches 2,500 feet radio altitude at ${formattedDistance} slant distance from the threshold. ${descriptionComparison}${isMaterial ? " The visual separation between profiles is enlarged for clarity." : ""}`;
+    const referenceDescription = showReference
+      ? "A dashed 3.0 degree comparison is also shown because the selected glidepath is outside the 2.8 to 3.3 degree comparison band."
+      : "No dashed 3.0 degree comparison is shown because the selected glidepath is within the 2.8 to 3.3 degree comparison band.";
+    elements.diagramDescription.textContent = `The selected ${formattedAngle} degree glidepath reaches 2,500 feet radio altitude at ${formattedDistance} slant distance from the threshold. ${referenceDescription} ${descriptionComparison}${isMaterial ? " The visual separation between profiles is enlarged for clarity." : ""}`;
     elements.geometry.classList.remove("is-empty");
     elements.geometry.classList.toggle("is-warning", result.coldWeatherWarning);
     elements.geometry.classList.toggle("is-cold", isMaterial && isOverReading);
