@@ -122,7 +122,7 @@ h1 {
 }
 
 .tool-menu {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-bottom: 10px;
 }
 
@@ -2340,7 +2340,7 @@ form label {
   }
 
   .tool-menu {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .account-panel,
@@ -2985,9 +2985,10 @@ html[data-theme="night"] input[type="time"] {
 
 /* Radio Altimeter and NOTOC tools */
 .tool-menu {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.checks-panel,
 .ra-panel,
 .notoc-panel {
   border: 1px solid var(--line);
@@ -2995,6 +2996,97 @@ html[data-theme="night"] input[type="time"] {
   background: var(--panel);
   box-shadow: var(--shadow);
   padding: 20px;
+}
+
+.checks-panel {
+  min-height: 420px;
+}
+
+.checks-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.checks-action-card {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 13px;
+  min-height: 132px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+  color: var(--ink);
+  padding: 18px;
+  text-align: left;
+}
+
+.checks-action-card:hover {
+  border-color: var(--nav-silver);
+  background: var(--panel);
+  box-shadow: var(--soft-shadow);
+}
+
+.checks-action-card:focus-visible {
+  border-color: var(--accent);
+  outline: 3px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  outline-offset: 2px;
+}
+
+.checks-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--blue-soft);
+  color: var(--accent);
+}
+
+.checks-action-icon .ui-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.checks-action-copy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.checks-action-copy strong {
+  color: var(--navy);
+  font-size: 1rem;
+  font-weight: 760;
+}
+
+.checks-action-copy small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.checks-action-arrow {
+  color: var(--muted);
+}
+
+.tool-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tool-title-row h2 {
+  line-height: 1.15;
+}
+
+.checks-back-button {
+  flex: 0 0 44px;
 }
 
 .tool-heading {
@@ -3199,6 +3291,37 @@ html[data-theme="night"] input[type="time"] {
   font-weight: 700;
 }
 
+.ra-geometry-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 14px;
+  margin-top: 8px;
+}
+
+.ra-geometry-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.67rem;
+  line-height: 1.25;
+}
+
+.ra-geometry-legend b {
+  font-weight: 700;
+}
+
+.ra-legend-line {
+  display: inline-block;
+  width: 20px;
+  border-top: 3px solid var(--silver);
+}
+
+.ra-legend-line.is-affected {
+  border-top-color: var(--gold);
+  border-top-width: 2px;
+}
+
 .ra-geometry {
   display: block;
   width: 100%;
@@ -3218,8 +3341,16 @@ html[data-theme="night"] input[type="time"] {
 }
 
 .ra-path-line {
-  stroke: var(--accent);
   stroke-linecap: round;
+}
+
+.ra-path-line.is-nominal {
+  stroke: var(--silver);
+  stroke-width: 5;
+}
+
+.ra-path-line.is-affected {
+  stroke: var(--gold);
   stroke-width: 2.5;
 }
 
@@ -3233,6 +3364,12 @@ html[data-theme="night"] input[type="time"] {
   fill: var(--navy);
   stroke: var(--panel);
   stroke-width: 3;
+}
+
+.ra-baro-marker {
+  fill: var(--panel);
+  stroke: var(--gold);
+  stroke-width: 2.5;
 }
 
 .ra-diagram-label {
@@ -3250,12 +3387,35 @@ html[data-theme="night"] input[type="time"] {
 
 .ra-geometry-card.is-empty .ra-path-line,
 .ra-geometry-card.is-empty .ra-height-line,
-.ra-geometry-card.is-empty .ra-aircraft-marker {
+.ra-geometry-card.is-empty .ra-aircraft-marker,
+.ra-geometry-card.is-empty .ra-baro-marker {
   opacity: 0.32;
 }
 
-.ra-geometry-card.is-warning .ra-aircraft-marker {
-  fill: var(--amber);
+.ra-geometry-card.is-warning .ra-baro-marker {
+  stroke: var(--amber);
+}
+
+.ra-baro-comparison {
+  margin: 2px 0 4px;
+  color: var(--navy);
+  font-size: 0.78rem;
+  font-weight: 760;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.ra-geometry-card.is-empty .ra-baro-comparison,
+.ra-geometry-card.is-neutral .ra-baro-comparison {
+  color: var(--muted);
+}
+
+.ra-geometry-card.is-cold .ra-baro-comparison {
+  color: var(--amber);
+}
+
+.ra-geometry-card.is-warm .ra-baro-comparison {
+  color: var(--accent);
 }
 
 .conditional-warning {
@@ -3903,7 +4063,7 @@ html[data-theme="night"] input[type="time"] {
 
 @media (max-width: 700px) {
   .tool-menu {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .notoc-field-grid,
@@ -3913,8 +4073,22 @@ html[data-theme="night"] input[type="time"] {
 }
 
 @media (max-width: 560px) {
+  .checks-panel,
   .ra-panel,
   .notoc-panel {
+    padding: 14px;
+  }
+
+  .checks-panel {
+    min-height: 0;
+  }
+
+  .checks-action-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .checks-action-card {
+    min-height: 104px;
     padding: 14px;
   }
 

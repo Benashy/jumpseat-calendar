@@ -11,9 +11,9 @@ const CASES = [
   [0, 15, 3.0, 2500.000, "~2,500 ft", "7.7 NM"],
   [0, 0, 3.0, 2637.287, "~2,640 ft", "7.7 NM"],
   [0, 50, 3.0, 2229.228, "~2,230 ft", "7.7 NM"],
-  [2000, -30, 3.0, 4921.937, "~4,920 ft", "7.7 NM"],
-  [-500, -30, 3.0, 2472.862, "~2,470 ft", "7.7 NM"],
-  [500, -30, 3.0, 3452.492, "~3,450 ft", "7.7 NM"],
+  [2000, -25, 3.0, 4863.063, "~4,860 ft", "7.7 NM"],
+  [-500, -25, 3.0, 2412.962, "~2,410 ft", "7.7 NM"],
+  [500, -25, 3.0, 3393.002, "~3,390 ft", "7.7 NM"],
   [0, 15, 2.5, 2500.000, "~2,500 ft", "9.2 NM"],
   [0, 15, 4.0, 2500.000, "~2,500 ft", "5.8 NM"],
 ];
@@ -45,7 +45,7 @@ test("uses geometric slant range for the DME-style distance", () => {
 });
 
 test("keeps temperature independent from slant distance", () => {
-  const cold = calculateRadioAltimeterPosition({ thresholdElevationFt: 0, airportTemperatureC: -30, glidepathAngleDeg: 3 });
+  const cold = calculateRadioAltimeterPosition({ thresholdElevationFt: 0, airportTemperatureC: -25, glidepathAngleDeg: 3 });
   const warm = calculateRadioAltimeterPosition({ thresholdElevationFt: 0, airportTemperatureC: 50, glidepathAngleDeg: 3 });
 
   assert.equal(cold.result.slantDistanceNmRaw, warm.result.slantDistanceNmRaw);
@@ -53,8 +53,8 @@ test("keeps temperature independent from slant distance", () => {
 });
 
 test("keeps glidepath independent from barometric altitude", () => {
-  const shallow = calculateRadioAltimeterPosition({ thresholdElevationFt: 2000, airportTemperatureC: -30, glidepathAngleDeg: 2.5 });
-  const steep = calculateRadioAltimeterPosition({ thresholdElevationFt: 2000, airportTemperatureC: -30, glidepathAngleDeg: 4 });
+  const shallow = calculateRadioAltimeterPosition({ thresholdElevationFt: 2000, airportTemperatureC: -20, glidepathAngleDeg: 2.5 });
+  const steep = calculateRadioAltimeterPosition({ thresholdElevationFt: 2000, airportTemperatureC: -20, glidepathAngleDeg: 4 });
 
   assert.equal(shallow.result.expectedBaroAltitudeFtRaw, steep.result.expectedBaroAltitudeFtRaw);
   assert.notEqual(shallow.result.slantDistanceNmRaw, steep.result.slantDistanceNmRaw);
@@ -86,8 +86,8 @@ test("warns only when temperature is strictly below ISA minus 25", () => {
 
 test("accepts every defined input boundary", () => {
   for (const input of [
-    { thresholdElevationFt: -1500, airportTemperatureC: -60, glidepathAngleDeg: 2.5 },
-    { thresholdElevationFt: 15000, airportTemperatureC: 60, glidepathAngleDeg: 4.0 },
+    { thresholdElevationFt: -1500, airportTemperatureC: -25, glidepathAngleDeg: 2.5 },
+    { thresholdElevationFt: 15000, airportTemperatureC: 50, glidepathAngleDeg: 4.0 },
   ]) {
     assert.equal(calculateRadioAltimeterPosition(input).valid, true);
   }
@@ -99,8 +99,8 @@ test("rejects missing, non-finite and out-of-range values without clamping", () 
     { thresholdElevationFt: Infinity, airportTemperatureC: 10, glidepathAngleDeg: 3 },
     { thresholdElevationFt: -1501, airportTemperatureC: 10, glidepathAngleDeg: 3 },
     { thresholdElevationFt: 15001, airportTemperatureC: 10, glidepathAngleDeg: 3 },
-    { thresholdElevationFt: 0, airportTemperatureC: -61, glidepathAngleDeg: 3 },
-    { thresholdElevationFt: 0, airportTemperatureC: 61, glidepathAngleDeg: 3 },
+    { thresholdElevationFt: 0, airportTemperatureC: -26, glidepathAngleDeg: 3 },
+    { thresholdElevationFt: 0, airportTemperatureC: 51, glidepathAngleDeg: 3 },
     { thresholdElevationFt: 0, airportTemperatureC: 10, glidepathAngleDeg: 2.4 },
     { thresholdElevationFt: 0, airportTemperatureC: 10, glidepathAngleDeg: 4.1 },
   ];
@@ -111,4 +111,28 @@ test("rejects missing, non-finite and out-of-range values without clamping", () 
     assert.equal(calculation.result, null);
     assert.ok(Object.keys(calculation.errors).length > 0);
   }
+});
+
+test("reports barometric indication error against the true 2,500 ft RA altitude", () => {
+  const cold = calculateRadioAltimeterPosition({ thresholdElevationFt: 0, airportTemperatureC: -25, glidepathAngleDeg: 3 });
+  const isa = calculateRadioAltimeterPosition({ thresholdElevationFt: 0, airportTemperatureC: 15, glidepathAngleDeg: 3 });
+  const warm = calculateRadioAltimeterPosition({ thresholdElevationFt: 0, airportTemperatureC: 50, glidepathAngleDeg: 3 });
+
+  assert.equal(cold.result.trueBaroAltitudeFtRaw, 2500);
+  assert.ok(cold.result.barometricErrorFtRaw > 0);
+  assert.equal(isa.result.barometricErrorFtRaw, 0);
+  assert.ok(warm.result.barometricErrorFtRaw < 0);
+  assert.equal(
+    warm.result.barometricErrorFtRaw,
+    warm.result.expectedBaroAltitudeFtRaw - warm.result.trueBaroAltitudeFtRaw
+  );
+});
+
+test("uses the published temperature range without silently clamping", () => {
+  const below = calculateRadioAltimeterPosition({ thresholdElevationFt: 0, airportTemperatureC: -26, glidepathAngleDeg: 3 });
+  const above = calculateRadioAltimeterPosition({ thresholdElevationFt: 0, airportTemperatureC: 51, glidepathAngleDeg: 3 });
+
+  assert.equal(below.valid, false);
+  assert.equal(above.valid, false);
+  assert.equal(below.errors.airportTemperatureC, "Use a temperature between -25 and +50 degrees Celsius.");
 });

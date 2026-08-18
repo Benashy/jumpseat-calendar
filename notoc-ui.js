@@ -622,6 +622,7 @@
     button.addEventListener("click", () => showScreen(button.dataset.notocScreen));
   });
   elements.backButtons.forEach((button) => button.addEventListener("click", () => showScreen("home")));
+  document.addEventListener("opsdeck:notoc-open", () => showScreen("home", false));
   elements.clearSession.addEventListener("click", clearSession);
 
   elements.lookupCode.addEventListener("input", () => {

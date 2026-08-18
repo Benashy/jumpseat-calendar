@@ -15,13 +15,16 @@
     resultPanel: document.querySelector("#raResultPanel"),
     baro: document.querySelector("#raBaroResult"),
     distance: document.querySelector("#raDistanceResult"),
-    support: document.querySelector("#raResultSupport"),
+    baroComparison: document.querySelector("#raBaroComparison"),
     coldWarning: document.querySelector("#raColdWeatherWarning"),
     geometry: document.querySelector(".ra-geometry-card"),
     diagramDescription: document.querySelector("#raDiagramDescription"),
-    diagramPath: document.querySelector("#raDiagramPath"),
+    nominalLegend: document.querySelector("#raNominalLegend"),
+    diagramNominalPath: document.querySelector("#raDiagramNominalPath"),
+    diagramAffectedPath: document.querySelector("#raDiagramAffectedPath"),
     diagramHeight: document.querySelector("#raDiagramHeight"),
     diagramMarker: document.querySelector("#raDiagramMarker"),
+    diagramBaroMarker: document.querySelector("#raDiagramBaroMarker"),
     diagramAltitudeLabel: document.querySelector("#raDiagramAltitudeLabel"),
     diagramDistanceLabel: document.querySelector("#raDiagramDistanceLabel"),
     clearButton: document.querySelector("#clearRaButton"),
@@ -29,7 +32,11 @@
   const touched = new Set();
   let renderTimer = null;
 
-  for (let temperature = -60; temperature <= 60; temperature += 1) {
+  for (
+    let temperature = core.CONSTANTS.MIN_AIRPORT_TEMPERATURE_C;
+    temperature <= core.CONSTANTS.MAX_AIRPORT_TEMPERATURE_C;
+    temperature += 1
+  ) {
     const option = document.createElement("option");
     option.value = String(temperature);
     option.textContent = temperature > 0 ? `+${temperature}` : String(temperature);
@@ -61,37 +68,71 @@
 
   function resetDiagram() {
     elements.geometry.classList.add("is-empty");
-    elements.geometry.classList.remove("is-warning");
-    elements.diagramDescription.textContent = "Approach geometry will appear when the required inputs are valid.";
+    elements.geometry.classList.remove("is-warning", "is-cold", "is-warm", "is-neutral");
+    elements.diagramDescription.textContent = "Nominal and temperature-affected approach profiles will appear when the required inputs are valid.";
+    elements.nominalLegend.textContent = "Nominal 3.0 degree profile";
     elements.diagramAltitudeLabel.textContent = "2,500 ft RA";
     elements.diagramDistanceLabel.textContent = "Select valid inputs";
+    elements.baroComparison.textContent = "Enter valid inputs to compare the profiles.";
   }
 
   function renderDiagram(result, glidepathAngleDeg) {
     const minimumDistanceNm = 5.7;
     const maximumDistanceNm = 9.3;
-    const minimumX = 220;
-    const maximumX = 330;
+    const thresholdX = 34;
+    const runwayY = 184;
+    const nominalY = 44;
+    const minimumX = 230;
+    const maximumX = 360;
     const clampedDistance = Math.min(maximumDistanceNm, Math.max(minimumDistanceNm, result.slantDistanceNmRaw));
     const aircraftX = minimumX + (
       (clampedDistance - minimumDistanceNm) /
       (maximumDistanceNm - minimumDistanceNm)
     ) * (maximumX - minimumX);
-    const labelX = (34 + aircraftX) / 2;
+    const affectedRatio = result.indicatedHeightAboveThresholdFtRaw / core.CONSTANTS.RA_TRIGGER_FT;
+    const affectedY = Math.min(
+      runwayY - 5,
+      Math.max(18, runwayY - ((runwayY - nominalY) * affectedRatio))
+    );
+    const labelX = (thresholdX + aircraftX) / 2;
     const formattedDistance = core.formatSlantDistance(result.slantDistanceNmRaw);
     const formattedAngle = Number(glidepathAngleDeg).toFixed(1);
+    const roundedError = Math.round(Math.abs(result.barometricErrorFtRaw));
+    const isNeutral = Math.abs(result.barometricErrorFtRaw) < 0.5;
+    const isOverReading = result.barometricErrorFtRaw > 0;
+    const comparison = isNeutral
+      ? "Barometric indication matches nominal"
+      : `Baro ${isOverReading ? "over-reads" : "under-reads"} by ${new Intl.NumberFormat("en-GB").format(roundedError)} ft`;
+    const descriptionComparison = isNeutral
+      ? "The temperature-affected indication coincides with the nominal profile."
+      : `The barometric indication ${isOverReading ? "over-reads" : "under-reads"} by approximately ${roundedError} feet.`;
 
-    elements.diagramPath.setAttribute("x2", aircraftX.toFixed(1));
+    elements.diagramNominalPath.setAttribute("x2", aircraftX.toFixed(1));
+    elements.diagramNominalPath.setAttribute("y2", String(nominalY));
+    elements.diagramAffectedPath.setAttribute("x2", aircraftX.toFixed(1));
+    elements.diagramAffectedPath.setAttribute("y2", affectedY.toFixed(1));
     elements.diagramHeight.setAttribute("x1", aircraftX.toFixed(1));
     elements.diagramHeight.setAttribute("x2", aircraftX.toFixed(1));
+    elements.diagramHeight.setAttribute("y1", String(nominalY));
     elements.diagramMarker.setAttribute("cx", aircraftX.toFixed(1));
-    elements.diagramAltitudeLabel.setAttribute("x", aircraftX.toFixed(1));
+    elements.diagramMarker.setAttribute("cy", String(nominalY));
+    elements.diagramBaroMarker.setAttribute("cx", aircraftX.toFixed(1));
+    elements.diagramBaroMarker.setAttribute("cy", affectedY.toFixed(1));
+    const putAltitudeLabelLeft = aircraftX > 325;
+    elements.diagramAltitudeLabel.setAttribute("x", (aircraftX + (putAltitudeLabelLeft ? -8 : 8)).toFixed(1));
+    elements.diagramAltitudeLabel.setAttribute("y", String((nominalY + runwayY) / 2));
+    elements.diagramAltitudeLabel.setAttribute("text-anchor", putAltitudeLabelLeft ? "end" : "start");
     elements.diagramDistanceLabel.setAttribute("x", labelX.toFixed(1));
+    elements.nominalLegend.textContent = `Nominal ${formattedAngle} degree profile`;
     elements.diagramAltitudeLabel.textContent = "2,500 ft RA";
     elements.diagramDistanceLabel.textContent = `${formattedAngle} degrees / ${formattedDistance}`;
-    elements.diagramDescription.textContent = `Estimated ${formattedAngle} degree approach geometry at 2,500 feet radio altitude and ${formattedDistance} slant distance from the threshold.`;
+    elements.baroComparison.textContent = comparison;
+    elements.diagramDescription.textContent = `The nominal ${formattedAngle} degree profile reaches 2,500 feet radio altitude at ${formattedDistance} slant distance from the threshold. ${descriptionComparison}`;
     elements.geometry.classList.remove("is-empty");
     elements.geometry.classList.toggle("is-warning", result.coldWeatherWarning);
+    elements.geometry.classList.toggle("is-cold", !isNeutral && isOverReading);
+    elements.geometry.classList.toggle("is-warm", !isNeutral && !isOverReading);
+    elements.geometry.classList.toggle("is-neutral", isNeutral);
   }
 
   function render() {
@@ -106,9 +147,9 @@
       elements.resultPanel.classList.add("is-empty");
       elements.resultPanel.removeAttribute("data-baro-raw");
       elements.resultPanel.removeAttribute("data-distance-raw");
+      elements.resultPanel.removeAttribute("data-baro-error-raw");
       elements.baro.textContent = "-- ft";
       elements.distance.textContent = "-- NM";
-      elements.support.textContent = "Enter threshold elevation and airport temperature to calculate.";
       elements.coldWarning.classList.add("hidden");
       resetDiagram();
       return;
@@ -118,9 +159,9 @@
     elements.resultPanel.classList.remove("is-empty");
     elements.resultPanel.dataset.baroRaw = String(result.expectedBaroAltitudeFtRaw);
     elements.resultPanel.dataset.distanceRaw = String(result.slantDistanceNmRaw);
+    elements.resultPanel.dataset.baroErrorRaw = String(result.barometricErrorFtRaw);
     elements.baro.textContent = core.formatBaroAltitude(result.expectedBaroAltitudeFtRaw);
     elements.distance.textContent = core.formatSlantDistance(result.slantDistanceNmRaw);
-    elements.support.textContent = "Uses 2,500 ft RA and a 50 ft threshold crossing height.";
     elements.coldWarning.classList.toggle("hidden", !result.coldWeatherWarning);
     renderDiagram(result, input.glidepathAngleDeg);
   }

@@ -1,6 +1,6 @@
 const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
-const APP_VERSION = "2.41";
+const APP_VERSION = "2.42";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 2;
 const MAGIC_LINK_SENT_KEY = "jumpseat-calendar-magic-link-sent-at";
@@ -28,27 +28,32 @@ const elements = {
   authStatus: document.querySelector("#authStatus"),
   homeSyncStatus: document.querySelector("#homeSyncStatus"),
   ftlSyncStatus: document.querySelector("#ftlSyncStatus"),
+  checksSyncStatus: document.querySelector("#checksSyncStatus"),
   raSyncStatus: document.querySelector("#raSyncStatus"),
   notocSyncStatus: document.querySelector("#notocSyncStatus"),
   settingsSyncStatus: document.querySelector("#settingsSyncStatus"),
   offlineBanner: document.querySelector("#offlineBanner"),
   accountPanel: document.querySelector("#accountPanel"),
   ftlAccountPanel: document.querySelector("#ftlAccountPanel"),
+  checksAccountPanel: document.querySelector("#checksAccountPanel"),
   raAccountPanel: document.querySelector("#raAccountPanel"),
   notocAccountPanel: document.querySelector("#notocAccountPanel"),
   settingsAccountPanel: document.querySelector("#settingsAccountPanel"),
   magicLinkButton: document.querySelector("#magicLinkButton"),
   refreshCloudButton: document.querySelector("#refreshCloudButton"),
   ftlRefreshCloudButton: document.querySelector("#ftlRefreshCloudButton"),
+  checksRefreshCloudButton: document.querySelector("#checksRefreshCloudButton"),
   raRefreshCloudButton: document.querySelector("#raRefreshCloudButton"),
   notocRefreshCloudButton: document.querySelector("#notocRefreshCloudButton"),
   settingsRefreshCloudButton: document.querySelector("#settingsRefreshCloudButton"),
   homeSettingsButton: document.querySelector("#homeSettingsButton"),
   ftlSettingsButton: document.querySelector("#ftlSettingsButton"),
+  checksSettingsButton: document.querySelector("#checksSettingsButton"),
   raSettingsButton: document.querySelector("#raSettingsButton"),
   notocSettingsButton: document.querySelector("#notocSettingsButton"),
   homeSignOutButton: document.querySelector("#homeSignOutButton"),
   ftlSignOutButton: document.querySelector("#ftlSignOutButton"),
+  checksSignOutButton: document.querySelector("#checksSignOutButton"),
   raSignOutButton: document.querySelector("#raSignOutButton"),
   notocSignOutButton: document.querySelector("#notocSignOutButton"),
   settingsSignOutButton: document.querySelector("#settingsSignOutButton"),
@@ -56,14 +61,18 @@ const elements = {
   layout: document.querySelector(".layout"),
   jumpseatToolTab: document.querySelector("#jumpseatToolTab"),
   ftlToolTab: document.querySelector("#ftlToolTab"),
-  raToolTab: document.querySelector("#raToolTab"),
-  notocToolTab: document.querySelector("#notocToolTab"),
+  checksToolTab: document.querySelector("#checksToolTab"),
   homeView: document.querySelector("#homeView"),
   addView: document.querySelector("#addView"),
   ftlView: document.querySelector("#ftlView"),
+  checksView: document.querySelector("#checksView"),
   raView: document.querySelector("#raView"),
   notocView: document.querySelector("#notocView"),
   settingsView: document.querySelector("#settingsView"),
+  openRaCheckButton: document.querySelector("#openRaCheckButton"),
+  openNotocButton: document.querySelector("#openNotocButton"),
+  raBackToChecks: document.querySelector("#raBackToChecks"),
+  notocBackToChecks: document.querySelector("#notocBackToChecks"),
   openAddRequestButton: document.querySelector("#openAddRequestButton"),
   previousDay: document.querySelector("#previousDay"),
   nextDay: document.querySelector("#nextDay"),
@@ -365,6 +374,7 @@ function setSyncStatus(message, isError = false, isWarning = false) {
   [
     elements.homeSyncStatus,
     elements.ftlSyncStatus,
+    elements.checksSyncStatus,
     elements.raSyncStatus,
     elements.notocSyncStatus,
     elements.settingsSyncStatus,
@@ -501,6 +511,7 @@ function setOfflineReadOnly(isReadOnly) {
   elements.openAddRequestButton.disabled = isReadOnly;
   elements.refreshCloudButton.disabled = isReadOnly;
   elements.ftlRefreshCloudButton.disabled = isReadOnly;
+  elements.checksRefreshCloudButton.disabled = isReadOnly;
   elements.raRefreshCloudButton.disabled = isReadOnly;
   elements.notocRefreshCloudButton.disabled = isReadOnly;
   elements.settingsRefreshCloudButton.disabled = isReadOnly;
@@ -530,6 +541,7 @@ function startOfflineMode(message = "Offline: viewing saved data") {
   elements.authPanel.classList.add("hidden");
   elements.accountPanel.classList.add("hidden");
   elements.ftlAccountPanel.classList.add("hidden");
+  elements.checksAccountPanel.classList.add("hidden");
   elements.raAccountPanel.classList.add("hidden");
   elements.notocAccountPanel.classList.add("hidden");
   elements.settingsAccountPanel.classList.add("hidden");
@@ -549,6 +561,7 @@ function setSignedInState(user) {
   elements.authPanel.classList.toggle("hidden", Boolean(user));
   elements.accountPanel.classList.toggle("hidden", !user);
   elements.ftlAccountPanel.classList.toggle("hidden", !user);
+  elements.checksAccountPanel.classList.toggle("hidden", !user);
   elements.raAccountPanel.classList.toggle("hidden", !user);
   elements.notocAccountPanel.classList.toggle("hidden", !user);
   elements.settingsAccountPanel.classList.toggle("hidden", !user);
@@ -580,76 +593,79 @@ function setActiveTab(tabName) {
   elements.homeView.classList.toggle("hidden", !isHome);
   elements.addView.classList.toggle("hidden", isHome);
   elements.ftlView.classList.add("hidden");
+  elements.checksView.classList.add("hidden");
   elements.raView.classList.add("hidden");
   elements.notocView.classList.add("hidden");
   elements.settingsView.classList.add("hidden");
   elements.homeView.setAttribute("aria-hidden", String(!isHome));
   elements.addView.setAttribute("aria-hidden", String(isHome));
   elements.ftlView.setAttribute("aria-hidden", "true");
+  elements.checksView.setAttribute("aria-hidden", "true");
   elements.raView.setAttribute("aria-hidden", "true");
   elements.notocView.setAttribute("aria-hidden", "true");
   elements.settingsView.setAttribute("aria-hidden", "true");
   elements.jumpseatToolTab.classList.add("active");
   elements.ftlToolTab.classList.remove("active");
-  elements.raToolTab.classList.remove("active");
-  elements.notocToolTab.classList.remove("active");
+  elements.checksToolTab.classList.remove("active");
   elements.jumpseatToolTab.setAttribute("aria-selected", "true");
   elements.ftlToolTab.setAttribute("aria-selected", "false");
-  elements.raToolTab.setAttribute("aria-selected", "false");
-  elements.notocToolTab.setAttribute("aria-selected", "false");
+  elements.checksToolTab.setAttribute("aria-selected", "false");
 }
 
 function setActiveTool(toolName) {
   const isJumpseat = toolName === "jumpseat";
   const isFtl = toolName === "ftl";
+  const isChecks = toolName === "checks";
   const isRa = toolName === "ra";
   const isNotoc = toolName === "notoc";
+  const isChecksSection = isChecks || isRa || isNotoc;
 
   elements.homeView.classList.toggle("hidden", !isJumpseat);
   elements.addView.classList.add("hidden");
   elements.ftlView.classList.toggle("hidden", !isFtl);
+  elements.checksView.classList.toggle("hidden", !isChecks);
   elements.raView.classList.toggle("hidden", !isRa);
   elements.notocView.classList.toggle("hidden", !isNotoc);
   elements.settingsView.classList.add("hidden");
   elements.homeView.setAttribute("aria-hidden", String(!isJumpseat));
   elements.addView.setAttribute("aria-hidden", "true");
   elements.ftlView.setAttribute("aria-hidden", String(!isFtl));
+  elements.checksView.setAttribute("aria-hidden", String(!isChecks));
   elements.raView.setAttribute("aria-hidden", String(!isRa));
   elements.notocView.setAttribute("aria-hidden", String(!isNotoc));
   elements.settingsView.setAttribute("aria-hidden", "true");
   elements.jumpseatToolTab.classList.toggle("active", isJumpseat);
   elements.ftlToolTab.classList.toggle("active", isFtl);
-  elements.raToolTab.classList.toggle("active", isRa);
-  elements.notocToolTab.classList.toggle("active", isNotoc);
+  elements.checksToolTab.classList.toggle("active", isChecksSection);
   elements.jumpseatToolTab.setAttribute("aria-selected", String(isJumpseat));
   elements.ftlToolTab.setAttribute("aria-selected", String(isFtl));
-  elements.raToolTab.setAttribute("aria-selected", String(isRa));
-  elements.notocToolTab.setAttribute("aria-selected", String(isNotoc));
+  elements.checksToolTab.setAttribute("aria-selected", String(isChecksSection));
 
   if (isJumpseat) setActiveTab("home");
+  if (isNotoc) document.dispatchEvent(new CustomEvent("opsdeck:notoc-open"));
 }
 
 function openSettings() {
   elements.homeView.classList.add("hidden");
   elements.addView.classList.add("hidden");
   elements.ftlView.classList.add("hidden");
+  elements.checksView.classList.add("hidden");
   elements.raView.classList.add("hidden");
   elements.notocView.classList.add("hidden");
   elements.settingsView.classList.remove("hidden");
   elements.homeView.setAttribute("aria-hidden", "true");
   elements.addView.setAttribute("aria-hidden", "true");
   elements.ftlView.setAttribute("aria-hidden", "true");
+  elements.checksView.setAttribute("aria-hidden", "true");
   elements.raView.setAttribute("aria-hidden", "true");
   elements.notocView.setAttribute("aria-hidden", "true");
   elements.settingsView.setAttribute("aria-hidden", "false");
   elements.jumpseatToolTab.classList.remove("active");
   elements.ftlToolTab.classList.remove("active");
-  elements.raToolTab.classList.remove("active");
-  elements.notocToolTab.classList.remove("active");
+  elements.checksToolTab.classList.remove("active");
   elements.jumpseatToolTab.setAttribute("aria-selected", "false");
   elements.ftlToolTab.setAttribute("aria-selected", "false");
-  elements.raToolTab.setAttribute("aria-selected", "false");
-  elements.notocToolTab.setAttribute("aria-selected", "false");
+  elements.checksToolTab.setAttribute("aria-selected", "false");
   refreshTelegramStatus();
 }
 
@@ -3320,8 +3336,17 @@ elements.requestForm.addEventListener("keydown", (event) => {
 
 elements.jumpseatToolTab.addEventListener("click", () => setActiveTool("jumpseat"));
 elements.ftlToolTab.addEventListener("click", () => setActiveTool("ftl"));
-elements.raToolTab.addEventListener("click", () => setActiveTool("ra"));
-elements.notocToolTab.addEventListener("click", () => setActiveTool("notoc"));
+elements.checksToolTab.addEventListener("click", () => setActiveTool("checks"));
+elements.openRaCheckButton.addEventListener("click", () => setActiveTool("ra"));
+elements.openNotocButton.addEventListener("click", () => setActiveTool("notoc"));
+elements.raBackToChecks.addEventListener("click", () => {
+  setActiveTool("checks");
+  elements.openRaCheckButton.focus();
+});
+elements.notocBackToChecks.addEventListener("click", () => {
+  setActiveTool("checks");
+  elements.openNotocButton.focus();
+});
 elements.clearFtlButton.addEventListener("click", clearFtlCalculator);
 elements.sendLtotTelegramButton.addEventListener("click", sendLtotTelegramSummary);
 elements.bdxInfoButton?.addEventListener("click", openBdxInfo);
@@ -3378,15 +3403,18 @@ elements.authForm.addEventListener("submit", (event) => {
 elements.magicLinkButton.addEventListener("click", sendMagicLink);
 elements.refreshCloudButton.addEventListener("click", refreshCloudData);
 elements.ftlRefreshCloudButton.addEventListener("click", refreshCloudData);
+elements.checksRefreshCloudButton.addEventListener("click", refreshCloudData);
 elements.raRefreshCloudButton.addEventListener("click", refreshCloudData);
 elements.notocRefreshCloudButton.addEventListener("click", refreshCloudData);
 elements.settingsRefreshCloudButton.addEventListener("click", refreshCloudData);
 elements.homeSettingsButton.addEventListener("click", openSettings);
 elements.ftlSettingsButton.addEventListener("click", openSettings);
+elements.checksSettingsButton.addEventListener("click", openSettings);
 elements.raSettingsButton.addEventListener("click", openSettings);
 elements.notocSettingsButton.addEventListener("click", openSettings);
 elements.homeSignOutButton.addEventListener("click", () => signOut());
 elements.ftlSignOutButton.addEventListener("click", () => signOut());
+elements.checksSignOutButton.addEventListener("click", () => signOut());
 elements.raSignOutButton.addEventListener("click", () => signOut());
 elements.notocSignOutButton.addEventListener("click", () => signOut());
 elements.settingsSignOutButton.addEventListener("click", () => signOut());
@@ -3420,7 +3448,7 @@ strengthenCredentialPaste(elements.authEmail);
 strengthenCredentialPaste(elements.authPassword);
 initCloud();
 if (LOCAL_PREVIEW_VIEW === "settings") openSettings();
-else if (["ftl", "ra", "notoc"].includes(LOCAL_PREVIEW_VIEW)) setActiveTool(LOCAL_PREVIEW_VIEW);
+else if (["ftl", "checks", "ra", "notoc"].includes(LOCAL_PREVIEW_VIEW)) setActiveTool(LOCAL_PREVIEW_VIEW);
 
 if ("serviceWorker" in navigator && !IS_LOCAL_PREVIEW) {
   window.addEventListener("load", () => {

@@ -10,8 +10,8 @@
     FT_PER_NM: 6076.1154856,
     MIN_THRESHOLD_ELEVATION_FT: -1500,
     MAX_THRESHOLD_ELEVATION_FT: 15000,
-    MIN_AIRPORT_TEMPERATURE_C: -60,
-    MAX_AIRPORT_TEMPERATURE_C: 60,
+    MIN_AIRPORT_TEMPERATURE_C: -25,
+    MAX_AIRPORT_TEMPERATURE_C: 50,
     MIN_GLIDEPATH_ANGLE_DEG: 2.5,
     MAX_GLIDEPATH_ANGLE_DEG: 4.0,
     COLD_WARNING_ISA_DEVIATION_C: -25,
@@ -42,7 +42,7 @@
       airportTemperatureC < CONSTANTS.MIN_AIRPORT_TEMPERATURE_C ||
       airportTemperatureC > CONSTANTS.MAX_AIRPORT_TEMPERATURE_C
     ) {
-      errors.airportTemperatureC = "Use a temperature between -60 and +60 degrees Celsius.";
+      errors.airportTemperatureC = "Use a temperature between -25 and +50 degrees Celsius.";
     }
 
     if (!finiteNumber(glidepathAngleDeg)) {
@@ -80,7 +80,9 @@
     const indicatedHeightAboveThresholdFt = CONSTANTS.RA_TRIGGER_FT *
       (isaTemperatureAtThresholdC + CONSTANTS.KELVIN_OFFSET) /
       (airportTemperatureC + CONSTANTS.KELVIN_OFFSET);
+    const trueBaroAltitudeFtRaw = thresholdElevationFt + CONSTANTS.RA_TRIGGER_FT;
     const expectedBaroAltitudeFtRaw = thresholdElevationFt + indicatedHeightAboveThresholdFt;
+    const barometricErrorFtRaw = expectedBaroAltitudeFtRaw - trueBaroAltitudeFtRaw;
     const verticalHeightAboveThresholdFt = CONSTANTS.RA_TRIGGER_FT - CONSTANTS.ASSUMED_TCH_FT;
     const slantDistanceNmRaw = verticalHeightAboveThresholdFt /
       (CONSTANTS.FT_PER_NM * Math.sin(glidepathAngleDeg * Math.PI / 180));
@@ -90,7 +92,10 @@
       valid: true,
       errors: {},
       result: {
+        indicatedHeightAboveThresholdFtRaw: indicatedHeightAboveThresholdFt,
+        trueBaroAltitudeFtRaw,
         expectedBaroAltitudeFtRaw,
+        barometricErrorFtRaw,
         slantDistanceNmRaw,
         isaTemperatureAtThresholdC,
         isaDeviationC,
