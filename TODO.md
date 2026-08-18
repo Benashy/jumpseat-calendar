@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.35.
+- Current visible app version: v2.36.
 - The top navigation is limited to `Jumpseat` and `FDP & LTOT`. Jumpseat opens the daily view by default, with contextual `Add request` and `Back to requests` actions instead of a second navigation row.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
