@@ -3643,8 +3643,29 @@ html[data-theme="night"] input[type="time"] {
 }
 
 .notoc-suggestions,
-.lookup-boundary {
+.lookup-boundary,
+.notoc-policy-status {
   grid-column: 1 / -1;
+}
+
+.notoc-policy-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.notoc-policy-status.is-ready {
+  color: var(--good);
+}
+
+.notoc-policy-status.is-saved {
+  color: var(--amber);
+}
+
+.notoc-policy-status.is-unavailable {
+  color: var(--danger);
 }
 
 .notoc-suggestions {

@@ -34,17 +34,17 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-92" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-93" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-92" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-93" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-92" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-93" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -151,7 +151,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.44</small>
+            <small class="app-version">v2.45</small>
           </section>
 
         </section>
@@ -552,7 +552,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.44</small>
+            <small class="app-version">v2.45</small>
           </section>
         </section>
 
@@ -606,7 +606,7 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.44</small>
+            <small class="app-version">v2.45</small>
           </section>
         </section>
 
@@ -722,7 +722,7 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.44</small>
+            <small class="app-version">v2.45</small>
           </section>
         </section>
 
@@ -741,7 +741,7 @@
 
           <div class="development-banner is-notoc" role="note">
             <strong>Development</strong>
-            <span>Current manual revisions and the complete CDGM code mapping have not yet been independently verified in this build.</span>
+            <span>Current BA sources remain under staged verification. Codes without a verified NOTOC expectation continue to refer.</span>
           </div>
 
           <section class="notoc-screen" id="notocHomeScreen" aria-label="NOTOC home">
@@ -773,6 +773,7 @@
               </label>
               <button class="primary-button" type="submit">Check code</button>
               <div class="notoc-suggestions hidden" id="notocLookupSuggestions" role="listbox" aria-label="Matching SHC or Dangerous Goods codes"></div>
+              <p class="notoc-policy-status" id="notocPolicyStatus" aria-live="polite">Sign in to load the BA code library.</p>
             </form>
             <div class="notoc-result-region" id="notocLookupResult" aria-live="polite"></div>
           </section>
@@ -830,7 +831,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.44</small>
+            <small class="app-version">v2.45</small>
           </section>
         </section>
 
@@ -937,7 +938,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.44</small>
+            <small class="app-version">v2.45</small>
           </section>
         </section>
       </main>
@@ -1020,15 +1021,16 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-92"></script>
-    <script src="./ltot-core.js?v=cloud-sync-92"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-92"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-92"></script>
-    <script src="./notoc-core.js?v=cloud-sync-92"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-92"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-92"></script>
-    <script src="./data-portability.js?v=cloud-sync-92"></script>
-    <script src="./request-retention.js?v=cloud-sync-92"></script>
-    <script src="./app.js?v=cloud-sync-92"></script>
+    <script src="./supabase-config.js?v=cloud-sync-93"></script>
+    <script src="./ltot-core.js?v=cloud-sync-93"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-93"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-93"></script>
+    <script src="./notoc-policy-store.js?v=cloud-sync-93"></script>
+    <script src="./notoc-core.js?v=cloud-sync-93"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-93"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-93"></script>
+    <script src="./data-portability.js?v=cloud-sync-93"></script>
+    <script src="./request-retention.js?v=cloud-sync-93"></script>
+    <script src="./app.js?v=cloud-sync-93"></script>
   </body>
 </html>

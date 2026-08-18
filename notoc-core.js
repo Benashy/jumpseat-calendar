@@ -447,14 +447,18 @@
       [EXPECTATIONS.CONDITIONAL]: "Conditional, more information required",
       [EXPECTATIONS.UNKNOWN]: "Unable to determine, refer",
     }[code.expectation];
+    const conditionSummary = String(code.conditionSummary || "").trim();
+    const explanation = verified
+      ? `${label}.${conditionSummary ? ` ${conditionSummary}` : ""}`
+      : `${label}. The NOTOC expectation is not fully verified for operational use.${conditionSummary ? ` Available source information: ${conditionSummary}` : ""}`;
     const finding = makeFinding(policyPack, {
       ruleId: code.ruleId,
       state,
       expectation: code.expectation,
       sourceIds: code.sourceIds,
       verificationStatus: code.verificationStatus,
-      explanation: verified ? label : `${label}. The source or mapping is not currently verified for operational use.`,
-      action: state === STATES.NO_OBVIOUS_INCONSISTENCY ? undefined : "Check the current BA source or refer.",
+      explanation,
+      action: code.crewAction || (state === STATES.NO_OBVIOUS_INCONSISTENCY ? undefined : "Check the current BA source or refer."),
     });
 
     return {
@@ -464,6 +468,7 @@
       appearsOn: code.appearsOn,
       expectation: code.expectation,
       conditionSummary: code.conditionSummary,
+      crewAction: code.crewAction,
       itemChecker: code.itemChecker,
       finding,
       matched: true,

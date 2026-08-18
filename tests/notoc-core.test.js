@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { POLICY_PACK } = require("../notoc-policy");
+const { POLICY_PACK, resetHandlingCodeMapping, setHandlingCodeMapping } = require("../notoc-policy");
 const {
   EXPECTATIONS,
   STATES,
@@ -136,6 +136,50 @@ test("an exact verified code fixture returns its mapped description and expectat
   assert.equal(lookup.description, "Verified fixture description");
   assert.equal(lookup.expectation, EXPECTATIONS.REQUIRED);
   assert.equal(lookup.finding.state, STATES.NO_OBVIOUS_INCONSISTENCY);
+});
+
+test("a controlled private mapping creates verified and unresolved lookup branches", () => {
+  const source = {
+    document: "BA manual",
+    section: "Section 9",
+    revision: "Current revision",
+  };
+  setHandlingCodeMapping([
+    {
+      code: "ICE",
+      aliases: ["RMD"],
+      description: "Dry ice",
+      appearsOn: ["LOADSHEET", "NOTOC"],
+      expectation: EXPECTATIONS.REQUIRED,
+      conditions: "Cross-check the documented quantity and stowage.",
+      crewAction: "Query any mismatch.",
+      source,
+      verificationStatus: "VERIFIED_CURRENT_MANUAL",
+    },
+    {
+      code: "AVP",
+      aliases: [],
+      description: "No authoritative mapping found",
+      appearsOn: [],
+      expectation: EXPECTATIONS.UNKNOWN,
+      conditions: "Do not infer the meaning.",
+      crewAction: "Refer.",
+      source,
+      verificationStatus: "UNVERIFIED_NOT_FOUND",
+    },
+  ], { policyVersion: "test-private-policy" });
+
+  try {
+    const ice = lookupHandlingCode("rmd", POLICY_PACK);
+    const avp = lookupHandlingCode("AVP", POLICY_PACK);
+    assert.equal(ice.finding.state, STATES.NO_OBVIOUS_INCONSISTENCY);
+    assert.match(ice.finding.explanation, /documented quantity and stowage/i);
+    assert.equal(avp.finding.state, STATES.UNABLE_TO_DETERMINE_REFER);
+    assert.match(avp.finding.explanation, /not fully verified/i);
+    assert.deepEqual(validatePolicyPack(POLICY_PACK), { valid: true, errors: [] });
+  } finally {
+    resetHandlingCodeMapping();
+  }
 });
 
 test("installed lithium above 300 Wh is not failed by the removed-battery limit", () => {

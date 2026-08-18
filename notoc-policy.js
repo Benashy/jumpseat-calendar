@@ -166,11 +166,92 @@
     sources,
     rules,
     handlingCodes: [],
+    mappingMetadata: null,
   };
 
+  function safeId(value) {
+    return String(value || "UNKNOWN").toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "");
+  }
+
+  function setHandlingCodeMapping(entries, metadata = {}) {
+    if (!Array.isArray(entries)) throw new Error("The BA code mapping must be an array.");
+
+    const dynamicSources = [];
+    const dynamicRules = [];
+    const handlingCodes = entries.map((entry, index) => {
+      const code = String(entry.code || "").trim().toUpperCase();
+      const suffix = `${String(index + 1).padStart(3, "0")}-${safeId(code)}`;
+      const sourceId = `BA-NOTOC-MAPPING-SOURCE-${suffix}`;
+      const ruleId = `BA-NOTOC-MAPPING-RULE-${suffix}`;
+      const verified = entry.verificationStatus === "VERIFIED_CURRENT_MANUAL";
+      const unresolved = entry.verificationStatus === "UNVERIFIED_NOT_FOUND";
+      const classification = unresolved ? "UNSUPPORTED" : "DOCUMENTED_BA";
+      const releaseStatus = verified ? "ACTIVE" : "BLOCKED";
+
+      dynamicSources.push({
+        id: sourceId,
+        documentId: "BA-NOTOC-CODE-LIBRARY",
+        documentTitle: entry.source.document,
+        sectionPath: [entry.source.section, entry.source.revision].filter(Boolean),
+        supportedText: entry.conditions,
+        classification,
+        verificationStatus: entry.verificationStatus,
+      });
+      dynamicRules.push({
+        id: ruleId,
+        title: `${code} SHC/DG mapping`,
+        domain: "SHC_CODE",
+        classification,
+        verificationStatus: entry.verificationStatus,
+        sourceIds: [sourceId],
+        requiredInputs: [],
+        releaseStatus,
+      });
+
+      return {
+        code,
+        aliases: entry.aliases,
+        description: entry.description,
+        appearsOn: entry.appearsOn,
+        expectation: entry.expectation,
+        conditionSummary: entry.conditions,
+        crewAction: entry.crewAction,
+        sourceIds: [sourceId],
+        ruleId,
+        verificationStatus: entry.verificationStatus,
+        releaseStatus,
+      };
+    });
+
+    POLICY_PACK.version = String(metadata.policyVersion || "private-mapping");
+    POLICY_PACK.status = "CONTROLLED_MAPPING";
+    POLICY_PACK.sources = [...sources, ...dynamicSources];
+    POLICY_PACK.rules = [...rules, ...dynamicRules];
+    POLICY_PACK.handlingCodes = handlingCodes;
+    POLICY_PACK.mappingMetadata = {
+      source: metadata.source || "cloud",
+      updatedAt: metadata.updatedAt || null,
+      codeCount: handlingCodes.length,
+      unresolvedCodes: handlingCodes
+        .filter((entry) => entry.verificationStatus === "UNVERIFIED_NOT_FOUND")
+        .map((entry) => entry.code),
+    };
+
+    return POLICY_PACK.mappingMetadata;
+  }
+
+  function resetHandlingCodeMapping() {
+    POLICY_PACK.version = "2026.08-development.1";
+    POLICY_PACK.status = "DEVELOPMENT";
+    POLICY_PACK.sources = [...sources];
+    POLICY_PACK.rules = [...rules];
+    POLICY_PACK.handlingCodes = [];
+    POLICY_PACK.mappingMetadata = null;
+  }
+
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = { POLICY_PACK };
+    module.exports = { POLICY_PACK, resetHandlingCodeMapping, setHandlingCodeMapping };
   } else {
-    globalScope.OpsDeckNotocPolicy = { POLICY_PACK };
+    globalScope.OpsDeckNotocPolicy = { POLICY_PACK, resetHandlingCodeMapping, setHandlingCodeMapping };
   }
 })(typeof globalThis !== "undefined" ? globalThis : window);

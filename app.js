@@ -1,10 +1,11 @@
 const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
-const APP_VERSION = "2.44";
+const APP_VERSION = "2.45";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 2;
 const MAGIC_LINK_SENT_KEY = "jumpseat-calendar-magic-link-sent-at";
 const APPEARANCE_STORAGE_KEY = "opsdeck-appearance-v1";
+const NOTOC_POLICY_TABLE = "opsdeck_notoc_policy";
 const MAX_REQUESTS_PER_FLIGHT = 10;
 const MAGIC_LINK_COOLDOWN_SECONDS = 75;
 const MAGIC_LINK_RATE_LIMIT_SECONDS = 60 * 60;
@@ -31,6 +32,7 @@ const elements = {
   checksSyncStatus: document.querySelector("#checksSyncStatus"),
   raSyncStatus: document.querySelector("#raSyncStatus"),
   notocSyncStatus: document.querySelector("#notocSyncStatus"),
+  notocPolicyStatus: document.querySelector("#notocPolicyStatus"),
   settingsSyncStatus: document.querySelector("#settingsSyncStatus"),
   offlineBanner: document.querySelector("#offlineBanner"),
   accountPanel: document.querySelector("#accountPanel"),
@@ -238,6 +240,8 @@ const FDP_TABLE_THREE_ROWS = [
 const initialRequestEnvelope = loadRequestEnvelope();
 let requests = initialRequestEnvelope.requests;
 let currentUser = null;
+let notocPolicyLoadedUserId = null;
+let notocPolicySource = "none";
 let cloudReady = false;
 let cloudLoaded = false;
 let cloudUpdatedAt = null;
@@ -293,6 +297,103 @@ const hasCloudConfig = Boolean(
 const supabaseClient = hasCloudConfig && window.supabase
   ? window.supabase.createClient(cloudConfig.url, cloudConfig.anonKey)
   : null;
+const notocPolicyApi = window.OpsDeckNotocPolicy || null;
+const notocPolicyStore = window.OpsDeckNotocPolicyStore || null;
+
+function setNotocPolicyStatus(message, state = "") {
+  if (!elements.notocPolicyStatus) return;
+  elements.notocPolicyStatus.textContent = message;
+  elements.notocPolicyStatus.classList.toggle("is-ready", state === "ready");
+  elements.notocPolicyStatus.classList.toggle("is-saved", state === "saved");
+  elements.notocPolicyStatus.classList.toggle("is-unavailable", state === "unavailable");
+}
+
+function announceNotocPolicyUpdate() {
+  document.dispatchEvent(new CustomEvent("opsdeck:notoc-policy-updated"));
+}
+
+function resetNotocPolicy(message = "Sign in to load the BA code library.") {
+  notocPolicyApi?.resetHandlingCodeMapping?.();
+  notocPolicyLoadedUserId = null;
+  notocPolicySource = "none";
+  setNotocPolicyStatus(message, "unavailable");
+  announceNotocPolicyUpdate();
+}
+
+function policyStatusMessage(mapping, source) {
+  const summary = notocPolicyStore.summarise(mapping);
+  const unresolved = summary.unresolvedCodes.length
+    ? ` · ${summary.unresolvedCodes.length} unresolved`
+    : "";
+  const prefix = source === "cloud"
+    ? "BA code library ready"
+    : `Saved BA code library${navigator.onLine ? "" : " · offline"}`;
+  return `${prefix} · ${summary.codeCount} codes${unresolved}`;
+}
+
+function applyNotocPolicyRecord(record, userId, source) {
+  if (!notocPolicyApi?.setHandlingCodeMapping || !notocPolicyStore) return false;
+  const envelope = notocPolicyStore.normaliseRecord(record, userId);
+  if (!envelope) return false;
+
+  notocPolicyApi.setHandlingCodeMapping(envelope.mapping, {
+    policyVersion: envelope.policyVersion,
+    updatedAt: envelope.updatedAt,
+    source,
+  });
+  notocPolicyLoadedUserId = String(userId);
+  notocPolicySource = source;
+  setNotocPolicyStatus(policyStatusMessage(envelope.mapping, source), source === "cloud" ? "ready" : "saved");
+  announceNotocPolicyUpdate();
+  return true;
+}
+
+function loadCachedNotocPolicy(user) {
+  if (!user?.id || !notocPolicyStore) return false;
+  const cached = notocPolicyStore.load(localStorage, user.id);
+  return cached ? applyNotocPolicyRecord(cached, user.id, "cache") : false;
+}
+
+async function loadNotocPolicy({ forceCloud = false } = {}) {
+  if (!currentUser?.id || !notocPolicyStore || !notocPolicyApi) return;
+  const userId = currentUser.id;
+  const hasCachedPolicy = loadCachedNotocPolicy(currentUser);
+
+  if (!navigator.onLine || !supabaseClient) {
+    if (!hasCachedPolicy) resetNotocPolicy("BA code library unavailable offline.");
+    return;
+  }
+
+  if (!forceCloud && notocPolicyLoadedUserId === userId && notocPolicySource === "cloud") return;
+  setNotocPolicyStatus("Updating BA code library...");
+
+  const { data, error } = await supabaseClient
+    .from(NOTOC_POLICY_TABLE)
+    .select("policy_version,mapping,mapping_sha256,updated_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (currentUser?.id !== userId) return;
+  if (error || !data) {
+    if (hasCachedPolicy) {
+      setNotocPolicyStatus(policyStatusMessage(notocPolicyApi.POLICY_PACK.handlingCodes, "cache"), "saved");
+    } else {
+      resetNotocPolicy("BA code library unavailable. Refresh when online.");
+    }
+    return;
+  }
+
+  if (!applyNotocPolicyRecord(data, userId, "cloud")) {
+    if (!hasCachedPolicy) resetNotocPolicy("BA code library failed validation. Refer instead.");
+    return;
+  }
+
+  try {
+    notocPolicyStore.save(localStorage, userId, data);
+  } catch (_error) {
+    setNotocPolicyStatus(`${policyStatusMessage(data.mapping, "cloud")} · offline copy not saved`, "saved");
+  }
+}
 
 const systemAppearanceQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
@@ -556,7 +657,9 @@ function setAppVisible(isVisible) {
 }
 
 function setSignedInState(user) {
+  const previousUserId = currentUser?.id || null;
   currentUser = user;
+  if (!user || (previousUserId && previousUserId !== user.id)) resetNotocPolicy();
   elements.authForm.classList.toggle("hidden", Boolean(user));
   elements.authPanel.classList.toggle("hidden", Boolean(user));
   elements.accountPanel.classList.toggle("hidden", !user);
@@ -2934,6 +3037,9 @@ async function handleSession(session) {
     await loadCloudRequests();
     await loadCloudCalculatorState();
   }
+  if (user && (notocPolicyLoadedUserId !== user.id || notocPolicySource !== "cloud")) {
+    await loadNotocPolicy();
+  }
   if (user) refreshTelegramStatus();
 }
 
@@ -3025,6 +3131,7 @@ async function refreshCloudData() {
   }
   await loadCloudRequests({ forceCloud: true });
   await loadCloudCalculatorState({ forceCloud: true });
+  await loadNotocPolicy({ forceCloud: true });
 }
 
 function setTelegramStatus(message, isError = false, isSuccess = false, isWarning = false) {
@@ -3262,6 +3369,13 @@ async function initCloud() {
   }
 
   if (!navigator.onLine) {
+    if (supabaseClient) {
+      const { data } = await supabaseClient.auth.getSession().catch(() => ({ data: null }));
+      if (data?.session?.user) {
+        setSignedInState(data.session.user);
+        loadCachedNotocPolicy(data.session.user);
+      }
+    }
     startOfflineMode();
     return;
   }

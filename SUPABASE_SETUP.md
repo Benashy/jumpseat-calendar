@@ -17,7 +17,7 @@ This app is prepared for Supabase cloud saving, but it will keep working locally
 4. Copy the whole file into the SQL Editor.
 5. Run it.
 
-This creates one private data row per signed-in user and enables Row Level Security so each signed-in user can only read and write their own jumpseat data.
+This creates the app's private user data tables and enables Row Level Security so each signed-in user can only access their own data.
 
 If the app shows `Cloud load failed`, run `supabase-schema.sql` again. It is safe to rerun, and it includes the table API grants needed when Supabase's automatic table exposure is switched off.
 
@@ -78,6 +78,14 @@ Supabase's default magic-link limits are strict during repeated testing:
 - A project-wide OTP/magic-link limit of 30 per hour by default.
 
 If magic links become frustrating, prefer password sign-in day to day, or review Authentication > Rate Limits in Supabase. Custom SMTP is only worth considering if email delivery or limits become a genuine problem.
+
+## Private NOTOC Code Library
+
+The NOTOC mapping is deliberately not stored in this public repository. Supabase holds one read-only policy row for each authorised user in `opsdeck_notoc_policy`; browser clients may select their own row but cannot create, alter or delete it.
+
+After an authenticated load, OpsDeck keeps a user-specific copy on that device for offline use. It does not load that copy into the app without a saved signed-in session, and removes the mapping from the running page on sign-out.
+
+Future mapping updates must be applied through an authorised Supabase administration route. Never add the source JSON, a service-role key or a database password to the repository or browser code.
 
 ## 7. Test
 

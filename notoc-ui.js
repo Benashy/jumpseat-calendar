@@ -225,6 +225,8 @@
   function verificationLabel(status) {
     return {
       VERIFIED_CURRENT_MANUAL: "Verified current manual",
+      CODE_VERIFIED_NOTOC_UNVERIFIED: "Code verified; NOTOC expectation not verified",
+      UNVERIFIED_NOT_FOUND: "No authoritative source found",
       CARRIED_FORWARD_REQUIRES_CURRENT_MANUAL_CHECK: "Carried forward, current manual check required",
       MISSING_SOURCE: "Source missing",
       RETIRED: "Retired source",
@@ -602,6 +604,10 @@
   });
   elements.backButtons.forEach((button) => button.addEventListener("click", () => showScreen("home")));
   document.addEventListener("opsdeck:notoc-open", () => showScreen("home", false));
+  document.addEventListener("opsdeck:notoc-policy-updated", () => {
+    renderLookupSuggestions();
+    if (elements.lookupCode.value.trim()) renderLookup(elements.lookupCode.value);
+  });
   elements.clearSession.addEventListener("click", clearSession);
 
   elements.lookupCode.addEventListener("input", () => {

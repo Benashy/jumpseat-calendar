@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.44.
+- Current visible app version: v2.45.
 - The top navigation contains `Jumpseat`, `FDP & LTOT` and `Tools`. Tools opens a dedicated landing view for the Radio Altimeter Position Check and NOTOC, while Jumpseat retains contextual `Add request` and `Back to requests` actions.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -38,6 +38,9 @@
 - v2.42 consolidates RA and NOTOC under a responsive Checks landing view, restricts RA temperature input to -25 through +50 degrees Celsius, and compares the selected nominal glidepath with the temperature-affected barometric indication. Repetitive NOTOC lookup caveats have been removed without changing the cautious unknown-code referral logic.
 - v2.43 renames Checks to Tools, standardises RA input-unit labels, gives cold and warm temperature profiles distinct blue and red treatments with clearer visual separation, and removes repetitive helper copy from the NOTOC battery journey.
 - v2.44 adds a fixed dashed 3.0-degree RA reference, hides temperature-profile differences below 50 ft at 2,500 ft RA, clarifies that the displayed DME is measured on the selected glidepath, and simplifies the mobility-aid battery journey with a neutral Yes/No opening and only decision-relevant stowage information.
+- v2.45 stores the BA NOTOC code library in a read-only, user-owned Supabase row rather than the public website repository. The authenticated library is cached per user on each device for offline lookup and removed from the running app on sign-out.
+- v2.45 loads 94 SHC/DG entries with explicit verification states: 45 current-manual verified entries, 47 codes whose NOTOC expectation still requires verification, and two unresolved codes (`AVP` and `AVC`) that remain on the referral path.
+- v2.45 expands the verified `ICE` entry with the documented 2.5 kg per-person passenger/crew baggage allowance, approval, venting, marking and AVI segregation requirements. Cargo, aircraft, hold and compartment quantity limits remain explicitly unknown pending the current CDGM.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
@@ -50,7 +53,7 @@
 ## Next Priorities
 
 - Radio Altimeter release gate: independently verify the ten specified manual references, confirm the current OMA cold-weather trigger, compare the complete validation matrix with the BA Cold Weather Calculator, and obtain pilot/OMC review before removing the development label.
-- NOTOC release gate: verify every carried-forward source against current BA manuals, obtain the complete CDGM Chapter 12 SHC mapping, complete Dangerous Goods/SME review, and repeat offline/device testing before removing the development label.
+- NOTOC release gate: verify the 47 code entries whose NOTOC expectation is not yet confirmed, resolve `AVP` and `AVC` from an authoritative current BA source, complete Dangerous Goods/SME review, and repeat operational offline/device testing before removing the development label.
 - NOTOC policy maintenance: retain stable rule and source IDs, record the effective date and revision of every verified source, and keep unsupported codes on the referral path until the mapping is complete.
 
 - Telegram testing: confirm an ordinary scheduled reminder still arrives once after the retry update, then keep observing delivery over several sectors.
