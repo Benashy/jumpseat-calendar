@@ -1,17 +1,19 @@
-const CACHE_NAME = "jumpseat-calendar-v100";
+const CACHE_NAME = "jumpseat-calendar-v101";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=cloud-sync-84",
-  "./supabase-config.js?v=cloud-sync-84",
-  "./ltot-core.js?v=cloud-sync-84",
-  "./data-portability.js?v=cloud-sync-84",
-  "./request-retention.js?v=cloud-sync-84",
-  "./app.js?v=cloud-sync-84",
-  "./manifest.webmanifest?v=cloud-sync-84",
-  "./icons/icon-192.png?v=ba-1",
-  "./icons/icon-512.png?v=ba-1",
-  "./icons/apple-touch-icon.png?v=ba-1"
+  "./styles.css?v=cloud-sync-85",
+  "./supabase-config.js?v=cloud-sync-85",
+  "./ltot-core.js?v=cloud-sync-85",
+  "./data-portability.js?v=cloud-sync-85",
+  "./request-retention.js?v=cloud-sync-85",
+  "./app.js?v=cloud-sync-85",
+  "./manifest.webmanifest?v=cloud-sync-85",
+  "./icons/opsdeck-logo.svg?v=opsdeck-wings-1",
+  "./icons/opsdeck-wordmark.svg?v=cloud-sync-85",
+  "./icons/icon-192.png?v=opsdeck-wings-1",
+  "./icons/icon-512.png?v=opsdeck-wings-1",
+  "./icons/apple-touch-icon.png?v=opsdeck-wings-1"
 ];
 
 self.addEventListener("install", (event) => {

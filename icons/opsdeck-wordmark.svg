@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 320" role="img" aria-labelledby="title description">
+  <title id="title">BA Ops Deck</title>
+  <desc id="description">A BA monogram with silver pilot wings and a gold centre line.</desc>
+
+  <g fill="#c8ced2">
+    <path d="M70 50h240v28H96c-14 0-26-11-26-25v-3Z" />
+    <path d="M105 101h205v28H131c-14 0-26-11-26-25v-3Z" />
+    <path d="M155 152h155v28H181c-14 0-26-11-26-25v-3Z" />
+    <path d="M714 50h240v3c0 14-12 25-26 25H714V50Z" />
+    <path d="M714 101h205v3c0 14-12 25-26 25H714v-28Z" />
+    <path d="M714 152h155v3c0 14-12 25-26 25H714v-28Z" />
+  </g>
+
+  <path fill="#f7f5ef" fill-rule="evenodd" d="M300 30h100c55 0 86 16 86 40 0 18-17 30-44 36 32 6 52 21 52 42 0 31-36 48-92 48H300V30Zm48 25v41h49c24 0 38-8 38-21 0-13-14-20-39-20h-48Zm0 65v51h54c27 0 42-9 42-25 0-17-16-26-44-26h-52Z" />
+  <path fill="#f7f5ef" fill-rule="evenodd" d="m520 196 104-166h62l104 166h-53l-22-36H595l-22 36h-53Zm91-61h88l-44-77-44 77Z" />
+  <path fill="#b89552" d="m507 40 3-6 3 6v142l-3 6-3-6V40Z" />
+
+  <text x="512" y="286" fill="#c8ced2" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="78" font-weight="600" text-anchor="middle">Ops Deck</text>
+</svg>

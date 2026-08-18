@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.36.
+- Current visible app version: v2.37.
 - The top navigation is limited to `Jumpseat` and `FDP & LTOT`. Jumpseat opens the daily view by default, with contextual `Add request` and `Back to requests` actions instead of a second navigation row.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -29,6 +29,7 @@
 - v2.34 gives sign-in fields persistent visible labels and replaces infrastructure wording in Telegram Settings with plain service status wording.
 - v2.35 automatically deletes Jumpseat requests and OpsDeck Telegram delivery records after seven complete days. The app applies the same Zulu-date rule to local and offline copies, while delivered Telegram messages remain in the user's Telegram account.
 - v2.36 clarifies the optional split-crew FDP workflow with shared/separate crew wording and gives the FDP table target banner a cleaner silver divider and spacing in Light and Night appearances.
+- v2.37 introduces the BA pilot-wings identity across the app header, favicon and iPhone/iPad home-screen icons, using flat vector artwork and a fresh cache marker.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
