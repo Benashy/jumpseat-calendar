@@ -1,6 +1,6 @@
 const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
-const APP_VERSION = "2.48";
+const APP_VERSION = "2.49";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 2;
 const MAGIC_LINK_SENT_KEY = "jumpseat-calendar-magic-link-sent-at";

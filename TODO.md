@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.48.
+- Current visible app version: v2.49.
 - The top navigation contains `Jumpseat`, `FDP & LTOT` and `Tools`. Tools opens a dedicated landing view for the Radio Altimeter Position Check and NOTOC, while Jumpseat retains contextual `Add request` and `Back to requests` actions.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -35,9 +35,9 @@
 - v2.39 corrects the right pilot-wing geometry in the header wordmark, favicon and iPhone/iPad home-screen icons so every wing bar meets the sloping `A` cleanly.
 - v2.40 simplifies the development RA and NOTOC tools: RA uses defaulted elevation and temperature selectors, geometric slant distance and a strict below-ISA-minus-25 warning; NOTOC retains only code lookup and mobility-aid battery checks, with the removed journeys and internal policy version no longer shown.
 - v2.41 adds a responsive RA geometry diagram, a guided one-question-at-a-time mobility-aid battery check with review summary, and searchable SHC/DG suggestions that remain limited to verified policy-pack entries while unsupported codes continue to refer.
-- v2.42 consolidates RA and NOTOC under a responsive Checks landing view, restricts RA temperature input to -25 through +50 degrees Celsius, and compares the selected nominal glidepath with the temperature-affected barometric indication. Repetitive NOTOC lookup caveats have been removed without changing the cautious unknown-code referral logic.
+- v2.42 consolidates RA and NOTOC under a responsive Checks landing view, restricts RA temperature input to -25 through +50 degrees Celsius, and compares the selected nominal glide slope with the temperature-affected barometric indication. Repetitive NOTOC lookup caveats have been removed without changing the cautious unknown-code referral logic.
 - v2.43 renames Checks to Tools, standardises RA input-unit labels, gives cold and warm temperature profiles distinct blue and red treatments with clearer visual separation, and removes repetitive helper copy from the NOTOC battery journey.
-- v2.44 adds a fixed dashed 3.0-degree RA reference, hides temperature-profile differences below 50 ft at 2,500 ft RA, clarifies that the displayed DME is measured on the selected glidepath, and simplifies the mobility-aid battery journey with a neutral Yes/No opening and only decision-relevant stowage information.
+- v2.44 adds a fixed dashed 3.0-degree RA reference, hides temperature-profile differences below 50 ft at 2,500 ft RA, clarifies that the displayed DME is measured on the selected glide slope, and simplifies the mobility-aid battery journey with a neutral Yes/No opening and only decision-relevant stowage information.
 - v2.45 stores the BA NOTOC code library in a read-only, user-owned Supabase row rather than the public website repository. The authenticated library is cached per user on each device for offline lookup and removed from the running app on sign-out.
 - v2.45 loaded the initial private SHC/DG mapping with explicit verification states.
 - v2.45 expands the verified `ICE` entry with the documented 2.5 kg per-person passenger/crew baggage allowance, approval, venting, marking and AVI segregation requirements. Cargo, aircraft, hold and compartment quantity limits remain explicitly unknown pending the current CDGM.
@@ -45,6 +45,7 @@
 - v2.47 adds a duplicate-protected `Snooze 15 minutes` action to scheduled Jumpseat Telegram reminders, moves bot pairing to the same verified Telegram webhook, and checks the server-side snooze queue every minute.
 - v2.47 adds a structured BA mobility-aid battery policy extraction brief. The battery tool remains on its cautious referral path until the required current BA evidence is returned and reviewed.
 - v2.48 stores the reviewed 15-branch BA mobility-aid battery policy privately in Supabase and replaces the earlier generic battery questions with a one-question-at-a-time Captain's cross-check. Dry-cell and non-spillable wet batteries remain separate, missing or conflicting handling and NOTOC information is explicit, and any branch with incomplete internal evidence continues to refer.
+- v2.49 scopes the Radio Altimeter Position Check to ILS terminology, keeps temperature compensation confined to the expected QNH indication, and corrects the diagram so temperature cannot appear to move the physical glide slope. It also supports a DME reference at, before or beyond the threshold and keeps threshold geometry separate from the expected DME indication.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
@@ -60,6 +61,7 @@
 - NOTOC release gate: verify the 47 documented code entries whose NOTOC expectation is not yet confirmed, complete Dangerous Goods/SME review, and repeat operational offline/device testing before removing the development label.
 - NOTOC policy maintenance: retain stable rule and source IDs, record the effective date and revision of every verified source, and keep unsupported codes on the referral path until the mapping is complete.
 - Mobility-aid battery operational review: use v2.48 cautiously alongside current BA documentation, record where questions or referrals do not match the real NOTOC workflow, and obtain Dangerous Goods/SME review before treating the result as anything beyond a Captain's consistency check.
+- Mobility-aid workflow redesign: distinguish the passenger mobility-aid provision from any separate cargo acceptance route, remove internal evidence and mapping language from operational results, remove `Unknown or unclear` as a normal answer, and replace incomplete-rule referrals with concise actions that tell the Captain what to confirm. Do not implement final wording until the BA-specific carriage and NOTOC expectations have been checked.
 
 - Telegram testing: confirm an ordinary scheduled reminder arrives once with the snooze button, a single tap produces one repeat about 15 minutes later, and a rapid double tap cannot schedule two repeats.
 - Backup verification: download a JSON backup, retain it somewhere separate, and perform a controlled restore test using non-operational sample data.
@@ -68,6 +70,7 @@
 - Split-crew operational testing: verify real Flight crew/Cabin crew report differences on iPad and confirm that the comparison identifies the expected limiting group.
 - FDP lookup redesign: later consider a guided OMA lookup beside Maximum FDP, while retaining the full tables for manual verification.
 - FDP elapsed-time helper: consider optional first-report and next-report date/time inputs that calculate the elapsed Table 1 column without attempting to automate complex acclimatisation states.
+- Radio Altimeter approach scope: research FLS, FINAL APP and selected FPA geometry from suitable Airbus and BA sources before adding any non-ILS mode. Keep these out of the released calculation until the displayed angle, temperature behaviour and position reference can be verified independently.
 - Jumpseat real-use polish: review whether BA ID, queue ordering, search, and daily view are showing exactly what is needed during actual requests.
 - Login reliability: keep watching Supabase magic-link rate limits and mobile sign-in behaviour; consider tuning settings or relying more on password sign-in if magic links remain awkward.
 - Day export/copy option: consider copying a clean text summary of jumpseat requests for messaging or email.
