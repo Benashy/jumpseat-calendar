@@ -13,6 +13,7 @@ const {
   evaluateEma,
   evaluateNotocIndicator,
   evaluateNotocSession,
+  listVerifiedHandlingCodes,
   lookupHandlingCode,
   normaliseCode,
   resolveEmaBranchId,
@@ -108,6 +109,36 @@ function withMobilityPolicy(callback) {
   }
 }
 
+const handlingSourceFixture = {
+  document: "BA manual",
+  section: "Section 9",
+  revision: "Current revision",
+};
+
+function handlingEntryFixture(code, overrides = {}) {
+  return {
+    code,
+    aliases: [],
+    description: `${code} test entry`,
+    appearsOn: ["LOADSHEET"],
+    expectation: EXPECTATIONS.REQUIRED,
+    conditions: "A NOTOC is required for this verified test entry.",
+    crewAction: "",
+    source: handlingSourceFixture,
+    verificationStatus: "VERIFIED_CURRENT_MANUAL",
+    ...overrides,
+  };
+}
+
+function withHandlingMapping(entries, callback) {
+  setHandlingCodeMapping(entries, { policyVersion: "test-private-policy" });
+  try {
+    return callback();
+  } finally {
+    resetHandlingCodeMapping();
+  }
+}
+
 test("development policy pack is structurally valid and visibly development-only", () => {
   assert.equal(POLICY_PACK.status, "DEVELOPMENT");
   assert.match(POLICY_PACK.version, /development/i);
@@ -118,14 +149,15 @@ test("normalises only case and harmless whitespace", () => {
   assert.equal(normaliseCode(" w clb \n"), "WCLB");
 });
 
-test("unknown code remains unknown and gives a specific confirmation action", () => {
+test("a code outside verified guidance stays unavailable without exposing unresolved records", () => {
   const lookup = lookupHandlingCode(" wclb ", POLICY_PACK);
   assert.equal(lookup.rawCode, " wclb ");
   assert.equal(lookup.normalisedCode, "WCLB");
   assert.equal(lookup.expectation, EXPECTATIONS.UNKNOWN);
   assert.equal(lookup.finding.state, STATES.ACTION_OR_INFORMATION_REQUIRED);
-  assert.match(lookup.finding.explanation, /not found in OpsDeck/i);
-  assert.match(lookup.finding.action, /dispatcher or TRM/i);
+  assert.equal(lookup.matched, false);
+  assert.equal(lookup.finding.explanation, "Code not available in verified NOTOC guidance.");
+  assert.equal(lookup.finding.action, undefined);
 });
 
 test("an empty verified code library offers no suggestions", () => {
@@ -133,38 +165,31 @@ test("an empty verified code library offers no suggestions", () => {
 });
 
 test("search suggestions match code, alias and description in a useful order", () => {
-  const pack = JSON.parse(JSON.stringify(POLICY_PACK));
-  pack.handlingCodes.push(
-    {
-      code: "WCLB",
+  withHandlingMapping([
+    handlingEntryFixture("WCLB", {
       aliases: ["WC-LB"],
       description: "Wheelchair with lithium battery",
-      expectation: EXPECTATIONS.REQUIRED,
-      verificationStatus: "VERIFIED_CURRENT_MANUAL",
-    },
-    {
-      code: "DG01",
+    }),
+    handlingEntryFixture("DG01", {
       aliases: ["BATTERY"],
       description: "Lithium battery test entry",
-      expectation: EXPECTATIONS.CONDITIONAL,
-      verificationStatus: "VERIFIED_CURRENT_MANUAL",
-    }
-  );
-
-  assert.deepEqual(searchHandlingCodes("wcl", pack).map((entry) => entry.code), ["WCLB"]);
-  assert.deepEqual(searchHandlingCodes("wc-lb", pack).map((entry) => entry.code), ["WCLB"]);
-  assert.deepEqual(searchHandlingCodes("lithium", pack).map((entry) => entry.code), ["DG01", "WCLB"]);
+      expectation: EXPECTATIONS.NOT_EXPECTED,
+    }),
+  ], () => {
+    assert.deepEqual(searchHandlingCodes("wcl", POLICY_PACK).map((entry) => entry.code), ["WCLB"]);
+    assert.deepEqual(searchHandlingCodes("wc-lb", POLICY_PACK).map((entry) => entry.code), ["WCLB"]);
+    assert.deepEqual(searchHandlingCodes("lithium", POLICY_PACK).map((entry) => entry.code), ["DG01", "WCLB"]);
+  });
 });
 
 test("search suggestions respect the result limit", () => {
-  const pack = JSON.parse(JSON.stringify(POLICY_PACK));
-  pack.handlingCodes.push(
-    { code: "AAA1", aliases: [], description: "First fixture" },
-    { code: "AAA2", aliases: [], description: "Second fixture" },
-    { code: "AAA3", aliases: [], description: "Third fixture" }
-  );
-
-  assert.deepEqual(searchHandlingCodes("aaa", pack, 2).map((entry) => entry.code), ["AAA1", "AAA2"]);
+  withHandlingMapping([
+    handlingEntryFixture("AAA1", { description: "First fixture" }),
+    handlingEntryFixture("AAA2", { description: "Second fixture" }),
+    handlingEntryFixture("AAA3", { description: "Third fixture" }),
+  ], () => {
+    assert.deepEqual(searchHandlingCodes("aaa", POLICY_PACK, 2).map((entry) => entry.code), ["AAA1", "AAA2"]);
+  });
 });
 
 test("an exact verified code fixture returns its mapped description and expectation", () => {
@@ -195,15 +220,11 @@ test("an exact verified code fixture returns its mapped description and expectat
   assert.equal(lookup.matched, true);
   assert.equal(lookup.description, "Verified fixture description");
   assert.equal(lookup.expectation, EXPECTATIONS.REQUIRED);
-  assert.equal(lookup.finding.state, STATES.NO_OBVIOUS_INCONSISTENCY);
+  assert.equal(lookup.finding.state, STATES.ACTION_OR_INFORMATION_REQUIRED);
+  assert.equal(lookup.finding.heading, "NOTOC required");
 });
 
 test("a controlled private mapping creates verified and unresolved lookup branches", () => {
-  const source = {
-    document: "BA manual",
-    section: "Section 9",
-    revision: "Current revision",
-  };
   setHandlingCodeMapping([
     {
       code: "ICE",
@@ -213,7 +234,7 @@ test("a controlled private mapping creates verified and unresolved lookup branch
       expectation: EXPECTATIONS.REQUIRED,
       conditions: "Cross-check the documented quantity and stowage.",
       crewAction: "Query any mismatch.",
-      source,
+      source: handlingSourceFixture,
       verificationStatus: "VERIFIED_CURRENT_MANUAL",
     },
     {
@@ -224,7 +245,7 @@ test("a controlled private mapping creates verified and unresolved lookup branch
       expectation: EXPECTATIONS.UNKNOWN,
       conditions: "Do not infer the meaning.",
       crewAction: "Refer.",
-      source,
+      source: handlingSourceFixture,
       verificationStatus: "UNVERIFIED_NOT_FOUND",
     },
   ], { policyVersion: "test-private-policy" });
@@ -232,14 +253,72 @@ test("a controlled private mapping creates verified and unresolved lookup branch
   try {
     const ice = lookupHandlingCode("rmd", POLICY_PACK);
     const unresolved = lookupHandlingCode("ZZZ", POLICY_PACK);
-    assert.equal(ice.finding.state, STATES.NO_OBVIOUS_INCONSISTENCY);
+    assert.equal(ice.finding.state, STATES.ACTION_OR_INFORMATION_REQUIRED);
+    assert.equal(ice.finding.heading, "NOTOC required");
     assert.match(ice.finding.explanation, /documented quantity and stowage/i);
     assert.equal(unresolved.finding.state, STATES.ACTION_OR_INFORMATION_REQUIRED);
-    assert.match(unresolved.finding.explanation, /cannot confirm/i);
+    assert.equal(unresolved.matched, false);
+    assert.equal(unresolved.finding.explanation, "Code not available in verified NOTOC guidance.");
+    assert.deepEqual(listVerifiedHandlingCodes(POLICY_PACK).map((entry) => entry.code), ["ICE"]);
     assert.deepEqual(validatePolicyPack(POLICY_PACK), { valid: true, errors: [] });
   } finally {
     resetHandlingCodeMapping();
   }
+});
+
+test("the visible library contains only verified yes or no outcomes", () => {
+  withHandlingMapping([
+    handlingEntryFixture("REQ"),
+    handlingEntryFixture("NOPE", { expectation: EXPECTATIONS.NOT_EXPECTED }),
+    handlingEntryFixture("COND", { expectation: EXPECTATIONS.CONDITIONAL }),
+    handlingEntryFixture("OLD", { verificationStatus: "CODE_VERIFIED_NOTOC_UNVERIFIED" }),
+  ], () => {
+    assert.deepEqual(listVerifiedHandlingCodes(POLICY_PACK).map((entry) => entry.code), ["NOPE", "REQ"]);
+    assert.deepEqual(searchHandlingCodes("cond", POLICY_PACK), []);
+    assert.equal(lookupHandlingCode("COND", POLICY_PACK).matched, false);
+    assert.equal(lookupHandlingCode("OLD", POLICY_PACK).matched, false);
+  });
+});
+
+test("lookup uses amber for required, green for not expected and red for an explicit inconsistency", () => {
+  withHandlingMapping([
+    handlingEntryFixture("REQ"),
+    handlingEntryFixture("NOPE", {
+      expectation: EXPECTATIONS.NOT_EXPECTED,
+      conditions: "The documented table states that no NOTOC entry is required.",
+    }),
+    handlingEntryFixture("CAO", {
+      description: "Cargo aircraft only",
+      conditions: "This is an operational inconsistency on the passenger aircraft.",
+    }),
+  ], () => {
+    const required = lookupHandlingCode("REQ", POLICY_PACK);
+    const notExpected = lookupHandlingCode("NOPE", POLICY_PACK);
+    const discrepancy = lookupHandlingCode("CAO", POLICY_PACK);
+    assert.equal(required.finding.state, STATES.ACTION_OR_INFORMATION_REQUIRED);
+    assert.equal(required.finding.heading, "NOTOC required");
+    assert.equal(notExpected.finding.state, STATES.NO_OBVIOUS_INCONSISTENCY);
+    assert.equal(notExpected.finding.heading, "NOTOC not expected");
+    assert.equal(discrepancy.finding.state, STATES.POSSIBLE_DISCREPANCY_QUERY);
+    assert.match(discrepancy.finding.action, /query this code/i);
+  });
+});
+
+test("generic lookup boilerplate is hidden while code-specific action remains", () => {
+  withHandlingMapping([
+    handlingEntryFixture("GEN", {
+      crewAction: "Treat any mismatch as a suspected NOTOC error. Check NOTOC status on every final loadsheet.",
+    }),
+    handlingEntryFixture("SPEC", {
+      crewAction: "Confirm the documented quantity and stowage.",
+    }),
+  ], () => {
+    assert.equal(lookupHandlingCode("GEN", POLICY_PACK).finding.action, undefined);
+    assert.equal(
+      lookupHandlingCode("SPEC", POLICY_PACK).finding.action,
+      "Confirm the documented quantity and stowage."
+    );
+  });
 });
 
 test("a non-passenger mobility aid directs the user to the correct acceptance route", () => {
@@ -248,10 +327,9 @@ test("a non-passenger mobility aid directs the user to the correct acceptance ro
     mobilityAidConfirmed: "NO",
   }, POLICY_PACK);
 
-  assert.equal(result.overallState, STATES.ACTION_OR_INFORMATION_REQUIRED);
-  assert.equal(result.findings[0].heading, "Confirm before signing");
-  assert.match(result.findings[0].action, /correct acceptance route/i);
-  assert.match(result.findings[0].action, /dispatcher or TRM/i);
+  assert.equal(result.overallState, STATES.STOP_THIS_CHECK);
+  assert.equal(result.findings[0].heading, "Use a different acceptance route");
+  assert.match(result.findings[0].action, /stop this check/i);
 });
 
 test("mobility-aid guidance gives a direct refresh action when unavailable", () => {

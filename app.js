@@ -1,6 +1,6 @@
 const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
-const APP_VERSION = "2.50";
+const APP_VERSION = "2.51";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 2;
 const MAGIC_LINK_SENT_KEY = "jumpseat-calendar-magic-link-sent-at";
@@ -305,7 +305,12 @@ function setNotocPolicyStatus(message, state = "") {
   elements.notocPolicyStatus.textContent = message;
   elements.notocPolicyStatus.classList.toggle("is-ready", state === "ready");
   elements.notocPolicyStatus.classList.toggle("is-saved", state === "saved");
+  elements.notocPolicyStatus.classList.toggle("is-warning", state === "warning");
   elements.notocPolicyStatus.classList.toggle("is-unavailable", state === "unavailable");
+  elements.notocPolicyStatus.classList.toggle(
+    "visually-hidden",
+    ["ready", "saved", "loading"].includes(state)
+  );
 }
 
 function announceNotocPolicyUpdate() {
@@ -324,7 +329,7 @@ function resetNotocPolicy(message = "Sign in to load the BA guidance.") {
 function policyStatusMessage(policyRecord, source) {
   const mobilityReady = Boolean(policyRecord?.mobilityPolicy || policyRecord?.mobility_policy);
   const prefix = source === "cloud"
-    ? "BA guidance ready"
+    ? "Verified BA guidance loaded"
     : `Saved BA guidance${navigator.onLine ? "" : " · offline"}`;
   return mobilityReady ? prefix : `${prefix} · mobility-aid guidance unavailable`;
 }
@@ -350,7 +355,11 @@ function applyNotocPolicyRecord(record, userId, source) {
   }
   notocPolicyLoadedUserId = String(userId);
   notocPolicySource = source;
-  setNotocPolicyStatus(policyStatusMessage(envelope, source), source === "cloud" ? "ready" : "saved");
+  const completePolicy = Boolean(envelope.mobilityPolicy);
+  setNotocPolicyStatus(
+    policyStatusMessage(envelope, source),
+    completePolicy ? (source === "cloud" ? "ready" : "saved") : "warning"
+  );
   announceNotocPolicyUpdate();
   return true;
 }
@@ -372,7 +381,7 @@ async function loadNotocPolicy({ forceCloud = false } = {}) {
   }
 
   if (!forceCloud && notocPolicyLoadedUserId === userId && notocPolicySource === "cloud") return;
-  setNotocPolicyStatus("Updating BA policy...");
+  setNotocPolicyStatus("Updating BA guidance...", "loading");
 
   const { data, error } = await supabaseClient
     .from(NOTOC_POLICY_TABLE)
@@ -383,10 +392,14 @@ async function loadNotocPolicy({ forceCloud = false } = {}) {
   if (currentUser?.id !== userId) return;
   if (error || !data) {
     if (hasCachedPolicy) {
-      setNotocPolicyStatus(policyStatusMessage({
+      const cachedPolicy = {
         mapping: notocPolicyApi.POLICY_PACK.handlingCodes,
         mobilityPolicy: notocPolicyApi.POLICY_PACK.mobilityAidPolicy,
-      }, "cache"), "saved");
+      };
+      setNotocPolicyStatus(
+        policyStatusMessage(cachedPolicy, "cache"),
+        cachedPolicy.mobilityPolicy ? "saved" : "warning"
+      );
     } else {
       resetNotocPolicy("BA policy unavailable. Refresh when online.");
     }
@@ -401,7 +414,7 @@ async function loadNotocPolicy({ forceCloud = false } = {}) {
   try {
     notocPolicyStore.save(localStorage, userId, data);
   } catch (_error) {
-    setNotocPolicyStatus(`${policyStatusMessage(data, "cloud")} · offline copy not saved`, "saved");
+    setNotocPolicyStatus(`${policyStatusMessage(data, "cloud")} · offline copy not saved`, "warning");
   }
 }
 

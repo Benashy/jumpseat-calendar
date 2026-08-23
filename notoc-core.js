@@ -6,6 +6,7 @@
     ACTION_OR_INFORMATION_REQUIRED: "ACTION_OR_INFORMATION_REQUIRED",
     UNABLE_TO_DETERMINE_REFER: "UNABLE_TO_DETERMINE_REFER",
     POSSIBLE_DISCREPANCY_QUERY: "POSSIBLE_DISCREPANCY_QUERY",
+    STOP_THIS_CHECK: "STOP_THIS_CHECK",
   });
   const EXPECTATIONS = Object.freeze({
     REQUIRED: "REQUIRED",
@@ -18,12 +19,14 @@
     [STATES.ACTION_OR_INFORMATION_REQUIRED]: "Confirm before signing",
     [STATES.UNABLE_TO_DETERMINE_REFER]: "Confirm before signing",
     [STATES.POSSIBLE_DISCREPANCY_QUERY]: "Possible discrepancy",
+    [STATES.STOP_THIS_CHECK]: "Use a different acceptance route",
   });
   const SEVERITY = Object.freeze({
     [STATES.NO_OBVIOUS_INCONSISTENCY]: 0,
     [STATES.ACTION_OR_INFORMATION_REQUIRED]: 1,
     [STATES.UNABLE_TO_DETERMINE_REFER]: 2,
     [STATES.POSSIBLE_DISCREPANCY_QUERY]: 3,
+    [STATES.STOP_THIS_CHECK]: 1,
   });
   const VERIFIED_RULE_STATUSES = new Set([
     "VERIFIED_CURRENT_MANUAL",
@@ -34,6 +37,10 @@
     "VERIFIED_CURRENT_MANUAL",
     "VERIFIED_SUPPLIED_MANUAL",
     "VERIFIED_CURRENT_PUBLIC_BA",
+  ]);
+  const VERIFIED_LOOKUP_EXPECTATIONS = new Set([
+    EXPECTATIONS.REQUIRED,
+    EXPECTATIONS.NOT_EXPECTED,
   ]);
 
   function normaliseCode(rawCode) {
@@ -52,6 +59,31 @@
     if (!rule || rule.releaseStatus !== "ACTIVE" || !VERIFIED_RULE_STATUSES.has(rule.verificationStatus)) return false;
     const sources = sourceMap(policyPack);
     return rule.sourceIds.every((sourceId) => VERIFIED_SOURCE_STATUSES.has(sources.get(sourceId)?.verificationStatus));
+  }
+
+  function isVerifiedHandlingCode(code, policyPack) {
+    if (!code || code.releaseStatus !== "ACTIVE") return false;
+    if (code.verificationStatus !== "VERIFIED_CURRENT_MANUAL") return false;
+    if (!VERIFIED_LOOKUP_EXPECTATIONS.has(code.expectation)) return false;
+    return isRuleVerified(ruleMap(policyPack).get(code.ruleId), policyPack);
+  }
+
+  function isExplicitHandlingDiscrepancy(code) {
+    const evidenceText = `${code?.description || ""} ${code?.conditionSummary || ""}`.toLocaleLowerCase("en-GB");
+    return evidenceText.includes("cargo aircraft only") ||
+      evidenceText.includes("does not carry") ||
+      evidenceText.includes("operational inconsistency");
+  }
+
+  function codeSpecificAction(rawAction) {
+    const action = String(rawAction || "").trim();
+    const normalised = action.toLocaleLowerCase("en-GB");
+    if (!action) return undefined;
+    if (
+      normalised.includes("treat any mismatch as a suspected notoc error") ||
+      normalised.includes("check notoc status on every final loadsheet")
+    ) return undefined;
+    return action;
   }
 
   function makeFinding(policyPack, options) {
@@ -247,9 +279,9 @@
       return simpleResult(policyPack, {
         entryId,
         ruleId: "OPSDECK-MOBILITY-AID-PASSENGER-PROVISION",
-        state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-        explanation: "This item does not meet the passenger mobility-aid provision because it is not for use by a passenger with reduced mobility travelling on this flight.",
-        action: "Do not treat it as passenger baggage under this check. Confirm the correct acceptance route with the dispatcher or TRM before signing.",
+        state: STATES.STOP_THIS_CHECK,
+        explanation: "This item is not for use by a passenger with reduced mobility travelling on this flight, so this passenger mobility-aid check does not apply.",
+        action: "Stop this check and confirm the correct acceptance route for the item.",
       });
     }
     if (entry?.mobilityAidConfirmed !== "YES") {
@@ -455,58 +487,58 @@
   function lookupHandlingCode(rawCode, policyPack) {
     const normalised = normaliseCode(rawCode);
     const codes = policyPack?.handlingCodes || [];
-    const code = codes.find((candidate) => {
-      const values = [candidate.code, ...(candidate.aliases || [])].map(normaliseCode);
+    const candidate = codes.find((item) => {
+      const values = [item.code, ...(item.aliases || [])].map(normaliseCode);
       return values.includes(normalised);
     });
+    const code = isVerifiedHandlingCode(candidate, policyPack) ? candidate : null;
 
     if (!normalised || !code) {
       const finding = makeFinding(policyPack, {
         ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
         state: STATES.ACTION_OR_INFORMATION_REQUIRED,
         expectation: EXPECTATIONS.UNKNOWN,
+        heading: normalised ? "Verified guidance unavailable" : "Enter a code",
         explanation: normalised
-          ? `${normalised} was not found in OpsDeck.`
+          ? "Code not available in verified NOTOC guidance."
           : "Enter an SHC/DG or special-load code exactly as shown.",
-        action: normalised
-          ? "Confirm the code and its NOTOC requirement with the dispatcher or TRM before signing."
-          : "Enter a code to continue.",
+        action: normalised ? undefined : "Enter a code to continue.",
       });
       return {
         rawCode: String(rawCode || ""),
         normalisedCode: normalised,
-        description: "Unknown code",
+        description: "Code not available",
         expectation: EXPECTATIONS.UNKNOWN,
         finding,
         matched: false,
       };
     }
 
-    const rule = ruleMap(policyPack).get(code.ruleId);
-    const verified = code.releaseStatus === "ACTIVE" && code.verificationStatus === "VERIFIED_CURRENT_MANUAL" && isRuleVerified(rule, policyPack);
-    let state = STATES.NO_OBVIOUS_INCONSISTENCY;
-    if (code.expectation === EXPECTATIONS.CONDITIONAL) state = STATES.ACTION_OR_INFORMATION_REQUIRED;
-    if (!verified) state = STATES.ACTION_OR_INFORMATION_REQUIRED;
-    const label = {
-      [EXPECTATIONS.REQUIRED]: "NOTOC expected",
-      [EXPECTATIONS.NOT_EXPECTED]: "NOTOC not expected",
-      [EXPECTATIONS.CONDITIONAL]: "Conditional, more information required",
-      [EXPECTATIONS.UNKNOWN]: "NOTOC requirement not confirmed",
-    }[code.expectation];
+    const explicitDiscrepancy = isExplicitHandlingDiscrepancy(code);
+    const state = explicitDiscrepancy
+      ? STATES.POSSIBLE_DISCREPANCY_QUERY
+      : code.expectation === EXPECTATIONS.NOT_EXPECTED
+        ? STATES.NO_OBVIOUS_INCONSISTENCY
+        : STATES.ACTION_OR_INFORMATION_REQUIRED;
+    const heading = explicitDiscrepancy
+      ? STATE_HEADINGS[STATES.POSSIBLE_DISCREPANCY_QUERY]
+      : code.expectation === EXPECTATIONS.NOT_EXPECTED
+        ? "NOTOC not expected"
+        : "NOTOC required";
     const conditionSummary = String(code.conditionSummary || "").trim();
-    const explanation = verified
-      ? `${label}.${conditionSummary ? ` ${conditionSummary}` : ""}`
-      : `This code is recognised, but OpsDeck cannot confirm its NOTOC requirement.${conditionSummary ? ` ${conditionSummary}` : ""}`;
+    const requirementSummary = code.expectation === EXPECTATIONS.NOT_EXPECTED
+      ? "A NOTOC is not expected."
+      : "A NOTOC is required.";
+    const explanation = conditionSummary || requirementSummary;
     const finding = makeFinding(policyPack, {
       ruleId: code.ruleId,
       state,
       expectation: code.expectation,
       sourceIds: code.sourceIds,
       verificationStatus: code.verificationStatus,
+      heading,
       explanation,
-      action: code.crewAction || (state === STATES.NO_OBVIOUS_INCONSISTENCY
-        ? undefined
-        : "Confirm the requirement with the dispatcher or TRM before signing."),
+      action: explicitDiscrepancy ? "Query this code before acceptance." : codeSpecificAction(code.crewAction),
     });
 
     return {
@@ -531,6 +563,7 @@
     const maximum = Number.isInteger(limit) && limit > 0 ? limit : 6;
 
     return (policyPack?.handlingCodes || [])
+      .filter((candidate) => isVerifiedHandlingCode(candidate, policyPack))
       .map((candidate) => {
         const code = normaliseCode(candidate.code);
         const aliases = (candidate.aliases || []).map(normaliseCode);
@@ -552,6 +585,18 @@
         expectation: candidate.expectation,
         verificationStatus: candidate.verificationStatus,
       }));
+  }
+
+  function listVerifiedHandlingCodes(policyPack) {
+    return (policyPack?.handlingCodes || [])
+      .filter((candidate) => isVerifiedHandlingCode(candidate, policyPack))
+      .map((candidate) => ({
+        code: normaliseCode(candidate.code),
+        description: candidate.description,
+        expectation: candidate.expectation,
+        isExplicitDiscrepancy: isExplicitHandlingDiscrepancy(candidate),
+      }))
+      .sort((left, right) => left.code.localeCompare(right.code, "en-GB"));
   }
 
   function aggregateFindings(findings) {
@@ -705,6 +750,7 @@
     expectedLocation,
     expectedNotocCode,
     isRuleVerified,
+    listVerifiedHandlingCodes,
     lookupHandlingCode,
     mobilityBranch,
     normaliseCode,

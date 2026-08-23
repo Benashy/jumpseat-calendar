@@ -91,7 +91,7 @@
 
   function dmeReferenceDescription(position, distanceNm) {
     if (position === "BEYOND_THRESHOLD") return `${distanceNm.toFixed(1)} NM beyond the threshold`;
-    if (position === "BEFORE_THRESHOLD") return `${distanceNm.toFixed(1)} NM before the threshold on final`;
+    if (position === "BEFORE_THRESHOLD") return `${distanceNm.toFixed(1)} NM before the threshold`;
     return "at the threshold";
   }
 
@@ -185,6 +185,7 @@
       elements.baro.textContent = "-- ft";
       elements.distance.textContent = "-- NM";
       elements.dmeReferenceResult.textContent = "Reference at the threshold";
+      elements.dmeReferenceResult.classList.remove("is-offset-reference");
       elements.coldWarning.classList.add("hidden");
       resetDiagram();
       return;
@@ -201,6 +202,10 @@
       input.dmeReferencePosition,
       input.dmeReferenceDistanceNm
     )}`;
+    elements.dmeReferenceResult.classList.toggle(
+      "is-offset-reference",
+      input.dmeReferencePosition !== "THRESHOLD"
+    );
     elements.coldWarning.classList.toggle("hidden", !result.coldWeatherWarning);
     renderDiagram(
       result,

@@ -16,6 +16,9 @@
     lookupForm: document.querySelector("#notocLookupForm"),
     lookupCode: document.querySelector("#notocLookupCode"),
     lookupSuggestions: document.querySelector("#notocLookupSuggestions"),
+    verifiedCodeBrowser: document.querySelector("#notocVerifiedCodeBrowser"),
+    verifiedCodeCount: document.querySelector("#notocVerifiedCodeCount"),
+    verifiedCodeList: document.querySelector("#notocVerifiedCodeList"),
     lookupResult: document.querySelector("#notocLookupResult"),
     emaForm: document.querySelector("#notocEmaForm"),
     emaQuestionStage: document.querySelector("#emaQuestionStage"),
@@ -240,6 +243,7 @@
       [core.STATES.ACTION_OR_INFORMATION_REQUIRED]: "is-action",
       [core.STATES.UNABLE_TO_DETERMINE_REFER]: "is-refer",
       [core.STATES.POSSIBLE_DISCREPANCY_QUERY]: "is-query",
+      [core.STATES.STOP_THIS_CHECK]: "is-stop",
     }[state] || "is-refer";
   }
 
@@ -249,12 +253,13 @@
       [core.STATES.ACTION_OR_INFORMATION_REQUIRED]: "Confirm",
       [core.STATES.UNABLE_TO_DETERMINE_REFER]: "Confirm",
       [core.STATES.POSSIBLE_DISCREPANCY_QUERY]: "Query",
+      [core.STATES.STOP_THIS_CHECK]: "Stop this check",
     }[state] || "Confirm";
   }
 
   function expectationLabel(expectation) {
     return {
-      [core.EXPECTATIONS.REQUIRED]: "NOTOC expected",
+      [core.EXPECTATIONS.REQUIRED]: "NOTOC required",
       [core.EXPECTATIONS.NOT_EXPECTED]: "NOTOC not expected",
       [core.EXPECTATIONS.CONDITIONAL]: "Conditional NOTOC expectation",
       [core.EXPECTATIONS.UNKNOWN]: "NOTOC expectation unknown",
@@ -287,8 +292,16 @@
     const card = document.createElement("article");
     card.className = `notoc-result-card ${stateClass(evaluation.overallState)}`;
     card.setAttribute("role", "status");
-    card.append(textElement("span", "result-state-label", stateLabel(evaluation.overallState)));
-    card.append(textElement("h3", "", core.STATE_HEADINGS[evaluation.overallState]));
+    card.append(textElement(
+      "span",
+      "result-state-label",
+      options.stateLabel || stateLabel(evaluation.overallState)
+    ));
+    card.append(textElement(
+      "h3",
+      "",
+      options.heading || evaluation.findings?.[0]?.heading || core.STATE_HEADINGS[evaluation.overallState]
+    ));
     if (options.summary) card.append(textElement("p", "result-summary", options.summary));
     if (evaluation.details?.length) {
       const details = document.createElement("dl");
@@ -318,6 +331,13 @@
 
   function renderLookup(rawCode) {
     const lookup = core.lookupHandlingCode(rawCode, policyPack);
+    const lookupStateLabel = !lookup.matched
+      ? "Not available"
+      : lookup.finding.state === core.STATES.POSSIBLE_DISCREPANCY_QUERY
+        ? "Query"
+        : lookup.expectation === core.EXPECTATIONS.NOT_EXPECTED
+          ? "Not expected"
+          : "Required";
     renderEvaluation(elements.lookupResult, {
       overallState: lookup.finding.state,
       findings: [lookup.finding],
@@ -325,7 +345,45 @@
     }, {
       summary: lookup.matched
         ? `${lookup.normalisedCode}: ${lookup.description}`
-        : `${lookup.normalisedCode || "No code"}: not found.`,
+        : undefined,
+      stateLabel: lookupStateLabel,
+      heading: lookup.finding.heading,
+      showExpectation: false,
+    });
+  }
+
+  function verifiedCodeBadge(code) {
+    if (code.isExplicitDiscrepancy) return { label: "Query", className: "is-query" };
+    if (code.expectation === core.EXPECTATIONS.NOT_EXPECTED) {
+      return { label: "Not expected", className: "is-not-expected" };
+    }
+    return { label: "Required", className: "is-required" };
+  }
+
+  function renderVerifiedCodeBrowser() {
+    const codes = core.listVerifiedHandlingCodes(policyPack);
+    clearNode(elements.verifiedCodeList);
+    elements.verifiedCodeBrowser.classList.toggle("hidden", codes.length === 0);
+    elements.verifiedCodeCount.textContent = codes.length ? `${codes.length} codes` : "";
+
+    codes.forEach((code) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "verified-code-item";
+      const copy = document.createElement("span");
+      copy.className = "verified-code-copy";
+      copy.append(textElement("strong", "", code.code));
+      copy.append(textElement("span", "", code.description));
+      const badge = verifiedCodeBadge(code);
+      button.append(copy, textElement("small", `verified-code-badge ${badge.className}`, badge.label));
+      button.addEventListener("click", () => {
+        elements.lookupCode.value = code.code;
+        elements.verifiedCodeBrowser.open = false;
+        hideLookupSuggestions();
+        renderLookup(code.code);
+        elements.lookupResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+      elements.verifiedCodeList.append(button);
     });
   }
 
@@ -620,6 +678,7 @@
   elements.backButtons.forEach((button) => button.addEventListener("click", () => showScreen("home")));
   document.addEventListener("opsdeck:notoc-open", () => showScreen("home", false));
   document.addEventListener("opsdeck:notoc-policy-updated", () => {
+    renderVerifiedCodeBrowser();
     renderLookupSuggestions();
     if (elements.lookupCode.value.trim()) renderLookup(elements.lookupCode.value);
   });
@@ -652,6 +711,7 @@
     advanceInputQuestion();
   });
 
+  renderVerifiedCodeBrowser();
   renderEmaQuestion();
   showScreen("home", false);
 })(typeof globalThis !== "undefined" ? globalThis : window);
