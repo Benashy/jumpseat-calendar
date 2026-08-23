@@ -42,7 +42,7 @@ test("touch devices do not receive a sticky hover fill on fresh mobility answers
 });
 
 test("the code lookup exposes a verified browser and hides normal success status visually", () => {
-  assert.match(index, /Browse verified codes/);
+  assert.match(index, /Verified Codes/);
   assert.match(ui, /listVerifiedHandlingCodes/);
   assert.match(app, /\["ready", "saved", "loading"\]\.includes\(state\)/);
   assert.doesNotMatch(index, /BA guidance ready/);
