@@ -3686,7 +3686,7 @@ html[data-theme="night"] input[type="time"] {
 }
 
 .ema-wizard {
-  min-height: 350px;
+  min-height: 240px;
   align-content: start;
   border-top: 3px solid var(--silver);
 }
@@ -4014,47 +4014,6 @@ html[data-theme="night"] input[type="time"] {
 .result-boundary {
   border-top: 1px solid var(--line);
   padding-top: 10px;
-}
-
-.source-drawer {
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--panel);
-}
-
-.source-drawer summary {
-  min-height: 42px;
-  color: var(--accent);
-  cursor: pointer;
-  font-size: 0.74rem;
-  font-weight: 800;
-  padding: 11px 12px;
-}
-
-.source-drawer > p,
-.source-record {
-  margin: 0 12px 11px;
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 650;
-  line-height: 1.45;
-}
-
-.source-record {
-  display: grid;
-  gap: 3px;
-  border-top: 1px solid var(--line);
-  padding-top: 9px;
-}
-
-.source-record strong {
-  color: var(--navy);
-}
-
-.source-record span,
-.source-record p {
-  color: var(--muted);
-  font-size: inherit;
 }
 
 .captain-info-grid {

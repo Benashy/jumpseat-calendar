@@ -87,6 +87,26 @@
       classification: "APP_GUIDANCE",
       verificationStatus: "VERIFIED_CURRENT_MANUAL",
     },
+    {
+      id: "UK-CAA-PASSENGER-MOBILITY-AID-PROVISION",
+      documentId: "UK-CAA-PASSENGER-BAGGAGE-GUIDANCE",
+      documentTitle: "UK CAA passenger baggage guidance",
+      sectionPath: ["Battery-powered mobility aids"],
+      supportedText: "The passenger mobility-aid provision applies to a battery-powered wheelchair or mobility aid used by a passenger whose mobility is restricted and who is travelling with the item.",
+      classification: "REGULATORY_GUIDANCE",
+      verificationStatus: "VERIFIED_CURRENT_PUBLIC_BA",
+      url: "https://www.caa.co.uk/air-passengers/about-your-trip/baggage/safety-advice-on-what-to-pack/",
+    },
+    {
+      id: "BA-PUBLIC-MOBILITY-AID-OWN-USE",
+      documentId: "BA-DISABILITY-ASSISTANCE",
+      documentTitle: "British Airways disability assistance guidance",
+      sectionPath: ["Wheelchairs and mobility aids"],
+      supportedText: "British Airways describes carrying wheelchairs and mobility aids for the passenger's own use as hold baggage, subject to the applicable arrangements.",
+      classification: "PUBLIC_BA",
+      verificationStatus: "VERIFIED_CURRENT_PUBLIC_BA",
+      url: "https://www.britishairways.com/content/en/us/information/disability-assistance/how-to-request-assistance",
+    },
   ];
 
   const rule = (id, title, domain, classification, sourceIds, requiredInputs = []) => ({
@@ -107,6 +127,16 @@
     rule("BA-LBM-SPECIAL-LOAD-SECURING-INSPECTION", "Special-load securing inspection", "NOTOC_PROCESS", "DOCUMENTED_BA", ["BA-LBM-SPECIAL-LOAD"]),
     rule("BA-CDGM-NOTOC-CODE-MAPPING-MISSING", "Missing authoritative SHC/DG mapping", "SHC_CODE", "UNSUPPORTED", ["BA-SHC-MAPPING-MISSING"]),
     rule("OPSDECK-NOTOC-INDICATOR-CROSSCHECK", "NOTOC indicator cross-check", "NOTOC_PROCESS", "APP_GUIDANCE", ["OPSDECK-NOTOC-APP-GUIDANCE", "BA-OMA-NOTOC-FORM"]),
+    {
+      id: "OPSDECK-MOBILITY-AID-PASSENGER-PROVISION",
+      title: "Passenger mobility-aid provision",
+      domain: "EMA",
+      classification: "PUBLIC_BA",
+      verificationStatus: "VERIFIED_CURRENT_PUBLIC_BA",
+      sourceIds: ["UK-CAA-PASSENGER-MOBILITY-AID-PROVISION", "BA-PUBLIC-MOBILITY-AID-OWN-USE"],
+      requiredInputs: ["mobilityAidConfirmed"],
+      releaseStatus: "ACTIVE",
+    },
   ];
 
   const POLICY_PACK = {

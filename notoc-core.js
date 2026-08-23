@@ -2,7 +2,6 @@
   "use strict";
 
   const STATES = Object.freeze({
-    NOT_APPLICABLE: "NOT_APPLICABLE",
     NO_OBVIOUS_INCONSISTENCY: "NO_OBVIOUS_INCONSISTENCY",
     ACTION_OR_INFORMATION_REQUIRED: "ACTION_OR_INFORMATION_REQUIRED",
     UNABLE_TO_DETERMINE_REFER: "UNABLE_TO_DETERMINE_REFER",
@@ -15,20 +14,22 @@
     UNKNOWN: "UNKNOWN",
   });
   const STATE_HEADINGS = Object.freeze({
-    [STATES.NOT_APPLICABLE]: "This guidance does not apply",
     [STATES.NO_OBVIOUS_INCONSISTENCY]: "No obvious inconsistency identified",
-    [STATES.ACTION_OR_INFORMATION_REQUIRED]: "More information or action required",
-    [STATES.UNABLE_TO_DETERMINE_REFER]: "Unable to determine, refer",
-    [STATES.POSSIBLE_DISCREPANCY_QUERY]: "Possible discrepancy, query before signing",
+    [STATES.ACTION_OR_INFORMATION_REQUIRED]: "Confirm before signing",
+    [STATES.UNABLE_TO_DETERMINE_REFER]: "Confirm before signing",
+    [STATES.POSSIBLE_DISCREPANCY_QUERY]: "Possible discrepancy",
   });
   const SEVERITY = Object.freeze({
-    [STATES.NOT_APPLICABLE]: 0,
     [STATES.NO_OBVIOUS_INCONSISTENCY]: 0,
     [STATES.ACTION_OR_INFORMATION_REQUIRED]: 1,
     [STATES.UNABLE_TO_DETERMINE_REFER]: 2,
     [STATES.POSSIBLE_DISCREPANCY_QUERY]: 3,
   });
-  const VERIFIED_RULE_STATUSES = new Set(["VERIFIED_CURRENT_MANUAL", "REVIEWED_BA_EVIDENCE"]);
+  const VERIFIED_RULE_STATUSES = new Set([
+    "VERIFIED_CURRENT_MANUAL",
+    "VERIFIED_CURRENT_PUBLIC_BA",
+    "REVIEWED_BA_EVIDENCE",
+  ]);
   const VERIFIED_SOURCE_STATUSES = new Set([
     "VERIFIED_CURRENT_MANUAL",
     "VERIFIED_SUPPLIED_MANUAL",
@@ -211,12 +212,12 @@
   }
 
   function expectedNotoc(branch) {
-    const expectation = normaliseNotocExpectation(branch?.notoc?.required);
-    const code = expectedNotocCode(branch);
-    if (expectation === EXPECTATIONS.REQUIRED && code) return `${code}, correct location and final loadsheet NOTOC: YES`;
-    if (expectation === EXPECTATIONS.REQUIRED) return "Required with the correct location; exact configuration code remains unverified";
-    if (expectation === EXPECTATIONS.NOT_EXPECTED) return "Not expected";
-    return "Internal NOTOC method or format is not fully verified";
+    if (branch?.id === "WET-S") return "Spare spillable batteries are not permitted";
+    return "Mobility aid or battery, correct stowage location and final loadsheet NOTOC: YES";
+  }
+
+  function operationalMobilityExpectation(branch) {
+    return branch?.id === "WET-S" ? EXPECTATIONS.NOT_EXPECTED : EXPECTATIONS.REQUIRED;
   }
 
   function addMobilityDetails(result, branch) {
@@ -234,7 +235,7 @@
       entryId: options.entryId,
       ruleId: branch?.ruleId || "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
       sourceIds: branch?.sourceIds,
-      expectation: branch ? normaliseNotocExpectation(branch.notoc?.required) : EXPECTATIONS.UNKNOWN,
+      expectation: branch ? operationalMobilityExpectation(branch) : EXPECTATIONS.UNKNOWN,
       ...options,
     });
     return addMobilityDetails(result, branch);
@@ -245,9 +246,10 @@
     if (entry?.mobilityAidConfirmed === "NO") {
       return simpleResult(policyPack, {
         entryId,
-        ruleId: "OPSDECK-NOTOC-INDICATOR-CROSSCHECK",
-        state: STATES.NOT_APPLICABLE,
-        explanation: "The item is not a wheelchair or electric mobility aid used by a person with reduced mobility.",
+        ruleId: "OPSDECK-MOBILITY-AID-PASSENGER-PROVISION",
+        state: STATES.ACTION_OR_INFORMATION_REQUIRED,
+        explanation: "This item does not meet the passenger mobility-aid provision because it is not for use by a passenger with reduced mobility travelling on this flight.",
+        action: "Do not treat it as passenger baggage under this check. Confirm the correct acceptance route with the dispatcher or TRM before signing.",
       });
     }
     if (entry?.mobilityAidConfirmed !== "YES") {
@@ -263,9 +265,9 @@
       return simpleResult(policyPack, {
         entryId,
         ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
-        state: STATES.UNABLE_TO_DETERMINE_REFER,
-        explanation: "The controlled BA mobility-aid policy is not available on this device.",
-        action: "Refresh while online or refer to the current BA procedure.",
+        state: STATES.ACTION_OR_INFORMATION_REQUIRED,
+        explanation: "The mobility-aid guidance has not loaded on this device.",
+        action: "Refresh the app while online before using this check.",
       });
     }
     if (unknownChoice(entry?.batteryType)) {
@@ -369,9 +371,9 @@
       return simpleResult(policyPack, {
         entryId,
         ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
-        state: STATES.UNABLE_TO_DETERMINE_REFER,
-        explanation: "The entered configuration cannot be matched to a controlled mobility-aid branch.",
-        action: "Refer to the current BA procedure or TRM/Coordinator.",
+        state: STATES.ACTION_OR_INFORMATION_REQUIRED,
+        explanation: "The selected answers do not describe a complete mobility-aid configuration.",
+        action: "Return to the battery questions and check the selected configuration before signing.",
       });
     }
 
@@ -416,45 +418,37 @@
       });
     }
 
-    const code = expectedNotocCode(branch);
-    if (code && entry.notocContentConfirmed !== "YES") {
+    if (entry.notocContentConfirmed !== "YES") {
       return mobilityResult(policyPack, branch, {
         entryId,
+        expectation: EXPECTATIONS.REQUIRED,
         state: entry.notocContentConfirmed === "NO" ? STATES.POSSIBLE_DISCREPANCY_QUERY : STATES.ACTION_OR_INFORMATION_REQUIRED,
         explanation: entry.notocContentConfirmed === "NO"
-          ? `The NOTOC does not show both ${code} and the correct location.`
-          : `The ${code} entry and location have not been confirmed on the NOTOC.`,
-        action: "Query the NOTOC with the dispatcher or TRM/Coordinator before signing.",
+          ? "The NOTOC does not identify the mobility aid or battery and its correct stowage location."
+          : "The mobility aid or battery and its stowage location have not been confirmed on the NOTOC.",
+        action: "Confirm or correct the NOTOC with the dispatcher or TRM before signing.",
       });
     }
 
-    const expectation = normaliseNotocExpectation(branch.notoc?.required);
-    if (expectation === EXPECTATIONS.REQUIRED && entry.loadsheetNotocIndicator !== "YES") {
+    if (entry.loadsheetNotocIndicator !== "YES") {
       return mobilityResult(policyPack, branch, {
         entryId,
+        expectation: EXPECTATIONS.REQUIRED,
         state: entry.loadsheetNotocIndicator === "NO" ? STATES.POSSIBLE_DISCREPANCY_QUERY : STATES.ACTION_OR_INFORMATION_REQUIRED,
         explanation: entry.loadsheetNotocIndicator === "NO"
-          ? "The final loadsheet shows NOTOC: NO for a branch where a NOTOC is expected."
+          ? "The final loadsheet shows NOTOC: NO, although the mobility aid or battery has been confirmed on the NOTOC."
           : "The final loadsheet NOTOC indicator has not been confirmed.",
         action: "Ask the dispatcher to provide or correct the NOTOC before signing.",
       });
     }
 
-    const rule = ruleMap(policyPack).get(branch.ruleId);
-    if (!isRuleVerified(rule, policyPack)) {
-      return mobilityResult(policyPack, branch, {
-        entryId,
-        state: STATES.UNABLE_TO_DETERMINE_REFER,
-        logicState: STATES.NO_OBVIOUS_INCONSISTENCY,
-        explanation: "The entered information matches the available handling guidance, but the internal BA NOTOC rule or source coverage for this branch is incomplete.",
-        action: "Cross-check the current BA documentation or query through the normal operational channel.",
-      });
-    }
-
     return mobilityResult(policyPack, branch, {
       entryId,
+      expectation: EXPECTATIONS.REQUIRED,
       state: STATES.NO_OBVIOUS_INCONSISTENCY,
-      explanation: "The information entered shows no obvious inconsistency against the reviewed BA evidence for this branch.",
+      explanation: ["LI-R-1-300", "LI-R-2-160", "LI-S-1-300", "LI-S-2-160"].includes(branch.id)
+        ? "The entered quantity, protection and cabin stowage are consistent with the reviewed guidance. The mobility aid or battery and its cabin location are confirmed on the NOTOC, and the final loadsheet shows NOTOC: YES."
+        : "The entered configuration, protection, stowage and NOTOC information show no obvious inconsistency against the reviewed guidance.",
     });
   }
 
@@ -469,12 +463,14 @@
     if (!normalised || !code) {
       const finding = makeFinding(policyPack, {
         ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
-        state: STATES.UNABLE_TO_DETERMINE_REFER,
+        state: STATES.ACTION_OR_INFORMATION_REQUIRED,
         expectation: EXPECTATIONS.UNKNOWN,
         explanation: normalised
-          ? `${normalised} is not supported by the current verified BA code library. Do not infer the NOTOC requirement from the code description.`
+          ? `${normalised} was not found in OpsDeck.`
           : "Enter an SHC/DG or special-load code exactly as shown.",
-        action: normalised ? "Refer to the relevant BA procedure or TRM/Coordinator." : "Enter a code to continue.",
+        action: normalised
+          ? "Confirm the code and its NOTOC requirement with the dispatcher or TRM before signing."
+          : "Enter a code to continue.",
       });
       return {
         rawCode: String(rawCode || ""),
@@ -490,17 +486,17 @@
     const verified = code.releaseStatus === "ACTIVE" && code.verificationStatus === "VERIFIED_CURRENT_MANUAL" && isRuleVerified(rule, policyPack);
     let state = STATES.NO_OBVIOUS_INCONSISTENCY;
     if (code.expectation === EXPECTATIONS.CONDITIONAL) state = STATES.ACTION_OR_INFORMATION_REQUIRED;
-    if (!verified) state = STATES.UNABLE_TO_DETERMINE_REFER;
+    if (!verified) state = STATES.ACTION_OR_INFORMATION_REQUIRED;
     const label = {
       [EXPECTATIONS.REQUIRED]: "NOTOC expected",
       [EXPECTATIONS.NOT_EXPECTED]: "NOTOC not expected",
       [EXPECTATIONS.CONDITIONAL]: "Conditional, more information required",
-      [EXPECTATIONS.UNKNOWN]: "Unable to determine, refer",
+      [EXPECTATIONS.UNKNOWN]: "NOTOC requirement not confirmed",
     }[code.expectation];
     const conditionSummary = String(code.conditionSummary || "").trim();
     const explanation = verified
       ? `${label}.${conditionSummary ? ` ${conditionSummary}` : ""}`
-      : `${label}. The NOTOC expectation is not fully verified for operational use.${conditionSummary ? ` Available source information: ${conditionSummary}` : ""}`;
+      : `This code is recognised, but OpsDeck cannot confirm its NOTOC requirement.${conditionSummary ? ` ${conditionSummary}` : ""}`;
     const finding = makeFinding(policyPack, {
       ruleId: code.ruleId,
       state,
@@ -508,7 +504,9 @@
       sourceIds: code.sourceIds,
       verificationStatus: code.verificationStatus,
       explanation,
-      action: code.crewAction || (state === STATES.NO_OBVIOUS_INCONSISTENCY ? undefined : "Check the current BA source or refer."),
+      action: code.crewAction || (state === STATES.NO_OBVIOUS_INCONSISTENCY
+        ? undefined
+        : "Confirm the requirement with the dispatcher or TRM before signing."),
     });
 
     return {

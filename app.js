@@ -1,6 +1,6 @@
 const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
-const APP_VERSION = "2.49";
+const APP_VERSION = "2.50";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 2;
 const MAGIC_LINK_SENT_KEY = "jumpseat-calendar-magic-link-sent-at";
@@ -312,7 +312,7 @@ function announceNotocPolicyUpdate() {
   document.dispatchEvent(new CustomEvent("opsdeck:notoc-policy-updated"));
 }
 
-function resetNotocPolicy(message = "Sign in to load the BA policy.") {
+function resetNotocPolicy(message = "Sign in to load the BA guidance.") {
   notocPolicyApi?.resetHandlingCodeMapping?.();
   notocPolicyApi?.resetMobilityAidPolicy?.();
   notocPolicyLoadedUserId = null;
@@ -322,17 +322,11 @@ function resetNotocPolicy(message = "Sign in to load the BA policy.") {
 }
 
 function policyStatusMessage(policyRecord, source) {
-  const mapping = policyRecord?.mapping || policyRecord || [];
-  const summary = notocPolicyStore.summarise(mapping);
   const mobilityReady = Boolean(policyRecord?.mobilityPolicy || policyRecord?.mobility_policy);
-  const unresolved = summary.unresolvedCodes.length
-    ? ` · ${summary.unresolvedCodes.length} unresolved`
-    : "";
   const prefix = source === "cloud"
-    ? "BA policy ready"
-    : `Saved BA policy${navigator.onLine ? "" : " · offline"}`;
-  const mobility = mobilityReady ? " · battery guidance ready" : " · battery guidance unavailable";
-  return `${prefix} · ${summary.codeCount} codes${unresolved}${mobility}`;
+    ? "BA guidance ready"
+    : `Saved BA guidance${navigator.onLine ? "" : " · offline"}`;
+  return mobilityReady ? prefix : `${prefix} · mobility-aid guidance unavailable`;
 }
 
 function applyNotocPolicyRecord(record, userId, source) {
@@ -373,7 +367,7 @@ async function loadNotocPolicy({ forceCloud = false } = {}) {
   const hasCachedPolicy = loadCachedNotocPolicy(currentUser);
 
   if (!navigator.onLine || !supabaseClient) {
-    if (!hasCachedPolicy) resetNotocPolicy("BA code library unavailable offline.");
+    if (!hasCachedPolicy) resetNotocPolicy("BA guidance unavailable offline.");
     return;
   }
 

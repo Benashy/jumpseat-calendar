@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.49.
+- Current visible app version: v2.50.
 - The top navigation contains `Jumpseat`, `FDP & LTOT` and `Tools`. Tools opens a dedicated landing view for the Radio Altimeter Position Check and NOTOC, while Jumpseat retains contextual `Add request` and `Back to requests` actions.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -46,6 +46,7 @@
 - v2.47 adds a structured BA mobility-aid battery policy extraction brief. The battery tool remains on its cautious referral path until the required current BA evidence is returned and reviewed.
 - v2.48 stores the reviewed 15-branch BA mobility-aid battery policy privately in Supabase and replaces the earlier generic battery questions with a one-question-at-a-time Captain's cross-check. Dry-cell and non-spillable wet batteries remain separate, missing or conflicting handling and NOTOC information is explicit, and any branch with incomplete internal evidence continues to refer.
 - v2.49 scopes the Radio Altimeter Position Check to ILS terminology, keeps temperature compensation confined to the expected QNH indication, and corrects the diagram so temperature cannot appear to move the physical glide slope. It also supports a DME reference at, before or beyond the threshold and keeps threshold geometry separate from the expected DME indication.
+- v2.50 simplifies the mobility-aid battery journey around observable operational facts. It removes visible evidence drawers and unknown-answer buttons, separates exact code lookup from the battery check, confirms NOTOC content and the final loadsheet directly, and replaces development-state referrals with `No obvious inconsistency identified`, `Confirm before signing` or `Possible discrepancy` outcomes. Items outside the passenger mobility-aid provision now receive a specific acceptance-route action.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
@@ -60,8 +61,7 @@
 - Radio Altimeter release gate: independently verify the ten specified manual references, confirm the current OMA cold-weather trigger, compare the complete validation matrix with the BA Cold Weather Calculator, and obtain pilot/OMC review before removing the development label.
 - NOTOC release gate: verify the 47 documented code entries whose NOTOC expectation is not yet confirmed, complete Dangerous Goods/SME review, and repeat operational offline/device testing before removing the development label.
 - NOTOC policy maintenance: retain stable rule and source IDs, record the effective date and revision of every verified source, and keep unsupported codes on the referral path until the mapping is complete.
-- Mobility-aid battery operational review: use v2.48 cautiously alongside current BA documentation, record where questions or referrals do not match the real NOTOC workflow, and obtain Dangerous Goods/SME review before treating the result as anything beyond a Captain's consistency check.
-- Mobility-aid workflow redesign: distinguish the passenger mobility-aid provision from any separate cargo acceptance route, remove internal evidence and mapping language from operational results, remove `Unknown or unclear` as a normal answer, and replace incomplete-rule referrals with concise actions that tell the Captain what to confirm. Do not implement final wording until the BA-specific carriage and NOTOC expectations have been checked.
+- Mobility-aid battery operational review: use v2.50 cautiously alongside current BA documentation, record where questions or outcomes do not match the real NOTOC workflow, and obtain Dangerous Goods/SME review before treating the result as anything beyond a Captain's consistency check.
 
 - Telegram testing: confirm an ordinary scheduled reminder arrives once with the snooze button, a single tap produces one repeat about 15 minutes later, and a rapid double tap cannot schedule two repeats.
 - Backup verification: download a JSON backup, retain it somewhere separate, and perform a controlled restore test using non-operational sample data.

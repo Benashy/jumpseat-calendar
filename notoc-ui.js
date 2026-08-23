@@ -26,7 +26,6 @@
     emaQuestionInput: document.querySelector("#emaQuestionInput"),
     emaWizardBack: document.querySelector("#emaWizardBackButton"),
     emaWizardContinue: document.querySelector("#emaWizardContinueButton"),
-    emaWizardUnknown: document.querySelector("#emaWizardUnknownButton"),
     emaResult: document.querySelector("#notocEmaResult"),
   };
   const screens = {
@@ -44,7 +43,7 @@
       id: "mobilityAidConfirmed",
       label: "Mobility aid",
       context: "Item",
-      question: "Is this a wheelchair or electric mobility aid used by a person with reduced mobility?",
+      question: "Is this wheelchair or electric mobility aid for use by a passenger with reduced mobility travelling on this flight?",
       type: "choice",
       choices: [
         { value: "YES", label: "Yes" },
@@ -62,7 +61,6 @@
         { value: "DRY_CELL", label: "Dry cell (NiCd or NiMH)" },
         { value: "NON_SPILLABLE", label: "Non-spillable wet (gel, SLA or AGM)" },
         { value: "SPILLABLE", label: "Spillable wet" },
-        { value: "UNKNOWN", label: "Unknown or unclear" },
       ],
     },
     installedStatus: {
@@ -75,7 +73,6 @@
         { value: "INSTALLED", label: "Installed in mobility aid" },
         { value: "REMOVED", label: "Removed from mobility aid" },
         { value: "SPARE", label: "Spare battery" },
-        { value: "UNKNOWN", label: "Unknown or unclear" },
       ],
     },
     lithiumLimitBand: {
@@ -90,7 +87,6 @@
         { value: "ONE_300", label: "One, up to 300 Wh" },
         { value: "TWO_160", label: "Two, up to 160 Wh each" },
         { value: "EXCEEDS", label: "Outside these limits" },
-        { value: "UNKNOWN", label: "Not shown" },
       ],
     },
     spareCountBand: {
@@ -102,7 +98,6 @@
       choices: [
         { value: "ONE", label: "One" },
         { value: "MORE_THAN_ONE", label: "More than one" },
-        { value: "UNKNOWN", label: "Not shown" },
       ],
     },
     spillableInstalledStatus: {
@@ -115,7 +110,6 @@
         { value: "CONFIRMED", label: "Yes, all confirmed" },
         { value: "UNSECURED", label: "Battery not secure" },
         { value: "NOT_UPRIGHT", label: "Cannot remain upright" },
-        { value: "UNKNOWN", label: "Not confirmed" },
       ],
     },
     spillableRemovalReason: {
@@ -128,7 +122,6 @@
         { value: "UNSECURED", label: "Battery not secure" },
         { value: "NOT_UPRIGHT", label: "Aid cannot remain upright" },
         { value: "BOTH", label: "Both" },
-        { value: "UNKNOWN", label: "Not confirmed" },
       ],
     },
     handlingConfirmed: {
@@ -167,9 +160,12 @@
       label: "NOTOC entry",
       context: "NOTOC",
       question: (answers) => {
-        const branch = core.mobilityBranch(policyPack, core.resolveEmaBranchId(buildEmaEntry(answers)));
-        const code = core.expectedNotocCode(branch);
-        return `Does the NOTOC show ${code || "the expected code"} and the correct location?`;
+        const item = answers.installedStatus === "INSTALLED"
+          ? "the mobility aid"
+          : answers.installedStatus === "REMOVED"
+            ? "the mobility aid or removed battery"
+            : "the mobility aid or spare battery";
+        return `Does the NOTOC identify ${item} and show the correct stowage location?`;
       },
       type: "choice",
       choices: yesNo,
@@ -240,7 +236,6 @@
 
   function stateClass(state) {
     return {
-      [core.STATES.NOT_APPLICABLE]: "is-neutral",
       [core.STATES.NO_OBVIOUS_INCONSISTENCY]: "is-clear",
       [core.STATES.ACTION_OR_INFORMATION_REQUIRED]: "is-action",
       [core.STATES.UNABLE_TO_DETERMINE_REFER]: "is-refer",
@@ -250,12 +245,11 @@
 
   function stateLabel(state) {
     return {
-      [core.STATES.NOT_APPLICABLE]: "Not applicable",
-      [core.STATES.NO_OBVIOUS_INCONSISTENCY]: "Cross-check complete",
-      [core.STATES.ACTION_OR_INFORMATION_REQUIRED]: "Action or information",
-      [core.STATES.UNABLE_TO_DETERMINE_REFER]: "Referral required",
-      [core.STATES.POSSIBLE_DISCREPANCY_QUERY]: "Possible discrepancy",
-    }[state] || "Referral required";
+      [core.STATES.NO_OBVIOUS_INCONSISTENCY]: "Clear",
+      [core.STATES.ACTION_OR_INFORMATION_REQUIRED]: "Confirm",
+      [core.STATES.UNABLE_TO_DETERMINE_REFER]: "Confirm",
+      [core.STATES.POSSIBLE_DISCREPANCY_QUERY]: "Query",
+    }[state] || "Confirm";
   }
 
   function expectationLabel(expectation) {
@@ -265,49 +259,6 @@
       [core.EXPECTATIONS.CONDITIONAL]: "Conditional NOTOC expectation",
       [core.EXPECTATIONS.UNKNOWN]: "NOTOC expectation unknown",
     }[expectation] || "NOTOC expectation unknown";
-  }
-
-  function verificationLabel(status) {
-    return {
-      VERIFIED_CURRENT_MANUAL: "Verified current manual",
-      VERIFIED_SUPPLIED_MANUAL: "Verified supplied BA manual",
-      VERIFIED_CURRENT_PUBLIC_BA: "Verified current BA guidance",
-      REVIEWED_BA_EVIDENCE: "Reviewed BA evidence",
-      REVIEWED_WITH_LIMITATION: "Reviewed with a documented limitation",
-      CODE_VERIFIED_NOTOC_UNVERIFIED: "Code verified; NOTOC expectation not verified",
-      UNVERIFIED_NOT_FOUND: "No authoritative source found",
-      CARRIED_FORWARD_REQUIRES_CURRENT_MANUAL_CHECK: "Carried forward, current manual check required",
-      MISSING_SOURCE: "Source missing",
-      RETIRED: "Retired source",
-    }[status] || status;
-  }
-
-  function classificationLabel(classification) {
-    return {
-      DOCUMENTED_BA: "BA documented",
-      PUBLIC_BA: "BA public guidance",
-      INFERENCE_FROM_BA: "Inference from BA",
-      APP_GUIDANCE: "App guidance",
-      UNSUPPORTED: "Unsupported",
-    }[classification] || classification;
-  }
-
-  function sourceDrawer(finding) {
-    const details = document.createElement("details");
-    details.className = "source-drawer";
-    details.append(textElement("summary", "", "Why and source"));
-    const sources = finding.sourceIds.map((sourceId) => policyPack.sources.find((source) => source.id === sourceId)).filter(Boolean);
-
-    details.append(textElement("p", "source-classification", `${classificationLabel(finding.classification)}. ${verificationLabel(finding.verificationStatus)}.`));
-    for (const source of sources) {
-      const article = document.createElement("div");
-      article.className = "source-record";
-      article.append(textElement("strong", "", source.documentTitle));
-      article.append(textElement("span", "", source.sectionPath.join(" > ")));
-      article.append(textElement("p", "", source.supportedText));
-      details.append(article);
-    }
-    return details;
   }
 
   function appendAnswerRows(container, rows) {
@@ -352,10 +303,11 @@
       item.className = "notoc-finding";
       const itemTitle = options.findingTitles?.[index] || (evaluation.findings.length > 1 ? `Check ${index + 1}` : null);
       if (itemTitle) item.append(textElement("h4", "", itemTitle));
-      if (finding.expectation) item.append(textElement("span", "expectation-badge", expectationLabel(finding.expectation)));
+      if (finding.expectation && options.showExpectation !== false) {
+        item.append(textElement("span", "expectation-badge", expectationLabel(finding.expectation)));
+      }
       item.append(textElement("p", "", finding.explanation));
       if (finding.action) item.append(textElement("p", "finding-action", finding.action));
-      item.append(sourceDrawer(finding));
       findings.append(item);
     });
     card.append(findings);
@@ -373,7 +325,7 @@
     }, {
       summary: lookup.matched
         ? `${lookup.normalisedCode}: ${lookup.description}`
-        : `${lookup.normalisedCode || "No code"}: unable to classify from the current verified BA mapping.`,
+        : `${lookup.normalisedCode || "No code"}: not found.`,
     });
   }
 
@@ -410,14 +362,14 @@
     if (emaAnswers.mobilityAidConfirmed !== "YES") return steps;
 
     steps.push(stepCatalog.batteryType);
-    if (!emaAnswers.batteryType || emaAnswers.batteryType === "UNKNOWN") return steps;
+    if (!emaAnswers.batteryType) return steps;
 
     steps.push(stepCatalog.installedStatus);
-    if (!emaAnswers.installedStatus || emaAnswers.installedStatus === "UNKNOWN") return steps;
+    if (!emaAnswers.installedStatus) return steps;
 
     if (emaAnswers.batteryType === "LITHIUM" && ["REMOVED", "SPARE"].includes(emaAnswers.installedStatus)) {
       steps.push(stepCatalog.lithiumLimitBand);
-      if (!emaAnswers.lithiumLimitBand || ["UNKNOWN", "EXCEEDS"].includes(emaAnswers.lithiumLimitBand)) return steps;
+      if (!emaAnswers.lithiumLimitBand || emaAnswers.lithiumLimitBand === "EXCEEDS") return steps;
     }
 
     if (["DRY_CELL", "NON_SPILLABLE"].includes(emaAnswers.batteryType) && emaAnswers.installedStatus === "SPARE") {
@@ -432,7 +384,7 @@
       }
       if (emaAnswers.installedStatus === "REMOVED") {
         steps.push(stepCatalog.spillableRemovalReason);
-        if (!emaAnswers.spillableRemovalReason || emaAnswers.spillableRemovalReason === "UNKNOWN") return steps;
+        if (!emaAnswers.spillableRemovalReason) return steps;
       }
       if (emaAnswers.installedStatus === "SPARE") return steps;
     }
@@ -449,15 +401,10 @@
     const expectedLocation = core.expectedLocation(branch);
     if (emaAnswers.locationType === "NOT_SHOWN" || (expectedLocation && emaAnswers.locationType !== expectedLocation)) return steps;
 
-    const notocCode = core.expectedNotocCode(branch);
-    if (notocCode) {
-      steps.push(stepCatalog.notocContentConfirmed);
-      if (emaAnswers.notocContentConfirmed !== "YES") return steps;
-    }
+    steps.push(stepCatalog.notocContentConfirmed);
+    if (emaAnswers.notocContentConfirmed !== "YES") return steps;
 
-    if (core.normaliseNotocExpectation(branch.notoc?.required) === core.EXPECTATIONS.REQUIRED) {
-      steps.push(stepCatalog.loadsheetNotocIndicator);
-    }
+    steps.push(stepCatalog.loadsheetNotocIndicator);
     return steps;
   }
 
@@ -556,8 +503,6 @@
     error.id = "emaWizardInputError";
     elements.emaQuestionInput.append(label, wrapper, error);
     elements.emaWizardContinue.classList.remove("hidden");
-    elements.emaWizardUnknown.textContent = step.unknownLabel;
-    elements.emaWizardUnknown.classList.remove("hidden");
   }
 
   function renderEmaQuestion() {
@@ -577,21 +522,15 @@
     elements.emaQuestionInput.classList.toggle("hidden", step.type === "choice");
     elements.emaWizardBack.classList.toggle("hidden", emaStepIndex === 0);
     elements.emaWizardContinue.classList.add("hidden");
-    elements.emaWizardUnknown.classList.add("hidden");
 
     if (step.type === "choice") renderChoiceQuestion(step);
     else renderInputQuestion(step);
     focusCurrentQuestion();
   }
 
-  function advanceInputQuestion(useUnknown = false) {
+  function advanceInputQuestion() {
     const step = activeEmaSteps()[emaStepIndex];
     if (step.type === "choice") return;
-    if (useUnknown) {
-      setEmaAnswer(step, step.type === "text" ? "" : null);
-      advanceEmaWizard();
-      return;
-    }
 
     const input = elements.emaQuestionInput.querySelector("input");
     const rawValue = input.value.trim();
@@ -640,6 +579,7 @@
     elements.emaForm.classList.add("hidden");
     const card = renderEvaluation(elements.emaResult, evaluation, {
       answerRows: rows,
+      showExpectation: false,
     });
     const actions = document.createElement("div");
     actions.className = "form-actions ema-result-actions";
@@ -706,11 +646,10 @@
     emaStepIndex -= 1;
     renderEmaQuestion();
   });
-  elements.emaWizardContinue.addEventListener("click", () => advanceInputQuestion(false));
-  elements.emaWizardUnknown.addEventListener("click", () => advanceInputQuestion(true));
+  elements.emaWizardContinue.addEventListener("click", advanceInputQuestion);
   elements.emaForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    advanceInputQuestion(false);
+    advanceInputQuestion();
   });
 
   renderEmaQuestion();
