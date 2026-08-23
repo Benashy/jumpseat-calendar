@@ -34,17 +34,17 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-99" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-102" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-99" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-102" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-99" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-102" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -72,7 +72,7 @@
       </section>
 
       <section class="offline-banner hidden" id="offlineBanner" aria-live="polite">
-        Offline: Jumpseat is view only. FDP, LTOT, RA Check and NOTOC tools remain available on this device.
+        Offline: Jumpseat is view only. FDP, LTOT, RA position check and NOTOC tools remain available on this device.
       </section>
 
       <nav class="tool-menu" aria-label="Flight tools" role="tablist">
@@ -151,7 +151,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.51</small>
+            <small class="app-version">v2.52</small>
           </section>
 
         </section>
@@ -172,26 +172,31 @@
             <div class="field-grid">
               <label>
                 Date
-                <input id="requestDate" name="requestDate" type="date" required />
+                <input id="requestDate" name="requestDate" type="date" aria-describedby="requestDateError" aria-invalid="false" required />
+                <small class="field-error request-field-error" id="requestDateError"></small>
               </label>
               <label>
                 Flight number
-                <input id="flightNumber" name="flightNumber" type="text" placeholder="BA123" autocomplete="off" required />
+                <input id="flightNumber" name="flightNumber" type="text" placeholder="BA123" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-describedby="flightNumberError" aria-invalid="false" required />
+                <small class="field-error request-field-error" id="flightNumberError"></small>
               </label>
               <label>
                 From
-                <input id="routeFrom" name="routeFrom" type="text" placeholder="LHR" autocomplete="off" required />
+                <input id="routeFrom" name="routeFrom" type="text" placeholder="LHR" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-describedby="routeFromError" aria-invalid="false" required />
+                <small class="field-error request-field-error" id="routeFromError"></small>
               </label>
               <label>
                 To
-                <input id="routeTo" name="routeTo" type="text" placeholder="JFK" autocomplete="off" required />
+                <input id="routeTo" name="routeTo" type="text" placeholder="JFK" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-describedby="routeToError" aria-invalid="false" required />
+                <small class="field-error request-field-error" id="routeToError"></small>
               </label>
               <label>
                 Departure time
                 <span class="zulu-field">
-                  <input id="departureTime" name="departureTime" type="time" required />
+                  <input id="departureTime" name="departureTime" type="time" aria-describedby="departureTimeError" aria-invalid="false" required />
                   <span aria-hidden="true">Z</span>
                 </span>
+                <small class="field-error request-field-error" id="departureTimeError"></small>
               </label>
               <label>
                 Available jumpseats
@@ -266,6 +271,12 @@
               <small class="result-discretion-note hidden" id="onChocksDiscretion"></small>
             </div>
           </section>
+
+          <button class="ftl-mobile-result-strip hidden" id="ftlMobileResultStrip" type="button" aria-label="View calculated latest times">
+            <span><small>Pushback</small><strong id="ftlMobilePushback">--:--Z</strong></span>
+            <span><small>Takeoff</small><strong id="ftlMobileTakeoff">--:--Z</strong></span>
+            <span><small>On-chocks</small><strong id="ftlMobileOnChocks">--:--Z</strong></span>
+          </button>
 
           <section class="crew-results hidden" id="crewResults" aria-label="Crew limit comparison">
             <div class="crew-results-heading">
@@ -365,14 +376,16 @@
                 <h3>FDP lookup workflow</h3>
                 <p class="fdp-time-context"><strong>Time reference:</strong> the LTOT calculator uses Zulu, while FDP table start times use the applicable local or reference report time.</p>
                 <div class="fdp-workflow">
-                  <div>
+                  <button class="fdp-workflow-route" type="button" data-fdp-route-target="fdpTableTwoSection">
                     <strong>1. Reporting in a time zone no more than 2 hours from London</strong>
-                    <p>Remain acclimatised to London. Use the departure-airport local report time with Table 2. Table 1 is not required.</p>
-                  </div>
-                  <div>
+                    <span>Remain acclimatised to London. Use the departure-airport local report time with Table 2. Table 1 is not required.</span>
+                    <span class="fdp-route-action">Go to Table 2</span>
+                  </button>
+                  <button class="fdp-workflow-route" type="button" data-fdp-route-target="fdpTableOneSection">
                     <strong>2. Reporting in a time zone more than 2 hours from London</strong>
-                    <p>Use Table 1 with the time-zone difference and total elapsed time since the first London report to establish whether the crew member is in state B, D or X.</p>
-                  </div>
+                    <span>Use Table 1 with the time-zone difference and total elapsed time since the first London report to establish whether the crew member is in state B, D or X.</span>
+                    <span class="fdp-route-action">Go to Table 1</span>
+                  </button>
                   <div>
                     <strong>3. Select the FDP</strong>
                     <ul class="fdp-workflow-options">
@@ -383,9 +396,9 @@
                   </div>
                 </div>
               </section>
-              <section>
+              <section id="fdpTableOneSection">
                 <div class="fdp-section-heading">
-                  <h3>OMA 7.2 Table 1 - Acclimatisation state</h3>
+                  <h3 tabindex="-1">OMA 7.2 Table 1 - Acclimatisation state</h3>
                   <button class="info-button" id="bdxInfoButton" type="button" aria-label="Open B, D, and X examples">i</button>
                 </div>
                 <p>Use this when the next duty starts in a local time zone more than 2 hours away from the time zone the crew member is currently acclimatised to.</p>
@@ -468,8 +481,8 @@
                 <p><strong class="fdp-state-x-label">X</strong> means the crew member is in an unknown state of acclimatisation. Use Table 3.</p>
               </div>
 
-              <section>
-                <h3>OMA 7.7 Table 2 - Acclimatised crew</h3>
+              <section id="fdpTableTwoSection">
+                <h3 tabindex="-1">OMA 7.7 Table 2 - Acclimatised crew</h3>
                 <p>Use when Table 1 is not required because the difference from London is no more than 2 hours, or when Table 1 gives B or D.</p>
                 <p class="fdp-reference-source">Reference: OMA 7.7 Table 2</p>
               </section>
@@ -552,7 +565,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.51</small>
+            <small class="app-version">v2.52</small>
           </section>
         </section>
 
@@ -606,7 +619,7 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.51</small>
+            <small class="app-version">v2.52</small>
           </section>
         </section>
 
@@ -732,7 +745,7 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.51</small>
+            <small class="app-version">v2.52</small>
           </section>
         </section>
 
@@ -746,7 +759,7 @@
                 <h2>NOTOC</h2>
               </div>
             </div>
-            <button class="text-button secondary" id="clearNotocSessionButton" type="button">Clear session</button>
+            <button class="text-button secondary hidden" id="clearNotocSessionButton" type="button">Clear session</button>
           </div>
 
           <section class="notoc-screen" id="notocHomeScreen" aria-label="NOTOC home">
@@ -764,9 +777,6 @@
 
           <section class="notoc-screen hidden" id="notocLookupScreen" aria-label="SHC or Dangerous Goods code lookup">
             <div class="subscreen-heading">
-              <button class="icon-button notoc-back-button" type="button" aria-label="Back to NOTOC">
-                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
-              </button>
               <div>
                 <h3>SHC/DG code lookup</h3>
               </div>
@@ -792,9 +802,6 @@
 
           <section class="notoc-screen hidden" id="notocEmaScreen" aria-label="Wheelchair or mobility-aid battery cross-check">
             <div class="subscreen-heading">
-              <button class="icon-button notoc-back-button" type="button" aria-label="Back to NOTOC">
-                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
-              </button>
               <div>
                 <h3>Wheelchair or mobility-aid battery</h3>
               </div>
@@ -833,7 +840,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.51</small>
+            <small class="app-version">v2.52</small>
           </section>
         </section>
 
@@ -940,7 +947,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.51</small>
+            <small class="app-version">v2.52</small>
           </section>
         </section>
       </main>
@@ -1022,17 +1029,17 @@
       </article>
     </template>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=cloud-sync-99"></script>
-    <script src="./ltot-core.js?v=cloud-sync-99"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-99"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-99"></script>
-    <script src="./notoc-policy-store.js?v=cloud-sync-99"></script>
-    <script src="./notoc-core.js?v=cloud-sync-99"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-99"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-99"></script>
-    <script src="./data-portability.js?v=cloud-sync-99"></script>
-    <script src="./request-retention.js?v=cloud-sync-99"></script>
-    <script src="./app.js?v=cloud-sync-99"></script>
+    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-102"></script>
+    <script src="./supabase-config.js?v=cloud-sync-102"></script>
+    <script src="./ltot-core.js?v=cloud-sync-102"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-102"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-102"></script>
+    <script src="./notoc-policy-store.js?v=cloud-sync-102"></script>
+    <script src="./notoc-core.js?v=cloud-sync-102"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-102"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-102"></script>
+    <script src="./data-portability.js?v=cloud-sync-102"></script>
+    <script src="./request-retention.js?v=cloud-sync-102"></script>
+    <script src="./app.js?v=cloud-sync-102"></script>
   </body>
 </html>

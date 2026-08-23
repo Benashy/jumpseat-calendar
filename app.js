@@ -1,6 +1,8 @@
 const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
-const APP_VERSION = "2.51";
+const JUMPSEAT_DRAFT_KEY = "opsdeck-jumpseat-draft-v1";
+const JUMPSEAT_DRAFT_SCHEMA_VERSION = 1;
+const APP_VERSION = "2.52";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 2;
 const MAGIC_LINK_SENT_KEY = "jumpseat-calendar-magic-link-sent-at";
@@ -142,12 +144,17 @@ const elements = {
   latestOnChocksCountdown: document.querySelector("#latestOnChocksCountdown"),
   onChocksCrewLimit: document.querySelector("#onChocksCrewLimit"),
   onChocksDiscretion: document.querySelector("#onChocksDiscretion"),
+  ftlMobileResultStrip: document.querySelector("#ftlMobileResultStrip"),
+  ftlMobilePushback: document.querySelector("#ftlMobilePushback"),
+  ftlMobileTakeoff: document.querySelector("#ftlMobileTakeoff"),
+  ftlMobileOnChocks: document.querySelector("#ftlMobileOnChocks"),
   crewResults: document.querySelector("#crewResults"),
   crewComparisonStatus: document.querySelector("#crewComparisonStatus"),
   crewResultRows: document.querySelector("#crewResultRows"),
   sectorLength: document.querySelector("#sectorLength"),
   fdpReferencePanel: document.querySelector("#fdpReferencePanel"),
   fdpTargetBanner: document.querySelector("#fdpTargetBanner"),
+  fdpWorkflowRoutes: document.querySelectorAll("[data-fdp-route-target]"),
   telegramLinkState: document.querySelector("#telegramLinkState"),
   telegramBotState: document.querySelector("#telegramBotState"),
   telegramPairingExpiry: document.querySelector("#telegramPairingExpiry"),
@@ -283,6 +290,7 @@ let calculatorCloudUpdatedAt = null;
 let calculatorLocalDirty = false;
 let calculatorLocalBaseUpdatedAt = null;
 let elapsedInfoTrigger = null;
+let manualSignOutInProgress = false;
 
 const ftlCrewControls = {};
 
@@ -647,6 +655,7 @@ function setOfflineReadOnly(isReadOnly) {
   updateLtotTelegramButton();
 
   if (isReadOnly) {
+    if (!elements.addView.classList.contains("hidden")) persistJumpseatDraft();
     if (!elements.addView.classList.contains("hidden")) setActiveTab("home");
     setSyncStatus("Offline: viewing saved data", false, true);
   }
@@ -739,6 +748,8 @@ function setActiveTab(tabName) {
 }
 
 function setActiveTool(toolName) {
+  if (!elements.addView.classList.contains("hidden")) persistJumpseatDraft();
+
   const isJumpseat = toolName === "jumpseat";
   const isFtl = toolName === "ftl";
   const isChecks = toolName === "checks";
@@ -1218,6 +1229,14 @@ function openFdpReferenceFor(crewId) {
   });
 }
 
+function openFdpWorkflowSection(targetId) {
+  const section = document.getElementById(targetId);
+  if (!section) return;
+
+  section.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.setTimeout(() => section.querySelector("h3")?.focus({ preventScroll: true }), 350);
+}
+
 function showFdpReferenceStatus(message) {
   if (!elements.fdpReferenceStatus) return;
 
@@ -1560,6 +1579,23 @@ function updateFtlCountdown() {
   updateCountdownElement(elements.latestOnChocksCountdown, ftlLatestOnChocksMinutes);
   updateCountdownElement(elements.latestPushbackCountdown, ftlLatestPushbackMinutes);
   updateCountdownElement(elements.latestTakeoffCountdown, ftlLatestTakeoffMinutes);
+  updateMobileFtlResults();
+}
+
+function updateMobileFtlResults() {
+  if (!elements.ftlMobileResultStrip) return;
+
+  const hasResult = ftlLatestOnChocksMinutes !== null;
+  elements.ftlMobilePushback.textContent = elements.latestPushback.textContent;
+  elements.ftlMobileTakeoff.textContent = elements.latestTakeoff.textContent;
+  elements.ftlMobileOnChocks.textContent = elements.latestOnChocks.textContent;
+  elements.ftlMobileResultStrip.classList.toggle("hidden", !hasResult);
+  elements.ftlMobileResultStrip.setAttribute(
+    "aria-label",
+    hasResult
+      ? `View calculated latest times. Pushback ${elements.latestPushback.textContent}, takeoff ${elements.latestTakeoff.textContent}, on-chocks ${elements.latestOnChocks.textContent}`
+      : "View calculated latest times"
+  );
 }
 
 function hasCompleteLtotResult() {
@@ -2575,6 +2611,94 @@ function normalizeText(value) {
   return value.trim().replace(/\s+/g, " ");
 }
 
+function readJumpseatDraft() {
+  try {
+    const draft = JSON.parse(localStorage.getItem(JUMPSEAT_DRAFT_KEY) || "null");
+    if (!draft || draft.schemaVersion !== JUMPSEAT_DRAFT_SCHEMA_VERSION) return null;
+
+    const ownerId = currentUser?.id || null;
+    if (draft.ownerId && draft.ownerId !== ownerId) return null;
+    if (!draft.ownerId && ownerId && !IS_LOCAL_PREVIEW) return null;
+    return draft;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function clearJumpseatDraft() {
+  try {
+    localStorage.removeItem(JUMPSEAT_DRAFT_KEY);
+  } catch (_error) {
+    // The form can still be cleared when browser storage is unavailable.
+  }
+}
+
+function collectJumpseatDraft() {
+  return {
+    schemaVersion: JUMPSEAT_DRAFT_SCHEMA_VERSION,
+    ownerId: currentUser?.id || null,
+    editingId: elements.editingId.value,
+    date: elements.requestDate.value,
+    flightNumber: elements.flightNumber.value,
+    departureTime: elements.departureTime.value,
+    availableSeats: elements.availableSeats.value,
+    routeFrom: elements.routeFrom.value,
+    routeTo: elements.routeTo.value,
+    staff: getStaffValues(),
+    notes: elements.notes.value,
+    savedAt: new Date().toISOString(),
+  };
+}
+
+function hasMeaningfulJumpseatDraft(draft = collectJumpseatDraft()) {
+  return Boolean(
+    draft.editingId ||
+    String(draft.flightNumber || "").trim() ||
+    String(draft.departureTime || "").trim() ||
+    String(draft.availableSeats || "").trim() ||
+    String(draft.routeFrom || "").trim() ||
+    String(draft.routeTo || "").trim() ||
+    String(draft.notes || "").trim() ||
+    (Array.isArray(draft.staff) && draft.staff.some((entry) => staffName(entry)))
+  );
+}
+
+function persistJumpseatDraft() {
+  const draft = collectJumpseatDraft();
+  if (!hasMeaningfulJumpseatDraft(draft)) {
+    clearJumpseatDraft();
+    return;
+  }
+
+  try {
+    localStorage.setItem(JUMPSEAT_DRAFT_KEY, JSON.stringify(draft));
+  } catch (_error) {
+    // An in-memory draft remains available until the page is closed.
+  }
+}
+
+function applyJumpseatDraft(draft) {
+  if (!draft || !hasMeaningfulJumpseatDraft(draft)) return false;
+
+  const isExistingEdit = Boolean(draft.editingId && requests.some((request) => request.id === draft.editingId));
+  elements.editingId.value = isExistingEdit ? draft.editingId : "";
+  elements.requestDate.value = isIsoDate(draft.date) ? draft.date : (elements.selectedDate.value || todayIso());
+  elements.flightNumber.value = String(draft.flightNumber || "");
+  elements.departureTime.value = sanitizeStoredTime(draft.departureTime);
+  const availableSeats = Number(draft.availableSeats);
+  elements.availableSeats.value = Number.isInteger(availableSeats) && availableSeats >= 0 && availableSeats <= 99
+    ? String(availableSeats)
+    : "";
+  elements.routeFrom.value = String(draft.routeFrom || "");
+  elements.routeTo.value = String(draft.routeTo || "");
+  renderStaffFields(Array.isArray(draft.staff) && draft.staff.length ? draft.staff : [""]);
+  elements.notes.value = String(draft.notes || "");
+  elements.formTitle.textContent = isExistingEdit ? "Edit request" : "Add request";
+  elements.saveButton.textContent = isExistingEdit ? "Update request" : "Save request";
+  clearValidation();
+  return true;
+}
+
 function getStaffInputs() {
   return Array.from(elements.staffFields.querySelectorAll(".staff-input"));
 }
@@ -2583,12 +2707,57 @@ function getStaffBaidInputs() {
   return Array.from(elements.staffFields.querySelectorAll(".staff-baid"));
 }
 
+function requestValidationEntries() {
+  return [
+    { field: elements.requestDate, label: "date", message: "Select the date." },
+    { field: elements.flightNumber, label: "flight number", message: "Enter the flight number." },
+    { field: elements.routeFrom, label: "from", message: "Enter the departure airport." },
+    { field: elements.routeTo, label: "to", message: "Enter the destination airport." },
+    { field: elements.departureTime, label: "departure time", message: "Select the Zulu departure time." },
+    ...getStaffInputs().map((field, index) => ({
+      field,
+      label: `request ${index + 1} name`,
+      message: `Enter request ${index + 1} name.`,
+    })),
+  ];
+}
+
+function requestFieldError(field) {
+  const errorId = field.getAttribute("aria-describedby")?.split(/\s+/).find(Boolean);
+  return errorId ? document.getElementById(errorId) : null;
+}
+
+function clearFieldValidation(field) {
+  field.classList.remove("invalid");
+  field.setAttribute("aria-invalid", "false");
+  const error = requestFieldError(field);
+  if (error?.classList.contains("request-field-error")) error.textContent = "";
+}
+
+function setFieldValidationError(field, message) {
+  field.classList.add("invalid");
+  field.setAttribute("aria-invalid", "true");
+  const error = requestFieldError(field);
+  if (error?.classList.contains("request-field-error")) error.textContent = message;
+}
+
+function updateValidationSummary() {
+  const missing = requestValidationEntries()
+    .filter(({ field }) => field.classList.contains("invalid"))
+    .map(({ label }) => label);
+
+  if (missing.length === 0) {
+    elements.formError.classList.add("hidden");
+    elements.formError.textContent = "";
+    return;
+  }
+
+  showFormError(`Please complete: ${missing.join(", ")}.`);
+}
+
 function clearValidation() {
-  elements.formError.classList.add("hidden");
-  elements.formError.textContent = "";
-  [elements.requestDate, elements.flightNumber, elements.routeFrom, elements.routeTo, elements.departureTime]
-    .forEach((field) => field.classList.remove("invalid"));
-  getStaffInputs().forEach((input) => input.classList.remove("invalid"));
+  requestValidationEntries().forEach(({ field }) => clearFieldValidation(field));
+  updateValidationSummary();
 }
 
 function showFormError(message) {
@@ -2609,33 +2778,12 @@ function updateAddRequestButton() {
 function validateRequestForm() {
   clearValidation();
 
-  const requiredFields = [
-    { field: elements.requestDate, label: "date" },
-    { field: elements.flightNumber, label: "flight number" },
-    { field: elements.routeFrom, label: "from" },
-    { field: elements.routeTo, label: "to" },
-    { field: elements.departureTime, label: "departure time" },
-  ];
-  const missing = [];
-
-  requiredFields.forEach(({ field, label }) => {
-    if (!field.value.trim()) {
-      field.classList.add("invalid");
-      missing.push(label);
-    }
-  });
-
-  getStaffInputs().forEach((input, index) => {
-    if (!input.value.trim()) {
-      input.classList.add("invalid");
-      missing.push(`request ${index + 1} name`);
-    }
-  });
-
+  const missing = requestValidationEntries().filter(({ field }) => !field.value.trim());
+  missing.forEach(({ field, message }) => setFieldValidationError(field, message));
+  updateValidationSummary();
   if (missing.length === 0) return true;
 
-  showFormError(`Please complete: ${missing.join(", ")}.`);
-  document.querySelector(".invalid")?.focus();
+  missing[0].field.focus();
   return false;
 }
 
@@ -2652,6 +2800,7 @@ function moveStaffField(fromIndex, toIndex) {
   if (toIndex < 0 || toIndex >= values.length) return;
   [values[fromIndex], values[toIndex]] = [values[toIndex], values[fromIndex]];
   renderStaffFields(values);
+  persistJumpseatDraft();
   getStaffInputs()[toIndex]?.focus();
 }
 
@@ -2666,6 +2815,7 @@ function renderStaffFields(values = [""]) {
     const entry = document.createElement("div");
     const label = document.createElement("label");
     const input = document.createElement("input");
+    const error = document.createElement("small");
     const baidLabel = document.createElement("label");
     const baidInput = document.createElement("input");
     const baidText = document.createElement("span");
@@ -2678,21 +2828,30 @@ function renderStaffFields(values = [""]) {
     input.type = "text";
     input.placeholder = "Name";
     input.autocomplete = "off";
+    input.autocapitalize = "words";
+    input.setAttribute("aria-describedby", `staffError${index + 1}`);
+    input.setAttribute("aria-invalid", "false");
     input.value = value.name;
     input.required = true;
     input.addEventListener("input", () => {
-      clearValidation();
+      clearFieldValidation(input);
+      updateValidationSummary();
       updateAddRequestButton();
+      persistJumpseatDraft();
     });
+
+    error.className = "field-error request-field-error";
+    error.id = `staffError${index + 1}`;
 
     baidLabel.className = "baid-toggle";
     baidInput.className = "staff-baid";
     baidInput.name = `staffBaid${index + 1}`;
     baidInput.type = "checkbox";
     baidInput.checked = value.baid;
+    baidInput.addEventListener("change", persistJumpseatDraft);
     baidText.textContent = "BA ID";
 
-    label.append(input);
+    label.append(input, error);
     baidLabel.append(baidInput, baidText);
     entry.append(label, baidLabel);
     row.append(entry);
@@ -2741,11 +2900,13 @@ function renderStaffFields(values = [""]) {
   });
 
   updateAddRequestButton();
+  updateValidationSummary();
 }
 
 function removeStaffField(indexToRemove) {
   const values = getStaffValues().filter((_, index) => index !== indexToRemove);
   renderStaffFields(values.length ? values : [""]);
+  persistJumpseatDraft();
 }
 
 function getFormData() {
@@ -2806,15 +2967,21 @@ function clearForm(keepDate = true) {
   clearValidation();
 }
 
+function focusJumpseatForm() {
+  const firstIncomplete = requestValidationEntries().find(({ field }) => !field.value.trim())?.field;
+  (firstIncomplete || elements.flightNumber).focus();
+}
+
 function startAdd() {
   if (isOfflineReadOnly) {
     window.alert("Offline mode is view only. Connect to the internet to add requests.");
     return;
   }
 
-  clearForm();
+  const restoredDraft = applyJumpseatDraft(readJumpseatDraft());
+  if (!restoredDraft) clearForm();
   setActiveTab("add");
-  elements.requestDate.focus();
+  focusJumpseatForm();
 }
 
 function setSelectedDate(iso) {
@@ -3018,6 +3185,20 @@ function startEdit(id) {
   const request = requests.find((item) => item.id === id);
   if (!request) return;
 
+  const draft = readJumpseatDraft();
+  if (draft && hasMeaningfulJumpseatDraft(draft)) {
+    if (draft.editingId === id) {
+      applyJumpseatDraft(draft);
+      setActiveTab("add");
+      focusJumpseatForm();
+      return;
+    }
+
+    const replaceDraft = window.confirm("Replace the unfinished Jumpseat request on this device with this saved request?");
+    if (!replaceDraft) return;
+  }
+  clearJumpseatDraft();
+
   elements.editingId.value = request.id;
   elements.flightNumber.value = request.flightNumber;
   elements.requestDate.value = request.date;
@@ -3029,6 +3210,7 @@ function startEdit(id) {
   elements.notes.value = request.notes || "";
   elements.formTitle.textContent = "Edit request";
   elements.saveButton.textContent = "Update request";
+  persistJumpseatDraft();
   setActiveTab("add");
   elements.flightNumber.focus();
 }
@@ -3047,7 +3229,10 @@ function deleteRequest(id) {
 
   requests = requests.filter((item) => item.id !== id);
   saveRequests();
-  if (elements.editingId.value === id) clearForm();
+  if (elements.editingId.value === id) {
+    clearJumpseatDraft();
+    clearForm();
+  }
   render();
 }
 
@@ -3133,17 +3318,22 @@ async function sendMagicLink() {
 
 async function signOut(message = "Sign in to load and save your OpsDeck data.") {
   setSyncStatus("Signing out...");
+  manualSignOutInProgress = true;
 
-  if (supabaseClient && navigator.onLine) {
-    await supabaseClient.auth.signOut().catch(() => {});
+  try {
+    if (supabaseClient && navigator.onLine) {
+      await supabaseClient.auth.signOut().catch(() => {});
+    }
+
+    cloudLoaded = false;
+    cloudUpdatedAt = null;
+    calculatorCloudLoaded = false;
+    calculatorCloudUpdatedAt = calculatorLocalBaseUpdatedAt;
+    setSignedInState(null);
+    setAuthStatus(message, false);
+  } finally {
+    manualSignOutInProgress = false;
   }
-
-  cloudLoaded = false;
-  cloudUpdatedAt = null;
-  calculatorCloudLoaded = false;
-  calculatorCloudUpdatedAt = calculatorLocalBaseUpdatedAt;
-  setSignedInState(null);
-  setAuthStatus(message, false);
 }
 
 async function refreshCloudData() {
@@ -3428,8 +3618,11 @@ async function initCloud() {
 
   await handleSession(data.session);
 
-  supabaseClient.auth.onAuthStateChange((_event, session) => {
-    handleSession(session);
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    const sessionEndedUnexpectedly = event === "SIGNED_OUT" && Boolean(currentUser) && !manualSignOutInProgress;
+    handleSession(session).then(() => {
+      if (sessionEndedUnexpectedly) setAuthStatus("Session expired. Sign in again.", true);
+    });
   });
 }
 
@@ -3460,6 +3653,7 @@ elements.requestForm.addEventListener("submit", (event) => {
 
   saveRequests();
   setSelectedDate(formData.date);
+  clearJumpseatDraft();
   clearForm();
   setActiveTab("home");
 });
@@ -3480,12 +3674,18 @@ elements.raBackToChecks.addEventListener("click", () => {
   setActiveTool("checks");
   elements.openRaCheckButton.focus();
 });
-elements.notocBackToChecks.addEventListener("click", () => {
+document.addEventListener("opsdeck:notoc-back-to-tools", () => {
   setActiveTool("checks");
   elements.openNotocButton.focus();
 });
 elements.clearFtlButton.addEventListener("click", clearFtlCalculator);
 elements.sendLtotTelegramButton.addEventListener("click", sendLtotTelegramSummary);
+elements.ftlMobileResultStrip?.addEventListener("click", () => {
+  document.querySelector(".ftl-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+elements.fdpWorkflowRoutes.forEach((button) => {
+  button.addEventListener("click", () => openFdpWorkflowSection(button.dataset.fdpRouteTarget));
+});
 elements.bdxInfoButton?.addEventListener("click", openBdxInfo);
 elements.bdxInfoCloseButton?.addEventListener("click", closeBdxInfo);
 elements.bdxInfoDialog?.addEventListener("click", (event) => {
@@ -3499,7 +3699,12 @@ elements.elapsedInfoDialog?.addEventListener("click", (event) => {
 });
 elements.openAddRequestButton.addEventListener("click", startAdd);
 [elements.requestDate, elements.flightNumber, elements.routeFrom, elements.routeTo, elements.departureTime]
-  .forEach((field) => field.addEventListener("input", clearValidation));
+  .forEach((field) => field.addEventListener("input", () => {
+    clearFieldValidation(field);
+    updateValidationSummary();
+  }));
+elements.requestForm.addEventListener("input", persistJumpseatDraft);
+elements.requestForm.addEventListener("change", persistJumpseatDraft);
 elements.selectedDate.addEventListener("change", () => setSelectedDate(elements.selectedDate.value));
 elements.requestDate.addEventListener("change", () => {
   if (!elements.editingId.value) elements.selectedDate.value = elements.requestDate.value;
@@ -3511,6 +3716,8 @@ elements.globalSearch.addEventListener("input", renderGlobalSearch);
 elements.availableSeatsUp.addEventListener("click", () => stepAvailableSeats(1));
 elements.availableSeatsDown.addEventListener("click", () => stepAvailableSeats(-1));
 elements.backToRequestsButton.addEventListener("click", () => {
+  if (hasMeaningfulJumpseatDraft() && !window.confirm("Discard this unfinished Jumpseat request?")) return;
+  clearJumpseatDraft();
   clearForm();
   setActiveTab("home");
   elements.openAddRequestButton.focus();
@@ -3522,14 +3729,15 @@ elements.addSeatButton.addEventListener("click", () => {
   const blankIndex = values.findIndex((value) => !staffName(value));
   if (blankIndex >= 0) {
     const input = getStaffInputs()[blankIndex];
-    input.classList.add("invalid");
-    showFormError(`Please enter request ${blankIndex + 1} before adding another request.`);
+    setFieldValidationError(input, `Enter request ${blankIndex + 1} name before adding another person.`);
+    updateValidationSummary();
     input.focus();
     updateAddRequestButton();
     return;
   }
 
   renderStaffFields([...values, { name: "", baid: false }]);
+  persistJumpseatDraft();
   getStaffInputs().at(-1)?.focus();
 });
 

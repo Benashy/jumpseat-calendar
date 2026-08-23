@@ -8,11 +8,11 @@
 
   const elements = {
     clearSession: document.querySelector("#clearNotocSessionButton"),
+    topBack: document.querySelector("#notocBackToChecks"),
     home: document.querySelector("#notocHomeScreen"),
     lookup: document.querySelector("#notocLookupScreen"),
     ema: document.querySelector("#notocEmaScreen"),
     actionButtons: document.querySelectorAll("[data-notoc-screen]"),
-    backButtons: document.querySelectorAll(".notoc-back-button"),
     lookupForm: document.querySelector("#notocLookupForm"),
     lookupCode: document.querySelector("#notocLookupCode"),
     lookupSuggestions: document.querySelector("#notocLookupSuggestions"),
@@ -199,6 +199,7 @@
 
   let emaAnswers = createEmptyEmaAnswers();
   let emaStepIndex = 0;
+  let activeScreen = "home";
 
   function createEmptyEmaAnswers() {
     return {
@@ -217,9 +218,14 @@
   }
 
   function showScreen(name, focus = true) {
+    activeScreen = name;
     Object.entries(screens).forEach(([screenName, screen]) => {
       screen.classList.toggle("hidden", screenName !== name);
     });
+    const backLabel = name === "home" ? "Back to Tools" : "Back to NOTOC";
+    elements.topBack.setAttribute("aria-label", backLabel);
+    elements.topBack.title = backLabel;
+    updateSessionControls();
     if (focus) {
       const heading = screens[name].querySelector("h3, button, input, select");
       window.requestAnimationFrame(() => heading?.focus?.({ preventScroll: true }));
@@ -228,6 +234,18 @@
 
   function clearNode(node) {
     while (node.firstChild) node.removeChild(node.firstChild);
+  }
+
+  function hasSessionState() {
+    return Boolean(
+      elements.lookupCode.value.trim() ||
+      elements.lookupResult.childElementCount ||
+      Object.values(emaAnswers).some((value) => value !== null && value !== "")
+    );
+  }
+
+  function updateSessionControls() {
+    elements.clearSession.classList.toggle("hidden", !hasSessionState());
   }
 
   function textElement(tag, className, text) {
@@ -350,6 +368,7 @@
       heading: lookup.finding.heading,
       showExpectation: false,
     });
+    updateSessionControls();
   }
 
   function verifiedCodeBadge(code) {
@@ -477,6 +496,7 @@
   function setEmaAnswer(step, value) {
     clearAnswersAfter(step.id);
     emaAnswers[step.id] = value;
+    updateSessionControls();
   }
 
   function choiceLabel(step, value) {
@@ -662,6 +682,7 @@
     clearNode(elements.emaResult);
     elements.emaForm.classList.remove("hidden");
     renderEmaQuestion();
+    updateSessionControls();
   }
 
   function clearSession() {
@@ -670,12 +691,19 @@
     clearNode(elements.lookupResult);
     clearEmaAssessment();
     showScreen("home");
+    updateSessionControls();
   }
 
   elements.actionButtons.forEach((button) => {
     button.addEventListener("click", () => showScreen(button.dataset.notocScreen));
   });
-  elements.backButtons.forEach((button) => button.addEventListener("click", () => showScreen("home")));
+  elements.topBack.addEventListener("click", () => {
+    if (activeScreen === "home") {
+      document.dispatchEvent(new CustomEvent("opsdeck:notoc-back-to-tools"));
+      return;
+    }
+    showScreen("home");
+  });
   document.addEventListener("opsdeck:notoc-open", () => showScreen("home", false));
   document.addEventListener("opsdeck:notoc-policy-updated", () => {
     renderVerifiedCodeBrowser();
@@ -689,6 +717,7 @@
     const exact = core.lookupHandlingCode(elements.lookupCode.value, policyPack);
     if (exact.matched) renderLookup(elements.lookupCode.value);
     else clearNode(elements.lookupResult);
+    updateSessionControls();
   });
   elements.lookupCode.addEventListener("focus", renderLookupSuggestions);
   elements.lookupCode.addEventListener("keydown", (event) => {

@@ -462,6 +462,10 @@ button:active:not(:disabled) {
   font-weight: 700;
 }
 
+.day-summary .day-add-button span {
+  color: inherit;
+}
+
 .day-summary strong {
   display: block;
   margin-top: 2px;
@@ -509,6 +513,10 @@ input[type="time"],
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 16px;
+}
+
+.ftl-mobile-result-strip {
+  display: none;
 }
 
 .ftl-context {
@@ -796,13 +804,53 @@ input[type="time"],
   gap: 8px;
 }
 
-.fdp-workflow div {
+.fdp-workflow div,
+.fdp-workflow-route {
   border: 1px solid rgba(198, 161, 90, 0.2);
   border-radius: 8px;
   background:
     linear-gradient(180deg, rgba(198, 161, 90, 0.1), transparent 58%),
     #fffefa;
   padding: 10px;
+}
+
+.fdp-workflow-route {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  min-height: 44px;
+  color: var(--muted);
+  font: inherit;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.fdp-workflow-route:hover,
+.fdp-workflow-route:focus-visible {
+  border-color: var(--silver);
+  background: var(--panel);
+  box-shadow: var(--soft-shadow);
+  outline: none;
+}
+
+.fdp-route-action {
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.fdp-route-action::after {
+  content: "  ›";
+}
+
+#fdpTableOneSection,
+#fdpTableTwoSection,
+#fdpTableThreeSection {
+  scroll-margin-top: 78px;
+}
+
+.fdp-reference-content h3[tabindex="-1"]:focus {
+  outline: none;
 }
 
 .fdp-workflow strong {
@@ -1985,6 +2033,16 @@ form,
   padding: 10px 12px;
 }
 
+.request-field-error:empty {
+  display: none;
+}
+
+#flightNumber,
+#routeFrom,
+#routeTo {
+  text-transform: uppercase;
+}
+
 .field-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2646,6 +2704,7 @@ legend {
 .ftl-result-card,
 .calculation-strip,
 .fdp-workflow div,
+.fdp-workflow-route,
 .fdp-reference-legend,
 .pairing-code,
 .upcoming-item,
@@ -3514,7 +3573,7 @@ html[data-theme="night"] input[type="time"] {
 
 .subscreen-heading {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 11px;
   margin-bottom: 12px;
@@ -4229,6 +4288,18 @@ html[data-theme="night"] input[type="time"] {
   .ra-result-panel {
     min-height: 230px;
   }
+
+  .ra-result-grid {
+    order: 1;
+  }
+
+  .ra-geometry-card {
+    order: 2;
+  }
+
+  .ra-result-panel > .conditional-warning {
+    order: 3;
+  }
 }
 
 @media (min-width: 881px) and (max-width: 1366px) {
@@ -4253,6 +4324,84 @@ html[data-theme="night"] input[type="time"] {
 }
 
 @media (max-width: 560px) {
+  #fdpTableOneSection,
+  #fdpTableTwoSection,
+  #fdpTableThreeSection {
+    scroll-margin-top: 128px;
+  }
+
+  #requestForm input:not([type="checkbox"]),
+  #requestForm textarea {
+    font-size: 16px;
+  }
+
+  .topbar {
+    min-height: 76px;
+    margin-bottom: 10px;
+    padding: 6px 12px;
+  }
+
+  .brand-logo {
+    width: min(235px, 72vw);
+  }
+
+  .tool-menu {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg);
+    padding: 6px 0 8px;
+  }
+
+  .ftl-mobile-result-strip:not(.hidden) {
+    position: sticky;
+    top: 61px;
+    z-index: 18;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1px;
+    width: 100%;
+    min-height: 50px;
+    margin: -4px 0 14px;
+    border: 1px solid var(--silver);
+    border-radius: 8px;
+    background: var(--navy);
+    box-shadow: var(--soft-shadow);
+    color: #fff;
+    padding: 5px;
+  }
+
+  .ftl-mobile-result-strip span {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 2px 5px;
+    text-align: center;
+  }
+
+  .ftl-mobile-result-strip span:last-child {
+    border-right: 0;
+  }
+
+  .ftl-mobile-result-strip small {
+    color: #dbe3e8;
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .ftl-mobile-result-strip strong {
+    overflow: hidden;
+    color: #fff;
+    font-size: 0.88rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .checks-panel,
   .ra-panel,
   .notoc-panel {
