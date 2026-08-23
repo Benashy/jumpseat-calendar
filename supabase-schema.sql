@@ -167,6 +167,43 @@ for select
 to authenticated
 using ((select auth.uid()) = user_id);
 
+create table if not exists public.jumpseat_reminder_snoozes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  reminder_run_id uuid not null references public.jumpseat_reminder_runs(id) on delete cascade,
+  chat_id text not null,
+  source_message_id bigint not null,
+  callback_query_id text not null,
+  due_at timestamptz not null,
+  status text not null default 'pending'
+    check (status in ('pending', 'processing', 'sent', 'error')),
+  attempt_count integer not null default 0
+    check (attempt_count >= 0 and attempt_count <= 3),
+  last_attempt_at timestamptz,
+  next_attempt_at timestamptz,
+  sent_at timestamptz,
+  error text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (chat_id, source_message_id),
+  unique (callback_query_id)
+);
+
+create index if not exists jumpseat_reminder_snoozes_due_queue
+on public.jumpseat_reminder_snoozes (status, next_attempt_at, due_at);
+
+create index if not exists jumpseat_reminder_snoozes_user_id
+on public.jumpseat_reminder_snoozes (user_id);
+
+create index if not exists jumpseat_reminder_snoozes_reminder_run_id
+on public.jumpseat_reminder_snoozes (reminder_run_id);
+
+alter table public.jumpseat_reminder_snoozes enable row level security;
+
+revoke all privileges on table public.jumpseat_reminder_snoozes from anon;
+revoke all privileges on table public.jumpseat_reminder_snoozes from authenticated;
+grant select, insert, update, delete on table public.jumpseat_reminder_snoozes to service_role;
+
 do $$
 begin
   if to_regprocedure('public.rls_auto_enable()') is not null then

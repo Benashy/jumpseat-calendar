@@ -6,10 +6,14 @@ const REMINDER_WINDOW_MINUTES = 30;
 const REMINDER_RETRY_MINUTES = 5;
 const MAX_REMINDER_ATTEMPTS = 3;
 const PAIRING_CODE_MINUTES = 15;
+const SNOOZE_MINUTES = 15;
+const SNOOZE_CALLBACK_PREFIX = "odjs:s:";
+const WEBHOOK_SECRET_RPC = "opsdeck_telegram_webhook_secret";
+const WEBHOOK_SECRET_MATCH_RPC = "opsdeck_telegram_webhook_secret_matches";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-opsdeck-cron-secret",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-opsdeck-cron-secret, x-telegram-bot-api-secret-token",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -41,6 +45,32 @@ type LtotSummary = {
   taxi_in?: string;
   contingency?: string;
   sector_length?: string;
+};
+
+type TelegramChat = {
+  id?: number | string;
+  type?: string;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+};
+
+type TelegramMessage = {
+  message_id?: number;
+  text?: string;
+  chat?: TelegramChat;
+};
+
+type TelegramCallbackQuery = {
+  id?: string;
+  message?: TelegramMessage;
+  data?: string;
+};
+
+type TelegramUpdate = {
+  update_id?: number;
+  message?: TelegramMessage;
+  callback_query?: TelegramCallbackQuery;
 };
 
 class AppError extends Error {
@@ -96,6 +126,7 @@ const supabaseSecretKey = firstConfiguredSecret("SUPABASE_SECRET_KEYS", [
 ]);
 const telegramBotToken = Deno.env.get("OPSDECK_TELEGRAM_BOT_TOKEN") || "";
 const cronSecret = Deno.env.get("OPSDECK_CRON_SECRET") || "";
+const telegramFunctionUrl = `${supabaseUrl}/functions/v1/${FUNCTION_NAME}`;
 
 const supabaseAdmin = supabaseUrl && supabaseSecretKey
   ? createClient(supabaseUrl, supabaseSecretKey, {
@@ -136,6 +167,31 @@ function requireCron(req: Request, body: Record<string, unknown>) {
   if (suppliedSecret !== cronSecret) {
     fail(401, "bad_cron_secret", "Scheduled reminder call was not authorised.");
   }
+}
+
+async function requireTelegramWebhook(req: Request) {
+  const admin = requireServerConfig();
+  const suppliedSecret = req.headers.get("x-telegram-bot-api-secret-token")?.trim() || "";
+  if (!suppliedSecret) {
+    fail(401, "webhook_secret_missing", "Telegram webhook credential is missing.");
+  }
+
+  const { data, error } = await admin.rpc(WEBHOOK_SECRET_MATCH_RPC, {
+    provided_secret: suppliedSecret,
+  });
+  if (error || data !== true) {
+    fail(403, "webhook_secret_invalid", "Telegram webhook credential is invalid.");
+  }
+}
+
+async function getTelegramWebhookSecret() {
+  const admin = requireServerConfig();
+  const { data, error } = await admin.rpc(WEBHOOK_SECRET_RPC);
+  const secret = normaliseText(data);
+  if (error || !secret) {
+    fail(503, "webhook_secret_unavailable", "Telegram webhook credential is not configured.");
+  }
+  return secret;
 }
 
 function normaliseText(value: unknown) {
@@ -301,11 +357,32 @@ async function telegramRequest(method: string, payload: Record<string, unknown>)
   return data.result;
 }
 
-async function sendTelegramMessage(chatId: string, text: string) {
+function buildSnoozeReplyMarkup(reminderRunId: string) {
+  return {
+    inline_keyboard: [[
+      {
+        text: "Snooze 15 minutes",
+        callback_data: `${SNOOZE_CALLBACK_PREFIX}${reminderRunId}`,
+      },
+    ]],
+  };
+}
+
+function parseSnoozeReminderRunId(value: unknown) {
+  const data = normaliseText(value);
+  if (!data.startsWith(SNOOZE_CALLBACK_PREFIX)) return "";
+  const id = data.slice(SNOOZE_CALLBACK_PREFIX.length);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
+    ? id
+    : "";
+}
+
+async function sendTelegramMessage(chatId: string, text: string, replyMarkup?: Record<string, unknown>) {
   return telegramRequest("sendMessage", {
     chat_id: chatId,
     text,
     disable_web_page_preview: true,
+    ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
   });
 }
 
@@ -359,7 +436,7 @@ async function startPairing(userId: string) {
   };
 }
 
-function telegramChatLabel(chat: Record<string, unknown>) {
+function telegramChatLabel(chat: TelegramChat) {
   const username = normaliseText(chat.username);
   if (username) return `@${username}`;
 
@@ -368,8 +445,18 @@ function telegramChatLabel(chat: Record<string, unknown>) {
 }
 
 async function resolveChat(userId: string) {
-  const admin = requireServerConfig();
   const settings = await getTelegramSettings(userId);
+
+  if (settings?.enabled && settings.chat_id) {
+    return {
+      ok: true,
+      linked: true,
+      chat_label: settings.chat_label || null,
+      username: settings.username || null,
+      reminder_offset_minutes: REMINDER_OFFSET_MINUTES,
+    };
+  }
+
   const pairingCode = normaliseText(settings?.pairing_code).toUpperCase();
   const expiresAt = settings?.pairing_expires_at ? new Date(settings.pairing_expires_at) : null;
 
@@ -377,52 +464,182 @@ async function resolveChat(userId: string) {
     fail(400, "pairing_code_expired", "Create a fresh pairing code, then send it to the Telegram bot.");
   }
 
-  const updates = await telegramRequest("getUpdates", {
-    limit: 100,
-    timeout: 0,
-    allowed_updates: ["message"],
-  });
-  const matchingUpdate = [...updates].reverse().find((update: Record<string, unknown>) => {
-    const message = update.message as Record<string, unknown> | undefined;
-    const chat = message?.chat as Record<string, unknown> | undefined;
-    const text = normaliseText(message?.text).toUpperCase();
-    return chat?.type === "private" && text.includes(pairingCode);
-  }) as Record<string, unknown> | undefined;
+  fail(404, "pairing_pending", "The pairing code has not been received by the Telegram bot yet.");
+}
 
-  if (!matchingUpdate) {
-    fail(404, "pairing_code_not_found", "No recent Telegram message matched that pairing code. Send the code to the bot, then try again.");
+function extractPairingCode(value: unknown) {
+  return normaliseText(value).toUpperCase().match(/OD-[A-Z0-9]{6}/)?.[0] || "";
+}
+
+async function handleTelegramMessageWebhook(message: TelegramMessage) {
+  const admin = requireServerConfig();
+  const chat = message.chat;
+  const code = extractPairingCode(message.text);
+  if (!chat?.id || chat.type !== "private" || !code) return;
+
+  const now = new Date().toISOString();
+  const { data: settings, error: settingsError } = await admin
+    .from("opsdeck_telegram_settings")
+    .select("user_id")
+    .eq("pairing_code", code)
+    .gt("pairing_expires_at", now)
+    .limit(1)
+    .maybeSingle();
+
+  if (settingsError) {
+    fail(500, "pairing_lookup_failed", settingsError.message);
   }
 
-  const message = matchingUpdate.message as Record<string, unknown>;
-  const chat = message.chat as Record<string, unknown>;
-  const chatId = String(chat.id);
+  if (!settings) {
+    return;
+  }
+
   const username = normaliseText(chat.username);
   const label = telegramChatLabel(chat);
-
-  const { error } = await admin
+  const { data: linked, error: updateError } = await admin
     .from("opsdeck_telegram_settings")
-    .upsert({
-      user_id: userId,
-      chat_id: chatId,
+    .update({
+      chat_id: String(chat.id),
       chat_label: label,
       username: username ? `@${username}` : null,
       enabled: true,
       pairing_code: null,
       pairing_expires_at: null,
-      linked_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
+      linked_at: now,
+      updated_at: now,
+    })
+    .eq("user_id", settings.user_id)
+    .eq("pairing_code", code)
+    .select("user_id")
+    .maybeSingle();
 
-  if (error) {
-    fail(500, "pairing_save_failed", error.message);
+  if (updateError || !linked) {
+    fail(500, "pairing_save_failed", updateError?.message || "Pairing state changed before it could be saved.");
   }
 
+  await sendTelegramMessage(String(chat.id), "Telegram reminders are linked to OpsDeck.");
+}
+
+async function answerTelegramCallback(callbackId: string, text: string, showAlert = false) {
+  if (!callbackId) return;
+  await telegramRequest("answerCallbackQuery", {
+    callback_query_id: callbackId,
+    text,
+    show_alert: showAlert,
+  });
+}
+
+async function removeSnoozeButton(chatId: string, messageId: number | undefined) {
+  if (!chatId || !messageId) return;
+  try {
+    await telegramRequest("editMessageReplyMarkup", {
+      chat_id: chatId,
+      message_id: messageId,
+      reply_markup: { inline_keyboard: [] },
+    });
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : "Snooze button could not be removed.");
+  }
+}
+
+async function handleTelegramCallbackWebhook(callback: TelegramCallbackQuery) {
+  const admin = requireServerConfig();
+  const callbackId = normaliseText(callback.id);
+  const chatId = callback.message?.chat?.id === undefined ? "" : String(callback.message.chat.id);
+  const messageId = callback.message?.message_id;
+  const reminderRunId = parseSnoozeReminderRunId(callback.data);
+
+  if (!callbackId || !chatId) return;
+  if (!messageId) {
+    await answerTelegramCallback(callbackId, "That reminder action is no longer available.", true);
+    return;
+  }
+  if (!reminderRunId) {
+    await answerTelegramCallback(callbackId, "That reminder action is no longer available.", true);
+    return;
+  }
+
+  const { data: settings, error: settingsError } = await admin
+    .from("opsdeck_telegram_settings")
+    .select("user_id")
+    .eq("chat_id", chatId)
+    .eq("enabled", true)
+    .limit(1)
+    .maybeSingle();
+  if (settingsError) {
+    fail(500, "settings_read_failed", settingsError.message);
+  }
+  if (!settings) {
+    await answerTelegramCallback(callbackId, "Telegram is not linked to an OpsDeck account.", true);
+    return;
+  }
+
+  const { data: run, error: runError } = await admin
+    .from("jumpseat_reminder_runs")
+    .select("id, user_id, message")
+    .eq("id", reminderRunId)
+    .eq("user_id", settings.user_id)
+    .maybeSingle();
+  if (runError) {
+    fail(500, "reminder_read_failed", runError.message);
+  }
+  if (!run?.message) {
+    await answerTelegramCallback(callbackId, "That reminder is no longer available.", true);
+    return;
+  }
+
+  const now = new Date();
+  const dueAt = new Date(now.getTime() + SNOOZE_MINUTES * 60_000);
+
+  const { error: insertError } = await admin
+    .from("jumpseat_reminder_snoozes")
+    .insert({
+      user_id: settings.user_id,
+      reminder_run_id: run.id,
+      chat_id: chatId,
+      source_message_id: messageId,
+      callback_query_id: callbackId,
+      due_at: dueAt.toISOString(),
+      next_attempt_at: dueAt.toISOString(),
+      status: "pending",
+    });
+
+  if (insertError?.code === "23505") {
+    await removeSnoozeButton(chatId, messageId);
+    await answerTelegramCallback(callbackId, "This reminder has already been snoozed.");
+    return;
+  }
+  if (insertError) {
+    fail(500, "snooze_save_failed", insertError.message);
+  }
+
+  await removeSnoozeButton(chatId, messageId);
+  await answerTelegramCallback(callbackId, "Snoozed for 15 minutes.");
+}
+
+async function handleTelegramWebhook(req: Request, update: TelegramUpdate) {
+  await requireTelegramWebhook(req);
+  if (update.message) await handleTelegramMessageWebhook(update.message);
+  if (update.callback_query) await handleTelegramCallbackWebhook(update.callback_query);
+  return { ok: true };
+}
+
+async function configureTelegramWebhook() {
+  const secret = await getTelegramWebhookSecret();
+  await telegramRequest("setWebhook", {
+    url: telegramFunctionUrl,
+    secret_token: secret,
+    allowed_updates: ["message", "callback_query"],
+    drop_pending_updates: false,
+  });
+  const status = await telegramRequest("getWebhookInfo", {});
   return {
     ok: true,
-    linked: true,
-    chat_label: label,
-    username: username ? `@${username}` : null,
-    reminder_offset_minutes: REMINDER_OFFSET_MINUTES,
+    configured: true,
+    url: status?.url || "",
+    allowed_updates: status?.allowed_updates || [],
+    pending_update_count: status?.pending_update_count || 0,
+    last_error_message: status?.last_error_message || "",
   };
 }
 
@@ -535,6 +752,8 @@ async function probe(userId: string) {
     username: settings?.username || null,
     test_sent_at: settings?.test_sent_at || null,
     reminder_offset_minutes: REMINDER_OFFSET_MINUTES,
+    snooze_minutes: SNOOZE_MINUTES,
+    snooze_supported: true,
     notes_policy: "Messages include note text when notes are present.",
     ltot_summary_supported: true,
   };
@@ -546,7 +765,12 @@ type ReminderClaim = {
   isRetry: boolean;
 };
 
-async function claimReminderRun(userId: string, request: JumpseatRequest, departureAt: Date): Promise<ReminderClaim | null> {
+async function claimReminderRun(
+  userId: string,
+  request: JumpseatRequest,
+  departureAt: Date,
+  message: string,
+): Promise<ReminderClaim | null> {
   const admin = requireServerConfig();
   const now = new Date();
   const nextAttemptAt = new Date(now.getTime() + REMINDER_RETRY_MINUTES * 60_000);
@@ -565,6 +789,7 @@ async function claimReminderRun(userId: string, request: JumpseatRequest, depart
     attempt_count: 1,
     last_attempt_at: now.toISOString(),
     next_attempt_at: nextAttemptAt.toISOString(),
+    message,
   };
   const { data, error } = await admin
     .from("jumpseat_reminder_runs")
@@ -597,6 +822,7 @@ async function claimReminderRun(userId: string, request: JumpseatRequest, depart
         attempt_count: nextAttempt,
         last_attempt_at: now.toISOString(),
         next_attempt_at: nextAttemptAt.toISOString(),
+        message,
         error: null,
       })
       .eq("id", existing.id)
@@ -643,9 +869,134 @@ async function finishReminderRun(id: string, status: "sent" | "error", message: 
   throw lastError || new Error("Reminder status could not be updated.");
 }
 
+type SnoozeSummary = {
+  due: number;
+  sent: number;
+  errors: number;
+};
+
+async function finishSnoozeRun(
+  id: string,
+  status: "sent" | "error",
+  errorMessage = "",
+) {
+  const admin = requireServerConfig();
+  const now = new Date();
+  const { error } = await admin
+    .from("jumpseat_reminder_snoozes")
+    .update({
+      status,
+      error: errorMessage || null,
+      sent_at: status === "sent" ? now.toISOString() : null,
+      next_attempt_at: status === "error"
+        ? new Date(now.getTime() + REMINDER_RETRY_MINUTES * 60_000).toISOString()
+        : null,
+      updated_at: now.toISOString(),
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+async function processDueSnoozes(now: Date): Promise<SnoozeSummary> {
+  const admin = requireServerConfig();
+  const nowIso = now.toISOString();
+  const staleBefore = new Date(now.getTime() - REMINDER_RETRY_MINUTES * 60_000).toISOString();
+
+  const { error: recoveryError } = await admin
+    .from("jumpseat_reminder_snoozes")
+    .update({
+      status: "error",
+      next_attempt_at: nowIso,
+      error: "Recovered an interrupted snooze delivery.",
+      updated_at: nowIso,
+    })
+    .eq("status", "processing")
+    .lt("last_attempt_at", staleBefore);
+  if (recoveryError) throw recoveryError;
+
+  const { data: candidates, error: queueError } = await admin
+    .from("jumpseat_reminder_snoozes")
+    .select("id, user_id, reminder_run_id, chat_id, status, attempt_count")
+    .in("status", ["pending", "error"])
+    .lte("due_at", nowIso)
+    .lte("next_attempt_at", nowIso)
+    .lt("attempt_count", MAX_REMINDER_ATTEMPTS)
+    .order("due_at", { ascending: true })
+    .limit(20);
+  if (queueError) throw queueError;
+
+  const summary: SnoozeSummary = { due: candidates?.length || 0, sent: 0, errors: 0 };
+
+  for (const candidate of candidates || []) {
+    const attemptCount = Number(candidate.attempt_count || 0);
+    const nextAttempt = attemptCount + 1;
+    const { data: claimed, error: claimError } = await admin
+      .from("jumpseat_reminder_snoozes")
+      .update({
+        status: "processing",
+        attempt_count: nextAttempt,
+        last_attempt_at: nowIso,
+        next_attempt_at: null,
+        error: null,
+        updated_at: nowIso,
+      })
+      .eq("id", candidate.id)
+      .eq("attempt_count", attemptCount)
+      .in("status", ["pending", "error"])
+      .select("id")
+      .maybeSingle();
+    if (claimError) {
+      summary.errors += 1;
+      continue;
+    }
+    if (!claimed) continue;
+
+    try {
+      const { data: run, error: runError } = await admin
+        .from("jumpseat_reminder_runs")
+        .select("id, message")
+        .eq("id", candidate.reminder_run_id)
+        .eq("user_id", candidate.user_id)
+        .maybeSingle();
+      if (runError) throw runError;
+      if (!run?.message) throw new Error("Original jumpseat reminder is unavailable.");
+
+      const { data: settings, error: settingsError } = await admin
+        .from("opsdeck_telegram_settings")
+        .select("user_id")
+        .eq("user_id", candidate.user_id)
+        .eq("chat_id", candidate.chat_id)
+        .eq("enabled", true)
+        .maybeSingle();
+      if (settingsError) throw settingsError;
+      if (!settings) throw new Error("Telegram is no longer linked for this reminder.");
+
+      await sendTelegramMessage(
+        candidate.chat_id,
+        run.message,
+        buildSnoozeReplyMarkup(run.id),
+      );
+      await finishSnoozeRun(candidate.id, "sent");
+      summary.sent += 1;
+    } catch (error) {
+      summary.errors += 1;
+      const message = error instanceof Error ? error.message : "Unknown snooze delivery error";
+      try {
+        await finishSnoozeRun(candidate.id, "error", message);
+      } catch (statusError) {
+        console.error(statusError instanceof Error ? statusError.message : "Snooze error status could not be saved.");
+      }
+      console.error(message);
+    }
+  }
+
+  return summary;
+}
+
 async function runJumpseatReminders() {
   const admin = requireServerConfig();
   const now = new Date();
+  const snoozes = await processDueSnoozes(now);
   const { data: settingsRows, error: settingsError } = await admin
     .from("opsdeck_telegram_settings")
     .select("user_id, chat_id")
@@ -659,7 +1010,16 @@ async function runJumpseatReminders() {
   const settingsByUser = new Map((settingsRows || []).map((row) => [row.user_id, row.chat_id]));
   const userIds = [...settingsByUser.keys()];
   if (userIds.length === 0) {
-    return { ok: true, checked_at: now.toISOString(), users: 0, due: 0, sent: 0, skipped_duplicates: 0, errors: 0 };
+    return {
+      ok: true,
+      checked_at: now.toISOString(),
+      users: 0,
+      due: 0,
+      sent: 0,
+      skipped_duplicates: 0,
+      errors: 0,
+      snoozes,
+    };
   }
 
   const { data: requestRows, error: requestError } = await admin
@@ -691,14 +1051,14 @@ async function runJumpseatReminders() {
       let claim: ReminderClaim | null = null;
 
       try {
-        claim = await claimReminderRun(row.user_id, request, departureAt);
+        claim = await claimReminderRun(row.user_id, request, departureAt, message);
         if (!claim) {
           skippedDuplicates += 1;
           continue;
         }
         if (claim.isRetry) retried += 1;
 
-        await sendTelegramMessage(chatId, message);
+        await sendTelegramMessage(chatId, message, buildSnoozeReplyMarkup(claim.id));
         await finishReminderRun(claim.id, "sent", message);
         sent += 1;
       } catch (error) {
@@ -728,6 +1088,8 @@ async function runJumpseatReminders() {
     reminder_offset_minutes: REMINDER_OFFSET_MINUTES,
     reminder_window_minutes: REMINDER_WINDOW_MINUTES,
     max_reminder_attempts: MAX_REMINDER_ATTEMPTS,
+    snooze_minutes: SNOOZE_MINUTES,
+    snoozes,
   };
 }
 
@@ -742,11 +1104,20 @@ Deno.serve(async (req: Request) => {
     }
 
     const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+    if (body.update_id !== undefined || body.message || body.callback_query) {
+      return jsonResponse(await handleTelegramWebhook(req, body as TelegramUpdate));
+    }
+
     const action = String(body.action || "");
 
     if (action === "run_jumpseat_reminders") {
       requireCron(req, body);
       return jsonResponse(await runJumpseatReminders());
+    }
+
+    if (action === "configure_webhook") {
+      requireCron(req, body);
+      return jsonResponse(await configureTelegramWebhook());
     }
 
     const user = await requireUser(req);

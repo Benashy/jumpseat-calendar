@@ -7,6 +7,8 @@
 - OpsDeck Settings screen for pairing Telegram and sending tests.
 - Fixed jumpseat reminder timing: 75 minutes before Zulu departure.
 - One scheduled reminder per saved flight/date.
+- A `Snooze 15 minutes` button on scheduled jumpseat reminders and their snoozed repeats.
+- Duplicate-tap protection so one Telegram message can create only one snooze.
 - Telegram messages include flight, route, British-format departure date, request names, BA ID yes/no, available jumpseats, and note text when present.
 - Manual LTOT summary sending is prepared in the app and Edge Function source. The live button appears once the updated Edge Function is deployed and reports LTOT summary support.
 
@@ -41,15 +43,17 @@ Do not add these to GitHub, `app.js`, `supabase-config.js`, localStorage, or any
 6. Return to OpsDeck and press Check pairing.
 7. Press Send test or Send sample reminder.
 
+Pairing messages and snooze button taps are received through Telegram's verified webhook. The webhook secret is generated and retained in Supabase Vault; it is not stored in the browser or repository.
+
 ## Cron
 
-Supabase Cron calls the Edge Function every 5 minutes once secrets and test pairing are confirmed.
+Supabase Cron calls the Edge Function every minute once secrets and test pairing are confirmed. This keeps a 15-minute snooze close to its requested time while remaining independent of the iPhone, iPad and MacBook.
 
 Production status checked on 23 July 2026:
 
 - `pg_cron`, `pg_net`, and Supabase Vault are enabled.
-- Job `opsdeck-jumpseat-reminders-every-5-minutes` is active.
-- Schedule is every 5 minutes.
+- Job `opsdeck-jumpseat-reminders-every-minute` is active.
+- Schedule is every minute.
 - HTTP timeout is 30 seconds.
 - A live BA123 test reminder was recorded as sent at `09:35:02Z`.
 

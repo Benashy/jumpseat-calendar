@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.46.
+- Current visible app version: v2.47.
 - The top navigation contains `Jumpseat`, `FDP & LTOT` and `Tools`. Tools opens a dedicated landing view for the Radio Altimeter Position Check and NOTOC, while Jumpseat retains contextual `Add request` and `Back to requests` actions.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -42,11 +42,13 @@
 - v2.45 loaded the initial private SHC/DG mapping with explicit verification states.
 - v2.45 expands the verified `ICE` entry with the documented 2.5 kg per-person passenger/crew baggage allowance, approval, venting, marking and AVI segregation requirements. Cargo, aircraft, hold and compartment quantity limits remain explicitly unknown pending the current CDGM.
 - v2.46 removes undocumented codes from the private library, leaving 92 entries: 45 current-manual verified codes and 47 codes whose NOTOC expectation still requires verification. It also enlarges the iPad RA diagram, keeps exact calculated values while reducing visual path-length compression, shortens labels, and shows the dashed 3.0-degree comparison only outside the 2.8 to 3.3 degree band.
+- v2.47 adds a duplicate-protected `Snooze 15 minutes` action to scheduled Jumpseat Telegram reminders, moves bot pairing to the same verified Telegram webhook, and checks the server-side snooze queue every minute.
+- v2.47 adds a structured BA mobility-aid battery policy extraction brief. The battery tool remains on its cautious referral path until the required current BA evidence is returned and reviewed.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
 - Telegram setup now lives under Settings, with a realistic sample reminder test message.
-- Supabase Cron is active every 5 minutes, using pg_net with a 30-second timeout.
+- Supabase Cron is active every minute, using pg_net with a 30-second timeout.
 - Live Telegram reminder test passed on 23 July 2026: BA123 sent at `09:35:02Z`.
 - Telegram reminder wording now uses British date format, removes the redundant timing line, and includes notes directly when present.
 - The current day-to-day workflow is considered well optimised; further functional additions should be driven by operational use rather than added speculatively.
@@ -56,8 +58,9 @@
 - Radio Altimeter release gate: independently verify the ten specified manual references, confirm the current OMA cold-weather trigger, compare the complete validation matrix with the BA Cold Weather Calculator, and obtain pilot/OMC review before removing the development label.
 - NOTOC release gate: verify the 47 documented code entries whose NOTOC expectation is not yet confirmed, complete Dangerous Goods/SME review, and repeat operational offline/device testing before removing the development label.
 - NOTOC policy maintenance: retain stable rule and source IDs, record the effective date and revision of every verified source, and keep unsupported codes on the referral path until the mapping is complete.
+- Mobility-aid battery policy: run `BA_MOBILITY_AID_BATTERY_POLICY_EXTRACTION_BRIEF.md` against the current BA manuals, review the returned sources and decision matrix, then simplify and rebuild the question flow before operational use.
 
-- Telegram testing: confirm an ordinary scheduled reminder still arrives once after the retry update, then keep observing delivery over several sectors.
+- Telegram testing: confirm an ordinary scheduled reminder arrives once with the snooze button, a single tap produces one repeat about 15 minutes later, and a rapid double tap cannot schedule two repeats.
 - Backup verification: download a JSON backup, retain it somewhere separate, and perform a controlled restore test using non-operational sample data.
 - Operational testing: use the app non-operationally alongside the normal BA/manual process, then note anything that slows the user down, is easy to misread, or feels clumsy.
 - LTOT reference data: add the exact BA AOMA reference wording/numbering if it differs from `OMA 7.7 Table 2`.

@@ -6,8 +6,8 @@
 -- 3. Telegram pairing and Send test work from OpsDeck.
 --
 -- Replace CHANGE_ME_CRON_SECRET with the same private value used for OPSDECK_CRON_SECRET.
--- This schedules the reminder checker every 5 minutes and gives the Edge Function
--- a 30-second timeout to allow for occasional cold starts.
+-- This schedules the reminder checker every minute so a 15-minute Telegram
+-- snooze remains accurate, with a 30-second timeout for occasional cold starts.
 
 create extension if not exists pg_net with schema extensions;
 create extension if not exists pg_cron;
@@ -29,9 +29,16 @@ where exists (
   where jobname = 'opsdeck-jumpseat-reminders-every-5-minutes'
 );
 
+select cron.unschedule('opsdeck-jumpseat-reminders-every-minute')
+where exists (
+  select 1
+  from cron.job
+  where jobname = 'opsdeck-jumpseat-reminders-every-minute'
+);
+
 select cron.schedule(
-  'opsdeck-jumpseat-reminders-every-5-minutes',
-  '*/5 * * * *',
+  'opsdeck-jumpseat-reminders-every-minute',
+  '* * * * *',
   $$
   select
     net.http_post(
