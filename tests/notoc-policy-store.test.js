@@ -29,12 +29,48 @@ function memoryStorage() {
   };
 }
 
-function policyRecord(mapping) {
+function mobilityPolicy() {
+  const configurations = {
+    "LI-I": "INSTALLED",
+    "LI-R-1-300": "REMOVED",
+    "LI-R-2-160": "REMOVED",
+    "LI-S-1-300": "SPARE",
+    "LI-S-2-160": "SPARE",
+    "DRY-I": "INSTALLED",
+    "DRY-R": "REMOVED",
+    "DRY-S-1": "SPARE",
+    "NSW-I": "INSTALLED",
+    "NSW-R": "REMOVED",
+    "NSW-S-1": "SPARE",
+    "WET-I-UP": "INSTALLED",
+    "WET-R-UNSECURED": "REMOVED",
+    "WET-R-NOUPRIGHT": "REMOVED",
+    "WET-S": "SPARE",
+  };
+  return {
+    policy_version: "test-mobility-policy",
+    decision_branches: Object.entries(configurations).map(([id, configuration]) => ({
+      id,
+      battery_type: "TEST",
+      configuration,
+      status: "TEST",
+      result_if_consistent: "Test result",
+      conditions: [],
+      location: [configuration === "INSTALLED" ? "HOLD" : "CABIN"],
+      notoc: { required: true },
+      sources: [{ evidence_class: "INTERNAL_BA", document: "Test source", section: "Test section" }],
+    })),
+  };
+}
+
+function policyRecord(mapping, mobility = null) {
   return {
     policy_version: "2026-08-18.2",
     mapping_sha256: "a".repeat(64),
     updated_at: "2026-08-18T21:00:00.000Z",
     mapping,
+    mobility_policy: mobility,
+    mobility_policy_sha256: mobility ? "b".repeat(64) : null,
   };
 }
 
@@ -49,10 +85,26 @@ test("rejects duplicate codes and unsupported verification states", () => {
 
 test("cache is isolated by authenticated user id", () => {
   const storage = memoryStorage();
-  store.save(storage, "user-a", policyRecord([mappingEntry()]));
+  store.save(storage, "user-a", policyRecord([mappingEntry()], mobilityPolicy()));
 
   assert.equal(store.load(storage, "user-a").mapping[0].code, "ICE");
+  assert.equal(store.load(storage, "user-a").mobilityPolicy.decision_branches.length, 15);
   assert.equal(store.load(storage, "user-b"), null);
+});
+
+test("private mobility policy requires all controlled branches and a hash", () => {
+  const complete = mobilityPolicy();
+  assert.equal(store.validateMobilityAidPolicy(complete), true);
+  assert.equal(store.validateMobilityAidPolicy({
+    ...complete,
+    decision_branches: complete.decision_branches.slice(1),
+  }), false);
+
+  const invalidHash = store.normaliseRecord({
+    ...policyRecord([mappingEntry()], complete),
+    mobility_policy_sha256: "invalid",
+  }, "user-a");
+  assert.equal(invalidHash.mobilityPolicy, null);
 });
 
 test("summary keeps unresolved codes explicit", () => {

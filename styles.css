@@ -3152,6 +3152,10 @@ html[data-theme="night"] input[type="time"] {
   padding: 16px;
 }
 
+.notoc-form.hidden {
+  display: none;
+}
+
 .ra-form label,
 .notoc-form > label,
 .notoc-field-grid > label {
@@ -3851,12 +3855,6 @@ html[data-theme="night"] input[type="time"] {
   padding-top: 2px;
 }
 
-.ema-review-stage h4,
-.ema-result-answers h4 {
-  color: var(--navy);
-  font-size: 1rem;
-}
-
 .ema-answer-summary {
   display: grid;
   margin: 0;
@@ -3889,10 +3887,53 @@ html[data-theme="night"] input[type="time"] {
 }
 
 .ema-result-answers {
-  display: grid;
-  gap: 8px;
   border-top: 1px solid var(--line);
   padding-top: 10px;
+}
+
+.ema-result-answers summary {
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 2px 0 8px;
+}
+
+.notoc-result-details {
+  display: grid;
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+}
+
+.notoc-result-details > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.55fr) minmax(0, 1.45fr);
+  gap: 12px;
+  padding: 9px 11px;
+}
+
+.notoc-result-details > div + div {
+  border-top: 1px solid var(--line);
+}
+
+.notoc-result-details dt,
+.notoc-result-details dd {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.notoc-result-details dt {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.notoc-result-details dd {
+  color: var(--ink);
+  font-weight: 800;
 }
 
 .ema-result-actions {
@@ -4204,11 +4245,13 @@ html[data-theme="night"] input[type="time"] {
 
   .ema-choice-grid,
   .ema-choice-grid.is-three-options,
-  .ema-answer-summary > div {
+  .ema-answer-summary > div,
+  .notoc-result-details > div {
     grid-template-columns: 1fr;
   }
 
-  .ema-answer-summary > div {
+  .ema-answer-summary > div,
+  .notoc-result-details > div {
     gap: 2px;
   }
 

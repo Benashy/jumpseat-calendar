@@ -79,13 +79,13 @@ Supabase's default magic-link limits are strict during repeated testing:
 
 If magic links become frustrating, prefer password sign-in day to day, or review Authentication > Rate Limits in Supabase. Custom SMTP is only worth considering if email delivery or limits become a genuine problem.
 
-## Private NOTOC Code Library
+## Private NOTOC Policy
 
-The NOTOC mapping is deliberately not stored in this public repository. Supabase holds one read-only policy row for each authorised user in `opsdeck_notoc_policy`; browser clients may select their own row but cannot create, alter or delete it.
+The NOTOC code mapping and mobility-aid battery policy are deliberately not stored in this public repository. Supabase holds one read-only policy row for each authorised user in `opsdeck_notoc_policy`; browser clients may select their own row but cannot create, alter or delete it.
 
-After an authenticated load, OpsDeck keeps a user-specific copy on that device for offline use. It does not load that copy into the app without a saved signed-in session, and removes the mapping from the running page on sign-out.
+After an authenticated load, OpsDeck keeps a user-specific copy on that device for offline use. It does not load that copy into the app without a saved signed-in session, and removes the policy from the running page on sign-out.
 
-Future mapping updates must be applied through an authorised Supabase administration route. Never add the source JSON, a service-role key or a database password to the repository or browser code.
+Future policy updates must be applied through an authorised Supabase administration route. Never add the source JSON, a service-role key or a database password to the repository or browser code.
 
 ## 7. Test
 

@@ -6,7 +6,7 @@ const test = require("node:test");
 const root = path.join(__dirname, "..");
 const functionSource = fs.readFileSync(path.join(root, "supabase/functions/opsdeck-telegram/index.ts"), "utf8");
 const migrationSource = fs.readFileSync(
-  path.join(root, "supabase/migrations/20260823101126_add_jumpseat_snooze_webhook.sql"),
+  path.join(root, "supabase/migrations/20260823082500_add_jumpseat_snooze_webhook.sql"),
   "utf8",
 );
 

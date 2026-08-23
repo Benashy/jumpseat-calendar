@@ -1,6 +1,6 @@
 const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
-const APP_VERSION = "2.47";
+const APP_VERSION = "2.48";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 2;
 const MAGIC_LINK_SENT_KEY = "jumpseat-calendar-magic-link-sent-at";
@@ -312,27 +312,31 @@ function announceNotocPolicyUpdate() {
   document.dispatchEvent(new CustomEvent("opsdeck:notoc-policy-updated"));
 }
 
-function resetNotocPolicy(message = "Sign in to load the BA code library.") {
+function resetNotocPolicy(message = "Sign in to load the BA policy.") {
   notocPolicyApi?.resetHandlingCodeMapping?.();
+  notocPolicyApi?.resetMobilityAidPolicy?.();
   notocPolicyLoadedUserId = null;
   notocPolicySource = "none";
   setNotocPolicyStatus(message, "unavailable");
   announceNotocPolicyUpdate();
 }
 
-function policyStatusMessage(mapping, source) {
+function policyStatusMessage(policyRecord, source) {
+  const mapping = policyRecord?.mapping || policyRecord || [];
   const summary = notocPolicyStore.summarise(mapping);
+  const mobilityReady = Boolean(policyRecord?.mobilityPolicy || policyRecord?.mobility_policy);
   const unresolved = summary.unresolvedCodes.length
     ? ` · ${summary.unresolvedCodes.length} unresolved`
     : "";
   const prefix = source === "cloud"
-    ? "BA code library ready"
-    : `Saved BA code library${navigator.onLine ? "" : " · offline"}`;
-  return `${prefix} · ${summary.codeCount} codes${unresolved}`;
+    ? "BA policy ready"
+    : `Saved BA policy${navigator.onLine ? "" : " · offline"}`;
+  const mobility = mobilityReady ? " · battery guidance ready" : " · battery guidance unavailable";
+  return `${prefix} · ${summary.codeCount} codes${unresolved}${mobility}`;
 }
 
 function applyNotocPolicyRecord(record, userId, source) {
-  if (!notocPolicyApi?.setHandlingCodeMapping || !notocPolicyStore) return false;
+  if (!notocPolicyApi?.setHandlingCodeMapping || !notocPolicyApi?.setMobilityAidPolicy || !notocPolicyStore) return false;
   const envelope = notocPolicyStore.normaliseRecord(record, userId);
   if (!envelope) return false;
 
@@ -341,9 +345,18 @@ function applyNotocPolicyRecord(record, userId, source) {
     updatedAt: envelope.updatedAt,
     source,
   });
+  if (envelope.mobilityPolicy) {
+    notocPolicyApi.setMobilityAidPolicy(envelope.mobilityPolicy, {
+      policyVersion: envelope.policyVersion,
+      updatedAt: envelope.updatedAt,
+      source,
+    });
+  } else {
+    notocPolicyApi.resetMobilityAidPolicy?.();
+  }
   notocPolicyLoadedUserId = String(userId);
   notocPolicySource = source;
-  setNotocPolicyStatus(policyStatusMessage(envelope.mapping, source), source === "cloud" ? "ready" : "saved");
+  setNotocPolicyStatus(policyStatusMessage(envelope, source), source === "cloud" ? "ready" : "saved");
   announceNotocPolicyUpdate();
   return true;
 }
@@ -365,33 +378,36 @@ async function loadNotocPolicy({ forceCloud = false } = {}) {
   }
 
   if (!forceCloud && notocPolicyLoadedUserId === userId && notocPolicySource === "cloud") return;
-  setNotocPolicyStatus("Updating BA code library...");
+  setNotocPolicyStatus("Updating BA policy...");
 
   const { data, error } = await supabaseClient
     .from(NOTOC_POLICY_TABLE)
-    .select("policy_version,mapping,mapping_sha256,updated_at")
+    .select("policy_version,mapping,mapping_sha256,mobility_policy,mobility_policy_sha256,updated_at")
     .eq("user_id", userId)
     .maybeSingle();
 
   if (currentUser?.id !== userId) return;
   if (error || !data) {
     if (hasCachedPolicy) {
-      setNotocPolicyStatus(policyStatusMessage(notocPolicyApi.POLICY_PACK.handlingCodes, "cache"), "saved");
+      setNotocPolicyStatus(policyStatusMessage({
+        mapping: notocPolicyApi.POLICY_PACK.handlingCodes,
+        mobilityPolicy: notocPolicyApi.POLICY_PACK.mobilityAidPolicy,
+      }, "cache"), "saved");
     } else {
-      resetNotocPolicy("BA code library unavailable. Refresh when online.");
+      resetNotocPolicy("BA policy unavailable. Refresh when online.");
     }
     return;
   }
 
   if (!applyNotocPolicyRecord(data, userId, "cloud")) {
-    if (!hasCachedPolicy) resetNotocPolicy("BA code library failed validation. Refer instead.");
+    if (!hasCachedPolicy) resetNotocPolicy("BA policy failed validation. Refer instead.");
     return;
   }
 
   try {
     notocPolicyStore.save(localStorage, userId, data);
   } catch (_error) {
-    setNotocPolicyStatus(`${policyStatusMessage(data.mapping, "cloud")} · offline copy not saved`, "saved");
+    setNotocPolicyStatus(`${policyStatusMessage(data, "cloud")} · offline copy not saved`, "saved");
   }
 }
 

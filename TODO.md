@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.47.
+- Current visible app version: v2.48.
 - The top navigation contains `Jumpseat`, `FDP & LTOT` and `Tools`. Tools opens a dedicated landing view for the Radio Altimeter Position Check and NOTOC, while Jumpseat retains contextual `Add request` and `Back to requests` actions.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -44,6 +44,7 @@
 - v2.46 removes undocumented codes from the private library, leaving 92 entries: 45 current-manual verified codes and 47 codes whose NOTOC expectation still requires verification. It also enlarges the iPad RA diagram, keeps exact calculated values while reducing visual path-length compression, shortens labels, and shows the dashed 3.0-degree comparison only outside the 2.8 to 3.3 degree band.
 - v2.47 adds a duplicate-protected `Snooze 15 minutes` action to scheduled Jumpseat Telegram reminders, moves bot pairing to the same verified Telegram webhook, and checks the server-side snooze queue every minute.
 - v2.47 adds a structured BA mobility-aid battery policy extraction brief. The battery tool remains on its cautious referral path until the required current BA evidence is returned and reviewed.
+- v2.48 stores the reviewed 15-branch BA mobility-aid battery policy privately in Supabase and replaces the earlier generic battery questions with a one-question-at-a-time Captain's cross-check. Dry-cell and non-spillable wet batteries remain separate, missing or conflicting handling and NOTOC information is explicit, and any branch with incomplete internal evidence continues to refer.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
@@ -58,7 +59,7 @@
 - Radio Altimeter release gate: independently verify the ten specified manual references, confirm the current OMA cold-weather trigger, compare the complete validation matrix with the BA Cold Weather Calculator, and obtain pilot/OMC review before removing the development label.
 - NOTOC release gate: verify the 47 documented code entries whose NOTOC expectation is not yet confirmed, complete Dangerous Goods/SME review, and repeat operational offline/device testing before removing the development label.
 - NOTOC policy maintenance: retain stable rule and source IDs, record the effective date and revision of every verified source, and keep unsupported codes on the referral path until the mapping is complete.
-- Mobility-aid battery policy: run `BA_MOBILITY_AID_BATTERY_POLICY_EXTRACTION_BRIEF.md` against the current BA manuals, review the returned sources and decision matrix, then simplify and rebuild the question flow before operational use.
+- Mobility-aid battery operational review: use v2.48 cautiously alongside current BA documentation, record where questions or referrals do not match the real NOTOC workflow, and obtain Dangerous Goods/SME review before treating the result as anything beyond a Captain's consistency check.
 
 - Telegram testing: confirm an ordinary scheduled reminder arrives once with the snooze button, a single tap produces one repeat about 15 minutes later, and a rapid double tap cannot schedule two repeats.
 - Backup verification: download a JSON backup, retain it somewhere separate, and perform a controlled restore test using non-operational sample data.

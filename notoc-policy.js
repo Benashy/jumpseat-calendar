@@ -4,7 +4,7 @@
   const CARRIED_FORWARD = "CARRIED_FORWARD_REQUIRES_CURRENT_MANUAL_CHECK";
   const MISSING_SOURCE = "MISSING_SOURCE";
 
-  const sources = [
+  const baseSources = [
     {
       id: "BA-OMA-NOTOC-FORM",
       documentId: "BA-OMA",
@@ -61,51 +61,6 @@
       verificationStatus: CARRIED_FORWARD,
     },
     {
-      id: "BA-OMA-EMA-LI-INSTALLED",
-      documentId: "BA-OMA",
-      documentTitle: "BA Operations Manual Part A",
-      sectionPath: ["Section 9.B", "Lithium batteries installed in electric wheelchairs or EMAs"],
-      supportedText: "The battery remains securely attached and is isolated against inadvertent activation. Operator approval and PIC location notification apply. The recovered rule does not specify a maximum Wh rating while securely installed.",
-      classification: "DOCUMENTED_BA",
-      verificationStatus: CARRIED_FORWARD,
-    },
-    {
-      id: "BA-OMA-EMA-LI-REMOVED",
-      documentId: "BA-OMA",
-      documentTitle: "BA Operations Manual Part A",
-      sectionPath: ["Section 9.B", "Lithium batteries removed from electric wheelchairs or EMAs"],
-      supportedText: "A removed lithium EMA battery is limited to 300 Wh, carried in the cabin, protected against short circuit, subject to operator approval and notified to the PIC with its location.",
-      classification: "DOCUMENTED_BA",
-      verificationStatus: CARRIED_FORWARD,
-    },
-    {
-      id: "BA-OMA-EMA-LI-SPARE",
-      documentId: "BA-OMA",
-      documentTitle: "BA Operations Manual Part A",
-      sectionPath: ["Section 9.B", "Spare lithium battery for an electric wheelchair or EMA", "Exact subsection title to be confirmed"],
-      supportedText: "A maximum of one spare lithium EMA battery is carried in the cabin, limited to 300 Wh, individually protected against short circuit and subject to operator approval and location notification.",
-      classification: "DOCUMENTED_BA",
-      verificationStatus: CARRIED_FORWARD,
-    },
-    {
-      id: "BA-OMA-EMA-NONSPILLABLE",
-      documentId: "BA-OMA",
-      documentTitle: "BA Operations Manual Part A",
-      sectionPath: ["Section 9.B", "Non-spillable wet battery mobility aid", "Exact subsection to be confirmed"],
-      supportedText: "The recovered high-level rule permits the relevant EMA category and one spare non-spillable battery in the hold, with operator approval and PIC location notification. Detailed handling requirements are not available in this pack.",
-      classification: "DOCUMENTED_BA",
-      verificationStatus: CARRIED_FORWARD,
-    },
-    {
-      id: "BA-OMA-EMA-SPILLABLE",
-      documentId: "BA-OMA",
-      documentTitle: "BA Operations Manual Part A",
-      sectionPath: ["Section 9.B", "Spillable wet battery mobility aid", "Exact subsection to be confirmed"],
-      supportedText: "The recovered high-level rule allows carriage subject to the applicable requirements and does not permit a spare spillable battery. Detailed handling requirements require the CDGM.",
-      classification: "DOCUMENTED_BA",
-      verificationStatus: CARRIED_FORWARD,
-    },
-    {
       id: "BA-CDGM-MISSING",
       documentId: "BA-CDGM",
       documentTitle: "BA Corporate Dangerous Goods Manual",
@@ -145,16 +100,11 @@
     releaseStatus: classification === "APP_GUIDANCE" ? "ACTIVE" : "BLOCKED",
   });
 
-  const rules = [
+  const baseRules = [
     rule("BA-OMA-NOTOC-SIGNATURE-ACKNOWLEDGEMENT", "NOTOC signature acknowledgement", "SIGNATURE", "DOCUMENTED_BA", ["BA-OMA-NOTOC-SIGNATURE", "BA-OMB-NOTOC-PROCESS"]),
     rule("BA-OMA-NOTOC-SUSPECTED-ERROR-REFER", "Suspected NOTOC error referral", "NOTOC_PROCESS", "DOCUMENTED_BA", ["BA-OMA-NOTOC-FORM"]),
     rule("BA-OMA-OPERATOR-ACCEPTANCE-RESPONSIBILITIES", "Operator acceptance responsibilities", "SIGNATURE", "DOCUMENTED_BA", ["BA-OMA-OPERATOR-ACCEPTANCE"]),
     rule("BA-LBM-SPECIAL-LOAD-SECURING-INSPECTION", "Special-load securing inspection", "NOTOC_PROCESS", "DOCUMENTED_BA", ["BA-LBM-SPECIAL-LOAD"]),
-    rule("BA-OMA-EMA-LI-INSTALLED", "Installed lithium EMA battery", "EMA", "DOCUMENTED_BA", ["BA-OMA-EMA-LI-INSTALLED"], ["securelyAttached", "isolatedAgainstInadvertentActivation", "operatorApprovalConfirmed", "location"]),
-    rule("BA-OMA-EMA-LI-REMOVED", "Removed lithium EMA battery", "EMA", "DOCUMENTED_BA", ["BA-OMA-EMA-LI-REMOVED"], ["wattHours", "terminalsProtected", "operatorApprovalConfirmed", "location"]),
-    rule("BA-OMA-EMA-LI-SPARE", "Spare lithium EMA battery", "EMA", "DOCUMENTED_BA", ["BA-OMA-EMA-LI-SPARE"], ["spareCount", "wattHours", "terminalsProtected", "operatorApprovalConfirmed", "location"]),
-    rule("BA-OMA-EMA-NONSPILLABLE", "Non-spillable wet battery EMA", "EMA", "DOCUMENTED_BA", ["BA-OMA-EMA-NONSPILLABLE", "BA-CDGM-MISSING"], ["installedStatus", "location"]),
-    rule("BA-OMA-EMA-SPILLABLE", "Spillable wet battery EMA", "EMA", "DOCUMENTED_BA", ["BA-OMA-EMA-SPILLABLE", "BA-CDGM-MISSING"], ["installedStatus", "location"]),
     rule("BA-CDGM-NOTOC-CODE-MAPPING-MISSING", "Missing authoritative SHC/DG mapping", "SHC_CODE", "UNSUPPORTED", ["BA-SHC-MAPPING-MISSING"]),
     rule("OPSDECK-NOTOC-INDICATOR-CROSSCHECK", "NOTOC indicator cross-check", "NOTOC_PROCESS", "APP_GUIDANCE", ["OPSDECK-NOTOC-APP-GUIDANCE", "BA-OMA-NOTOC-FORM"]),
   ];
@@ -163,11 +113,30 @@
     id: "opsdeck-ba-notoc-development",
     version: "2026.08-development.1",
     status: "DEVELOPMENT",
-    sources,
-    rules,
+    sources: [...baseSources],
+    rules: [...baseRules],
     handlingCodes: [],
     mappingMetadata: null,
+    mobilityAidPolicy: null,
+    mobilityMetadata: null,
   };
+
+  const CONFIRMED_MOBILITY_BRANCH_IDS = new Set(["LI-I", "DRY-I", "NSW-I", "WET-I-UP", "WET-R-NOUPRIGHT"]);
+  const CONFIRMED_DISCREPANCY_BRANCH_IDS = new Set(["WET-S"]);
+  let currentPolicyVersion = POLICY_PACK.version;
+  let handlingSources = [];
+  let handlingRules = [];
+  let handlingCodes = [];
+  let mobilitySources = [];
+  let mobilityRules = [];
+
+  function rebuildPolicyPack() {
+    POLICY_PACK.version = currentPolicyVersion;
+    POLICY_PACK.status = handlingCodes.length || POLICY_PACK.mobilityAidPolicy ? "CONTROLLED_MAPPING" : "DEVELOPMENT";
+    POLICY_PACK.sources = [...baseSources, ...handlingSources, ...mobilitySources];
+    POLICY_PACK.rules = [...baseRules, ...handlingRules, ...mobilityRules];
+    POLICY_PACK.handlingCodes = handlingCodes;
+  }
 
   function safeId(value) {
     return String(value || "UNKNOWN").toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -178,7 +147,7 @@
 
     const dynamicSources = [];
     const dynamicRules = [];
-    const handlingCodes = entries.map((entry, index) => {
+    const nextHandlingCodes = entries.map((entry, index) => {
       const code = String(entry.code || "").trim().toUpperCase();
       const suffix = `${String(index + 1).padStart(3, "0")}-${safeId(code)}`;
       const sourceId = `BA-NOTOC-MAPPING-SOURCE-${suffix}`;
@@ -223,35 +192,113 @@
       };
     });
 
-    POLICY_PACK.version = String(metadata.policyVersion || "private-mapping");
-    POLICY_PACK.status = "CONTROLLED_MAPPING";
-    POLICY_PACK.sources = [...sources, ...dynamicSources];
-    POLICY_PACK.rules = [...rules, ...dynamicRules];
-    POLICY_PACK.handlingCodes = handlingCodes;
+    currentPolicyVersion = String(metadata.policyVersion || "private-mapping");
+    handlingSources = dynamicSources;
+    handlingRules = dynamicRules;
+    handlingCodes = nextHandlingCodes;
     POLICY_PACK.mappingMetadata = {
       source: metadata.source || "cloud",
       updatedAt: metadata.updatedAt || null,
-      codeCount: handlingCodes.length,
-      unresolvedCodes: handlingCodes
+      codeCount: nextHandlingCodes.length,
+      unresolvedCodes: nextHandlingCodes
         .filter((entry) => entry.verificationStatus === "UNVERIFIED_NOT_FOUND")
         .map((entry) => entry.code),
     };
+    rebuildPolicyPack();
 
     return POLICY_PACK.mappingMetadata;
   }
 
+  function mobilitySourceRecord(branch, source, index) {
+    const sourceId = `BA-MOBILITY-${safeId(branch.id)}-SOURCE-${String(index + 1).padStart(2, "0")}`;
+    const internal = source.evidence_class === "INTERNAL_BA";
+    return {
+      id: sourceId,
+      documentId: safeId(source.document),
+      documentTitle: source.document,
+      sectionPath: [source.section, source.revision, source.effective_date].filter(Boolean),
+      supportedText: [
+        ...(branch.conditions || []),
+        ...(branch.packaging || []),
+        source.qualification,
+      ].filter(Boolean).join(" "),
+      classification: internal ? "DOCUMENTED_BA" : "PUBLIC_BA",
+      verificationStatus: internal ? "VERIFIED_SUPPLIED_MANUAL" : "VERIFIED_CURRENT_PUBLIC_BA",
+    };
+  }
+
+  function setMobilityAidPolicy(policy, metadata = {}) {
+    if (!policy || !Array.isArray(policy.decision_branches)) {
+      throw new Error("The BA mobility-aid policy is invalid.");
+    }
+
+    const nextSources = [];
+    const nextRules = [];
+    const branches = policy.decision_branches.map((branch) => {
+      const sourceRecords = (branch.sources || []).map((source, index) => mobilitySourceRecord(branch, source, index));
+      const sourceIds = sourceRecords.map((source) => source.id);
+      const ruleId = `BA-MOBILITY-${safeId(branch.id)}`;
+      const active = CONFIRMED_MOBILITY_BRANCH_IDS.has(branch.id) || CONFIRMED_DISCREPANCY_BRANCH_IDS.has(branch.id);
+      nextSources.push(...sourceRecords);
+      nextRules.push({
+        id: ruleId,
+        title: `${branch.id} mobility-aid battery branch`,
+        domain: "EMA",
+        classification: "DOCUMENTED_BA",
+        verificationStatus: active ? "REVIEWED_BA_EVIDENCE" : "REVIEWED_WITH_LIMITATION",
+        sourceIds,
+        requiredInputs: [],
+        releaseStatus: active ? "ACTIVE" : "BLOCKED",
+      });
+      return { ...branch, ruleId, sourceIds };
+    });
+
+    currentPolicyVersion = String(metadata.policyVersion || policy.policy_version || currentPolicyVersion);
+    mobilitySources = nextSources;
+    mobilityRules = nextRules;
+    POLICY_PACK.mobilityAidPolicy = { ...policy, decision_branches: branches };
+    POLICY_PACK.mobilityMetadata = {
+      updatedAt: metadata.updatedAt || null,
+      branchCount: branches.length,
+      source: metadata.source || "cloud",
+    };
+    rebuildPolicyPack();
+    return POLICY_PACK.mobilityMetadata;
+  }
+
   function resetHandlingCodeMapping() {
-    POLICY_PACK.version = "2026.08-development.1";
-    POLICY_PACK.status = "DEVELOPMENT";
-    POLICY_PACK.sources = [...sources];
-    POLICY_PACK.rules = [...rules];
-    POLICY_PACK.handlingCodes = [];
+    handlingSources = [];
+    handlingRules = [];
+    handlingCodes = [];
     POLICY_PACK.mappingMetadata = null;
+    if (!POLICY_PACK.mobilityAidPolicy) currentPolicyVersion = "2026.08-development.1";
+    rebuildPolicyPack();
+  }
+
+  function resetMobilityAidPolicy() {
+    mobilitySources = [];
+    mobilityRules = [];
+    POLICY_PACK.mobilityAidPolicy = null;
+    POLICY_PACK.mobilityMetadata = null;
+    if (!handlingCodes.length) currentPolicyVersion = "2026.08-development.1";
+    rebuildPolicyPack();
   }
 
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = { POLICY_PACK, resetHandlingCodeMapping, setHandlingCodeMapping };
+    module.exports = {
+      POLICY_PACK,
+      resetHandlingCodeMapping,
+      resetMobilityAidPolicy,
+      setHandlingCodeMapping,
+      setMobilityAidPolicy,
+    };
   } else {
-    globalScope.OpsDeckNotocPolicy = { POLICY_PACK, resetHandlingCodeMapping, setHandlingCodeMapping };
+    globalScope.OpsDeckNotocPolicy = {
+      POLICY_PACK,
+      resetHandlingCodeMapping,
+      resetMobilityAidPolicy,
+      setHandlingCodeMapping,
+      setMobilityAidPolicy,
+    };
   }
 })(typeof globalThis !== "undefined" ? globalThis : window);

@@ -28,6 +28,12 @@
     [STATES.UNABLE_TO_DETERMINE_REFER]: 2,
     [STATES.POSSIBLE_DISCREPANCY_QUERY]: 3,
   });
+  const VERIFIED_RULE_STATUSES = new Set(["VERIFIED_CURRENT_MANUAL", "REVIEWED_BA_EVIDENCE"]);
+  const VERIFIED_SOURCE_STATUSES = new Set([
+    "VERIFIED_CURRENT_MANUAL",
+    "VERIFIED_SUPPLIED_MANUAL",
+    "VERIFIED_CURRENT_PUBLIC_BA",
+  ]);
 
   function normaliseCode(rawCode) {
     return String(rawCode || "").trim().toUpperCase().replace(/\s+/g, "");
@@ -42,9 +48,9 @@
   }
 
   function isRuleVerified(rule, policyPack) {
-    if (!rule || rule.releaseStatus !== "ACTIVE" || rule.verificationStatus !== "VERIFIED_CURRENT_MANUAL") return false;
+    if (!rule || rule.releaseStatus !== "ACTIVE" || !VERIFIED_RULE_STATUSES.has(rule.verificationStatus)) return false;
     const sources = sourceMap(policyPack);
-    return rule.sourceIds.every((sourceId) => sources.get(sourceId)?.verificationStatus === "VERIFIED_CURRENT_MANUAL");
+    return rule.sourceIds.every((sourceId) => VERIFIED_SOURCE_STATUSES.has(sources.get(sourceId)?.verificationStatus));
   }
 
   function makeFinding(policyPack, options) {
@@ -119,292 +125,336 @@
     return entry?.location?.type || "NOT_SHOWN";
   }
 
+  const BRANCH_LABELS = Object.freeze({
+    "LI-I": "Installed lithium-ion battery",
+    "LI-R-1-300": "One removed lithium-ion battery, up to 300 Wh",
+    "LI-R-2-160": "Two removed lithium-ion batteries, up to 160 Wh each",
+    "LI-S-1-300": "One spare lithium-ion battery, up to 300 Wh",
+    "LI-S-2-160": "Two spare lithium-ion batteries, up to 160 Wh each",
+    "DRY-I": "Installed dry-cell battery",
+    "DRY-R": "Removed dry-cell battery",
+    "DRY-S-1": "One spare dry-cell battery",
+    "NSW-I": "Installed non-spillable wet battery",
+    "NSW-R": "Removed non-spillable wet battery",
+    "NSW-S-1": "One spare non-spillable wet battery",
+    "WET-I-UP": "Installed spillable wet battery",
+    "WET-R-UNSECURED": "Spillable wet battery removed because it was not secure",
+    "WET-R-NOUPRIGHT": "Spillable wet battery removed because the aid could not remain upright",
+    "WET-S": "Spare spillable wet battery",
+  });
+
+  function mobilityBranch(policyPack, branchId) {
+    return (policyPack?.mobilityAidPolicy?.decision_branches || []).find((branch) => branch.id === branchId) || null;
+  }
+
+  function expectedLocation(branch) {
+    const locations = branch?.location || [];
+    if (locations.includes("CABIN")) return "CABIN";
+    if (locations.some((location) => String(location).startsWith("HOLD"))) return "HOLD";
+    return null;
+  }
+
+  function normaliseNotocExpectation(value) {
+    if (value === true) return EXPECTATIONS.REQUIRED;
+    if (value === false) return EXPECTATIONS.NOT_EXPECTED;
+    if (value === "REQUIRED") return EXPECTATIONS.REQUIRED;
+    if (value === "NOT_EXPECTED") return EXPECTATIONS.NOT_EXPECTED;
+    if (value === "CONDITIONAL") return EXPECTATIONS.CONDITIONAL;
+    return EXPECTATIONS.UNKNOWN;
+  }
+
+  function expectedNotocCode(branch) {
+    const code = String(branch?.notoc?.dgsl_code || "").trim().toUpperCase();
+    return /^[A-Z0-9]{2,8}$/.test(code) ? code : null;
+  }
+
+  function resolveEmaBranchId(entry) {
+    const type = entry?.batteryType;
+    const configuration = entry?.installedStatus;
+    if (type === "LITHIUM") {
+      if (configuration === "INSTALLED") return "LI-I";
+      if (configuration === "REMOVED" && entry.lithiumLimitBand === "ONE_300") return "LI-R-1-300";
+      if (configuration === "REMOVED" && entry.lithiumLimitBand === "TWO_160") return "LI-R-2-160";
+      if (configuration === "SPARE" && entry.lithiumLimitBand === "ONE_300") return "LI-S-1-300";
+      if (configuration === "SPARE" && entry.lithiumLimitBand === "TWO_160") return "LI-S-2-160";
+    }
+    if (type === "DRY_CELL") {
+      if (configuration === "INSTALLED") return "DRY-I";
+      if (configuration === "REMOVED") return "DRY-R";
+      if (configuration === "SPARE") return "DRY-S-1";
+    }
+    if (type === "NON_SPILLABLE") {
+      if (configuration === "INSTALLED") return "NSW-I";
+      if (configuration === "REMOVED") return "NSW-R";
+      if (configuration === "SPARE") return "NSW-S-1";
+    }
+    if (type === "SPILLABLE") {
+      if (configuration === "INSTALLED" && entry.spillableInstalledStatus === "CONFIRMED") return "WET-I-UP";
+      if (configuration === "REMOVED" && entry.spillableRemovalReason === "UNSECURED") return "WET-R-UNSECURED";
+      if (configuration === "REMOVED" && ["NOT_UPRIGHT", "BOTH"].includes(entry.spillableRemovalReason)) return "WET-R-NOUPRIGHT";
+      if (configuration === "SPARE") return "WET-S";
+    }
+    return null;
+  }
+
+  function expectedHandling(branch) {
+    const id = branch?.id || "";
+    if (id.endsWith("-I") || id === "WET-I-UP") {
+      return id === "WET-I-UP"
+        ? "Hold; securely attached, isolated and able to remain upright"
+        : "Hold; securely attached and isolated against inadvertent activation";
+    }
+    if (id.startsWith("LI-")) return "Cabin; each battery protected against short circuit and damage";
+    if (id.startsWith("WET-R")) return "Hold; leakproof package, absorbent material, labels and restraint";
+    if (id.startsWith("DRY-") || id.startsWith("NSW-")) return "Hold; short-circuit protection and strong rigid packaging";
+    return "Refer to the current BA procedure";
+  }
+
+  function expectedNotoc(branch) {
+    const expectation = normaliseNotocExpectation(branch?.notoc?.required);
+    const code = expectedNotocCode(branch);
+    if (expectation === EXPECTATIONS.REQUIRED && code) return `${code}, correct location and final loadsheet NOTOC: YES`;
+    if (expectation === EXPECTATIONS.REQUIRED) return "Required with the correct location; exact configuration code remains unverified";
+    if (expectation === EXPECTATIONS.NOT_EXPECTED) return "Not expected";
+    return "Internal NOTOC method or format is not fully verified";
+  }
+
+  function addMobilityDetails(result, branch) {
+    if (!branch) return result;
+    result.details = [
+      { label: "Configuration", value: BRANCH_LABELS[branch.id] || branch.id },
+      { label: "Expected handling", value: expectedHandling(branch) },
+      { label: "Expected NOTOC", value: expectedNotoc(branch) },
+    ];
+    return result;
+  }
+
+  function mobilityResult(policyPack, branch, options) {
+    const result = simpleResult(policyPack, {
+      entryId: options.entryId,
+      ruleId: branch?.ruleId || "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
+      sourceIds: branch?.sourceIds,
+      expectation: branch ? normaliseNotocExpectation(branch.notoc?.required) : EXPECTATIONS.UNKNOWN,
+      ...options,
+    });
+    return addMobilityDetails(result, branch);
+  }
+
   function evaluateEma(entry, policyPack) {
     const entryId = entry?.id || "ema";
-    const shared = { entryId };
     if (entry?.mobilityAidConfirmed === "NO") {
       return simpleResult(policyPack, {
-        ...shared,
+        entryId,
         ruleId: "OPSDECK-NOTOC-INDICATOR-CROSSCHECK",
         state: STATES.NOT_APPLICABLE,
-        explanation: "The item is confirmed not to be a wheelchair or electric mobility aid used by a person with reduced mobility.",
+        explanation: "The item is not a wheelchair or electric mobility aid used by a person with reduced mobility.",
       });
     }
     if (entry?.mobilityAidConfirmed !== "YES") {
       return simpleResult(policyPack, {
-        ...shared,
+        entryId,
+        ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
+        state: STATES.ACTION_OR_INFORMATION_REQUIRED,
+        explanation: "Confirm that the item is a wheelchair or electric mobility aid before applying these rules.",
+        action: "Confirm the item type.",
+      });
+    }
+    if (!policyPack?.mobilityAidPolicy) {
+      return simpleResult(policyPack, {
+        entryId,
         ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
         state: STATES.UNABLE_TO_DETERMINE_REFER,
-        explanation: "Confirm that the item is a wheelchair or electric mobility aid used by a person with reduced mobility. The EMA rules must not be applied to another type of vehicle by analogy.",
-        action: "Refer to the current BA procedure or TRM/Coordinator.",
+        explanation: "The controlled BA mobility-aid policy is not available on this device.",
+        action: "Refresh while online or refer to the current BA procedure.",
       });
     }
-
-    const batteryType = entry?.batteryType || "UNKNOWN";
-    const installedStatus = entry?.installedStatus || "UNKNOWN";
-    if (batteryType === "UNKNOWN") {
+    if (unknownChoice(entry?.batteryType)) {
       return simpleResult(policyPack, {
-        ...shared,
+        entryId,
         ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
         state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-        explanation: "Confirm the battery type before applying a configuration-specific rule.",
-        action: "Obtain the battery type shown or confirmed for the mobility aid.",
+        explanation: "The battery type must be confirmed before a configuration-specific check can be made.",
+        action: "Confirm the battery type shown for the mobility aid.",
       });
     }
-
-    if (installedStatus === "UNKNOWN") {
+    if (unknownChoice(entry?.installedStatus)) {
       return simpleResult(policyPack, {
-        ...shared,
-        ruleId: batteryType === "LITHIUM" ? "BA-OMA-EMA-LI-INSTALLED" : "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
+        entryId,
+        ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
         state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-        explanation: "Confirm whether the battery is installed, removed or a spare. Different limits and locations apply to each branch.",
+        explanation: "Confirm whether the battery is installed, removed or a spare.",
         action: "Confirm the battery configuration.",
       });
     }
 
-    if (batteryType === "NON_SPILLABLE") {
-      return simpleResult(policyPack, {
-        ...shared,
-        ruleId: "BA-OMA-EMA-NONSPILLABLE",
-        state: STATES.UNABLE_TO_DETERMINE_REFER,
-        expectation: EXPECTATIONS.UNKNOWN,
-        explanation: "The policy pack contains only the high-level non-spillable battery points. The detailed BA/CDGM handling rule is unavailable, so this configuration cannot be fully cross-checked.",
-        action: "Refer to the current BA/CDGM handling procedure.",
-      });
-    }
-
-    if (batteryType === "SPILLABLE") {
-      if (installedStatus === "SPARE") {
+    if (entry.batteryType === "LITHIUM" && ["REMOVED", "SPARE"].includes(entry.installedStatus)) {
+      if (entry.lithiumLimitBand === "EXCEEDS") {
         return simpleResult(policyPack, {
-          ...shared,
-          ruleId: "BA-OMA-EMA-SPILLABLE",
+          entryId,
+          ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
           state: STATES.POSSIBLE_DISCREPANCY_QUERY,
-          expectation: EXPECTATIONS.UNKNOWN,
-          explanation: "The recovered BA category rule does not permit a spare spillable battery for this mobility-aid branch.",
-          action: "Query with the TRM/Coordinator or equivalent.",
+          expectation: EXPECTATIONS.REQUIRED,
+          explanation: "The entered quantity or battery rating is outside the documented lithium mobility-aid limits.",
+          action: "Query with the TRM/Coordinator or equivalent before signing.",
         });
       }
+      if (unknownChoice(entry.lithiumLimitBand)) {
+        return simpleResult(policyPack, {
+          entryId,
+          ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
+          state: STATES.ACTION_OR_INFORMATION_REQUIRED,
+          explanation: "The lithium battery quantity and Wh category have not been confirmed.",
+          action: "Obtain the manufacturer's stated Wh rating. Do not calculate or round it in this tool.",
+        });
+      }
+    }
+
+    if (["DRY_CELL", "NON_SPILLABLE"].includes(entry.batteryType) && entry.installedStatus === "SPARE") {
+      if (entry.spareCountBand === "MORE_THAN_ONE") {
+        const branch = mobilityBranch(policyPack, entry.batteryType === "DRY_CELL" ? "DRY-S-1" : "NSW-S-1");
+        return mobilityResult(policyPack, branch, {
+          entryId,
+          state: STATES.POSSIBLE_DISCREPANCY_QUERY,
+          explanation: "More than one spare battery is entered, while the reviewed BA guidance permits one spare for this branch.",
+          action: "Query with the TRM/Coordinator or equivalent before signing.",
+        });
+      }
+      if (entry.spareCountBand !== "ONE") {
+        return simpleResult(policyPack, {
+          entryId,
+          ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
+          state: STATES.ACTION_OR_INFORMATION_REQUIRED,
+          explanation: "The spare-battery quantity has not been confirmed.",
+          action: "Confirm the number of spare batteries.",
+        });
+      }
+    }
+
+    if (entry.batteryType === "SPILLABLE" && entry.installedStatus === "INSTALLED") {
+      if (["UNSECURED", "NOT_UPRIGHT"].includes(entry.spillableInstalledStatus)) {
+        const branch = mobilityBranch(policyPack, "WET-I-UP");
+        return mobilityResult(policyPack, branch, {
+          entryId,
+          state: STATES.POSSIBLE_DISCREPANCY_QUERY,
+          explanation: entry.spillableInstalledStatus === "UNSECURED"
+            ? "The spillable battery is shown as installed but is not securely attached."
+            : "The spillable battery is shown as installed but the aid cannot remain upright.",
+          action: "Query the configuration and removal requirements before signing.",
+        });
+      }
+      if (entry.spillableInstalledStatus !== "CONFIRMED") {
+        return simpleResult(policyPack, {
+          entryId,
+          ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
+          state: STATES.ACTION_OR_INFORMATION_REQUIRED,
+          explanation: "Secure attachment and upright stowage have not been confirmed for the installed spillable battery.",
+          action: "Confirm the configuration with the loading team.",
+        });
+      }
+    }
+
+    if (entry.batteryType === "SPILLABLE" && entry.installedStatus === "REMOVED" && unknownChoice(entry.spillableRemovalReason)) {
       return simpleResult(policyPack, {
-        ...shared,
-        ruleId: "BA-OMA-EMA-SPILLABLE",
-        state: STATES.UNABLE_TO_DETERMINE_REFER,
-        expectation: EXPECTATIONS.UNKNOWN,
-        explanation: "Detailed BA/CDGM handling requirements for this spillable-battery configuration are unavailable in the development policy pack.",
-        action: "Refer to the current BA/CDGM handling procedure.",
+        entryId,
+        ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
+        state: STATES.ACTION_OR_INFORMATION_REQUIRED,
+        explanation: "The reason for removing the spillable battery has not been confirmed.",
+        action: "Confirm whether it was not securely attached, could not remain upright, or both.",
       });
     }
 
-    if (batteryType !== "LITHIUM") {
+    const branchId = resolveEmaBranchId(entry);
+    const branch = mobilityBranch(policyPack, branchId);
+    if (!branch) {
       return simpleResult(policyPack, {
-        ...shared,
+        entryId,
         ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
         state: STATES.UNABLE_TO_DETERMINE_REFER,
-        expectation: EXPECTATIONS.UNKNOWN,
-        explanation: "The selected battery type is not supported by this policy pack.",
-        action: "Refer to the current BA procedure.",
+        explanation: "The entered configuration cannot be matched to a controlled mobility-aid branch.",
+        action: "Refer to the current BA procedure or TRM/Coordinator.",
       });
     }
 
-    if (installedStatus === "INSTALLED") {
-      const base = {
-        ...shared,
-        ruleId: "BA-OMA-EMA-LI-INSTALLED",
-        expectation: EXPECTATIONS.CONDITIONAL,
-      };
-      if (entry.securelyAttached !== "YES") {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.POSSIBLE_DISCREPANCY_QUERY,
-          explanation: entry.securelyAttached === "NO"
-            ? "The battery is recorded as installed but not securely attached."
-            : "Secure attachment has not been confirmed for the installed battery.",
-          action: "Query the configuration with the TRM/Coordinator or equivalent.",
-        });
-      }
-      if (entry.isolatedAgainstInadvertentActivation === "UNKNOWN" || unknownChoice(entry.isolatedAgainstInadvertentActivation)) {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-          explanation: "Confirm that the mobility aid is isolated against inadvertent activation.",
-          action: "Obtain confirmation of isolation.",
-        });
-      }
-      if (entry.isolatedAgainstInadvertentActivation === "NO") {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.POSSIBLE_DISCREPANCY_QUERY,
-          explanation: "The installed battery is recorded as not isolated against inadvertent activation.",
-          action: "Query the configuration with the TRM/Coordinator or equivalent.",
-        });
-      }
-      if (entry.operatorApprovalConfirmed !== "YES") {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-          explanation: "Operator approval has not been confirmed.",
-          action: "Confirm operator approval.",
-        });
-      }
-      if (["NOT_SHOWN", "UNCLEAR"].includes(locationType(entry))) {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-          explanation: "The battery location is not clearly shown.",
-          action: "Confirm the location notified to the PIC.",
-        });
-      }
-      return developOrConfirm(policyPack, {
-        ...base,
-        explanation: "The installed lithium battery is recorded as securely attached, isolated, approved and located. The recovered rule does not impose the removed-battery 300 Wh limit on this branch.",
+    if (branch.id === "WET-S") {
+      return mobilityResult(policyPack, branch, {
+        entryId,
+        state: STATES.POSSIBLE_DISCREPANCY_QUERY,
+        explanation: "Spare spillable batteries are not permitted under the reviewed BA guidance.",
+        action: "Query with the TRM/Coordinator or equivalent before signing.",
       });
     }
 
-    if (installedStatus === "REMOVED") {
-      const base = {
-        ...shared,
-        ruleId: "BA-OMA-EMA-LI-REMOVED",
-        expectation: EXPECTATIONS.REQUIRED,
-      };
-      if (!Number.isFinite(entry.wattHours) || entry.wattHours <= 0) {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-          explanation: "Enter and confirm the removed battery's watt-hour rating.",
-          action: "Confirm the Wh rating without rounding it down.",
-        });
-      }
-      if (entry.wattHours > 300) {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.POSSIBLE_DISCREPANCY_QUERY,
-          explanation: `The removed lithium battery is entered as ${entry.wattHours} Wh, above the recovered 300 Wh limit for this branch.`,
-          action: "Query this with the TRM/Coordinator or equivalent and verify whether another supported configuration is available.",
-        });
-      }
-      if (entry.terminalsProtected !== "YES") {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-          explanation: "Terminal protection against short circuit has not been confirmed.",
-          action: "Confirm terminal protection.",
-        });
-      }
-      if (locationType(entry) === "HOLD") {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.POSSIBLE_DISCREPANCY_QUERY,
-          explanation: "The removed lithium EMA battery is entered in the hold. The recovered rule requires cabin carriage for this branch.",
-          action: "Query this with the TRM/Coordinator or equivalent.",
-        });
-      }
-      if (["NOT_SHOWN", "UNCLEAR"].includes(locationType(entry))) {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-          explanation: "The removed battery location is not clearly shown.",
-          action: "Confirm the cabin location.",
-        });
-      }
-      if (locationType(entry) !== "CABIN") {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.UNABLE_TO_DETERMINE_REFER,
-          explanation: "The entered location is neither a confirmed cabin nor hold location, so the branch cannot be determined reliably.",
-          action: "Refer for clarification.",
-        });
-      }
-      if (entry.operatorApprovalConfirmed !== "YES") {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-          explanation: "Operator approval has not been confirmed.",
-          action: "Confirm operator approval.",
-        });
-      }
-      return developOrConfirm(policyPack, {
-        ...base,
-        explanation: "The removed lithium battery is at or below 300 Wh, protected against short circuit, approved and shown in the cabin.",
+    if (entry.handlingConfirmed !== "YES") {
+      return mobilityResult(policyPack, branch, {
+        entryId,
+        state: entry.handlingConfirmed === "NO"
+          ? STATES.POSSIBLE_DISCREPANCY_QUERY
+          : STATES.ACTION_OR_INFORMATION_REQUIRED,
+        explanation: entry.handlingConfirmed === "NO"
+          ? "The required secure handling, protection or packaging is not confirmed as complete."
+          : "The required secure handling, protection or packaging has not been confirmed.",
+        action: "Query or confirm the branch-specific handling with the loading team or TRM/Coordinator before signing.",
       });
     }
 
-    if (installedStatus === "SPARE") {
-      const base = {
-        ...shared,
-        ruleId: "BA-OMA-EMA-LI-SPARE",
-        expectation: EXPECTATIONS.REQUIRED,
-      };
-      if (!Number.isInteger(entry.spareCount) || entry.spareCount < 1 || !Number.isFinite(entry.wattHours) || entry.wattHours <= 0) {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-          explanation: "Confirm the spare count and watt-hour rating.",
-          action: "Enter the exact spare count and Wh rating.",
-        });
-      }
-      if (entry.spareCount > 1 || entry.wattHours > 300) {
-        const reasons = [];
-        if (entry.spareCount > 1) reasons.push(`${entry.spareCount} spares`);
-        if (entry.wattHours > 300) reasons.push(`${entry.wattHours} Wh`);
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.POSSIBLE_DISCREPANCY_QUERY,
-          explanation: `The spare lithium battery entry shows ${reasons.join(" and ")}, outside the recovered maximum of one spare at no more than 300 Wh.`,
-          action: "Query this with the TRM/Coordinator or equivalent.",
-        });
-      }
-      if (entry.terminalsProtected !== "YES") {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-          explanation: "Individual terminal protection against short circuit has not been confirmed.",
-          action: "Confirm terminal protection.",
-        });
-      }
-      if (locationType(entry) === "HOLD") {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.POSSIBLE_DISCREPANCY_QUERY,
-          explanation: "The spare lithium EMA battery is entered in the hold. The recovered rule requires cabin carriage.",
-          action: "Query this with the TRM/Coordinator or equivalent.",
-        });
-      }
-      if (["NOT_SHOWN", "UNCLEAR"].includes(locationType(entry))) {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-          explanation: "The spare battery location is not clearly shown.",
-          action: "Confirm the cabin location.",
-        });
-      }
-      if (locationType(entry) !== "CABIN") {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.UNABLE_TO_DETERMINE_REFER,
-          explanation: "The entered location cannot be matched reliably to the cabin-carriage branch.",
-          action: "Refer for clarification.",
-        });
-      }
-      if (entry.operatorApprovalConfirmed !== "YES") {
-        return simpleResult(policyPack, {
-          ...base,
-          state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-          explanation: "Operator approval has not been confirmed.",
-          action: "Confirm operator approval.",
-        });
-      }
-      return developOrConfirm(policyPack, {
-        ...base,
-        explanation: "One spare lithium battery is entered at or below 300 Wh, individually protected, approved and shown in the cabin.",
+    const requiredLocation = expectedLocation(branch);
+    const actualLocation = locationType(entry);
+    if (["NOT_SHOWN", "UNCLEAR", "UNKNOWN"].includes(actualLocation)) {
+      return mobilityResult(policyPack, branch, {
+        entryId,
+        state: STATES.ACTION_OR_INFORMATION_REQUIRED,
+        explanation: "The carriage location is not shown clearly.",
+        action: "Confirm the cabin or hold location before signing.",
+      });
+    }
+    if (requiredLocation && actualLocation !== requiredLocation) {
+      return mobilityResult(policyPack, branch, {
+        entryId,
+        state: STATES.POSSIBLE_DISCREPANCY_QUERY,
+        explanation: `The item is entered in the ${actualLocation === "CABIN" ? "cabin" : "hold"}, but this branch requires ${requiredLocation === "CABIN" ? "cabin" : "hold"} carriage.`,
+        action: "Query the location with the TRM/Coordinator or equivalent before signing.",
       });
     }
 
-    return simpleResult(policyPack, {
-      ...shared,
-      ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
-      state: STATES.UNABLE_TO_DETERMINE_REFER,
-      expectation: EXPECTATIONS.UNKNOWN,
-      explanation: "The battery configuration is not supported by this policy pack.",
-      action: "Refer to the current BA procedure.",
+    const code = expectedNotocCode(branch);
+    if (code && entry.notocContentConfirmed !== "YES") {
+      return mobilityResult(policyPack, branch, {
+        entryId,
+        state: entry.notocContentConfirmed === "NO" ? STATES.POSSIBLE_DISCREPANCY_QUERY : STATES.ACTION_OR_INFORMATION_REQUIRED,
+        explanation: entry.notocContentConfirmed === "NO"
+          ? `The NOTOC does not show both ${code} and the correct location.`
+          : `The ${code} entry and location have not been confirmed on the NOTOC.`,
+        action: "Query the NOTOC with the dispatcher or TRM/Coordinator before signing.",
+      });
+    }
+
+    const expectation = normaliseNotocExpectation(branch.notoc?.required);
+    if (expectation === EXPECTATIONS.REQUIRED && entry.loadsheetNotocIndicator !== "YES") {
+      return mobilityResult(policyPack, branch, {
+        entryId,
+        state: entry.loadsheetNotocIndicator === "NO" ? STATES.POSSIBLE_DISCREPANCY_QUERY : STATES.ACTION_OR_INFORMATION_REQUIRED,
+        explanation: entry.loadsheetNotocIndicator === "NO"
+          ? "The final loadsheet shows NOTOC: NO for a branch where a NOTOC is expected."
+          : "The final loadsheet NOTOC indicator has not been confirmed.",
+        action: "Ask the dispatcher to provide or correct the NOTOC before signing.",
+      });
+    }
+
+    const rule = ruleMap(policyPack).get(branch.ruleId);
+    if (!isRuleVerified(rule, policyPack)) {
+      return mobilityResult(policyPack, branch, {
+        entryId,
+        state: STATES.UNABLE_TO_DETERMINE_REFER,
+        logicState: STATES.NO_OBVIOUS_INCONSISTENCY,
+        explanation: "The entered information matches the available handling guidance, but the internal BA NOTOC rule or source coverage for this branch is incomplete.",
+        action: "Cross-check the current BA documentation or query through the normal operational channel.",
+      });
+    }
+
+    return mobilityResult(policyPack, branch, {
+      entryId,
+      state: STATES.NO_OBVIOUS_INCONSISTENCY,
+      explanation: "The information entered shows no obvious inconsistency against the reviewed BA evidence for this branch.",
     });
   }
 
@@ -654,9 +704,14 @@
     evaluateEma,
     evaluateNotocIndicator,
     evaluateNotocSession,
+    expectedLocation,
+    expectedNotocCode,
     isRuleVerified,
     lookupHandlingCode,
+    mobilityBranch,
     normaliseCode,
+    normaliseNotocExpectation,
+    resolveEmaBranchId,
     searchHandlingCodes,
     validatePolicyPack,
   };
