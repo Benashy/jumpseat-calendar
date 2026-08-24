@@ -127,10 +127,10 @@
     const isOverReading = result.barometricErrorFtRaw > 0;
     const showReference = core.shouldShowThreeDegreeReference(Number(glideSlopeAngleDeg));
     const comparison = !isMaterial
-      ? `Difference below ${PROFILE_DISPLAY_THRESHOLD_FT} ft at 2,500 ft RA`
+      ? `Temperature correction is less than ${PROFILE_DISPLAY_THRESHOLD_FT} ft at 2,500 ft RA`
       : `Baro ${isOverReading ? "over-reads" : "under-reads"} by ${new Intl.NumberFormat("en-GB").format(roundedError)} ft`;
     const descriptionComparison = !isMaterial
-      ? `The temperature-related barometric difference is below ${PROFILE_DISPLAY_THRESHOLD_FT} feet at 2,500 feet radio altitude.`
+      ? `The temperature correction is less than ${PROFILE_DISPLAY_THRESHOLD_FT} feet at 2,500 feet radio altitude.`
       : `The expected barometric indication ${isOverReading ? "over-reads" : "under-reads"} by approximately ${roundedError} feet.`;
 
     elements.diagramThreeDegreePath.setAttribute("x2", referenceX.toFixed(1));

@@ -17,6 +17,7 @@ const {
   lookupHandlingCode,
   normaliseCode,
   resolveEmaBranchId,
+  resolveEmaBranchIds,
   searchHandlingCodes,
   validatePolicyPack,
 } = require("../notoc-core");
@@ -26,10 +27,9 @@ const installedLithium = (overrides = {}) => ({
   mobilityAidConfirmed: "YES",
   batteryType: "LITHIUM",
   installedStatus: "INSTALLED",
-  handlingConfirmed: "YES",
+  spareLithiumBand: "NONE",
   notocContentConfirmed: "YES",
   loadsheetNotocIndicator: "YES",
-  location: { type: "HOLD", rawText: "CPT 5" },
   ...overrides,
 });
 
@@ -39,23 +39,9 @@ const removedLithium = (overrides = {}) => ({
   batteryType: "LITHIUM",
   installedStatus: "REMOVED",
   lithiumLimitBand: "ONE_300",
-  handlingConfirmed: "YES",
+  spareLithiumBand: "NONE",
   notocContentConfirmed: "YES",
   loadsheetNotocIndicator: "YES",
-  location: { type: "CABIN", rawText: "Cabin" },
-  ...overrides,
-});
-
-const spareLithium = (overrides = {}) => ({
-  id: "ema-1",
-  mobilityAidConfirmed: "YES",
-  batteryType: "LITHIUM",
-  installedStatus: "SPARE",
-  lithiumLimitBand: "ONE_300",
-  handlingConfirmed: "YES",
-  notocContentConfirmed: "YES",
-  loadsheetNotocIndicator: "YES",
-  location: { type: "CABIN", rawText: "Cabin" },
   ...overrides,
 });
 
@@ -339,26 +325,32 @@ test("mobility-aid guidance gives a direct refresh action when unavailable", () 
   assert.match(result.findings[0].action, /refresh the app while online/i);
 });
 
-test("all 15 documented configurations resolve to the intended branch", () => {
+test("operating batteries and independent spares resolve to the intended branches", () => {
   const cases = [
     [installedLithium(), "LI-I"],
     [removedLithium(), "LI-R-1-300"],
-    [removedLithium({ lithiumLimitBand: "TWO_160" }), "LI-R-2-160"],
-    [spareLithium(), "LI-S-1-300"],
-    [spareLithium({ lithiumLimitBand: "TWO_160" }), "LI-S-2-160"],
+    [removedLithium({ lithiumLimitBand: "TWO_300_TOTAL" }), "LI-R-2-160"],
     [{ ...installedLithium(), batteryType: "DRY_CELL" }, "DRY-I"],
     [{ ...installedLithium(), batteryType: "DRY_CELL", installedStatus: "REMOVED" }, "DRY-R"],
-    [{ ...installedLithium(), batteryType: "DRY_CELL", installedStatus: "SPARE", spareCountBand: "ONE" }, "DRY-S-1"],
     [{ ...installedLithium(), batteryType: "NON_SPILLABLE" }, "NSW-I"],
     [{ ...installedLithium(), batteryType: "NON_SPILLABLE", installedStatus: "REMOVED" }, "NSW-R"],
-    [{ ...installedLithium(), batteryType: "NON_SPILLABLE", installedStatus: "SPARE", spareCountBand: "ONE" }, "NSW-S-1"],
-    [{ ...installedLithium(), batteryType: "SPILLABLE", spillableInstalledStatus: "CONFIRMED" }, "WET-I-UP"],
-    [{ ...installedLithium(), batteryType: "SPILLABLE", installedStatus: "REMOVED", spillableRemovalReason: "UNSECURED" }, "WET-R-UNSECURED"],
-    [{ ...installedLithium(), batteryType: "SPILLABLE", installedStatus: "REMOVED", spillableRemovalReason: "NOT_UPRIGHT" }, "WET-R-NOUPRIGHT"],
-    [{ ...installedLithium(), batteryType: "SPILLABLE", installedStatus: "SPARE" }, "WET-S"],
+    [{ ...installedLithium(), batteryType: "SPILLABLE" }, "WET-I-UP"],
+    [{ ...installedLithium(), batteryType: "SPILLABLE", installedStatus: "REMOVED" }, "WET-R-NOUPRIGHT"],
   ];
 
   cases.forEach(([entry, expectedBranch]) => assert.equal(resolveEmaBranchId(entry), expectedBranch));
+  assert.deepEqual(
+    resolveEmaBranchIds(removedLithium({ spareLithiumBand: "ONE_300" })),
+    ["LI-R-1-300", "LI-S-1-300"]
+  );
+  assert.deepEqual(
+    resolveEmaBranchIds({
+      ...installedLithium(),
+      batteryType: "DRY_CELL",
+      spareCountBand: "ONE",
+    }),
+    ["DRY-I", "DRY-S-1"]
+  );
 });
 
 test("installed lithium has no Wh limit in this cross-check and can complete green", () => withMobilityPolicy(() => {
@@ -367,55 +359,51 @@ test("installed lithium has no Wh limit in this cross-check and can complete gre
   assert.equal(result.expectation, EXPECTATIONS.REQUIRED);
 }));
 
-test("secure handling answered no is a possible discrepancy", () => withMobilityPolicy(() => {
-  const result = evaluateEma(installedLithium({ handlingConfirmed: "NO" }), POLICY_PACK);
-  assert.equal(result.overallState, STATES.POSSIBLE_DISCREPANCY_QUERY);
-}));
-
-test("missing secure handling confirmation requests information", () => withMobilityPolicy(() => {
-  const result = evaluateEma(installedLithium({ handlingConfirmed: "UNKNOWN" }), POLICY_PACK);
-  assert.equal(result.overallState, STATES.ACTION_OR_INFORMATION_REQUIRED);
-}));
-
-test("a documented removed lithium configuration completes without an exact code gate", () => withMobilityPolicy(() => {
+test("a removed operating lithium battery in the cabin completes without an exact code gate", () => withMobilityPolicy(() => {
   const result = evaluateEma(removedLithium(), POLICY_PACK);
   assert.equal(result.overallState, STATES.NO_OBVIOUS_INCONSISTENCY);
-  assert.match(result.findings[0].explanation, /quantity, protection and cabin stowage/i);
+  assert.match(result.details.find((item) => item.label === "Expected NOTOC").value, /mobility aid in the hold/i);
+  assert.match(result.details.find((item) => item.label === "Expected NOTOC").value, /removed operating lithium-ion battery in the cabin/i);
   assert.doesNotMatch(result.findings[0].explanation, /source coverage|exact configuration code/i);
 }));
 
-test("lithium quantities outside the documented bands are queried", () => withMobilityPolicy(() => {
+test("a removed operating battery and an independent spare are checked together", () => withMobilityPolicy(() => {
+  const result = evaluateEma(removedLithium({ spareLithiumBand: "ONE_300" }), POLICY_PACK);
+  assert.equal(result.overallState, STATES.NO_OBVIOUS_INCONSISTENCY);
+  assert.deepEqual(resolveEmaBranchIds(removedLithium({ spareLithiumBand: "ONE_300" })), ["LI-R-1-300", "LI-S-1-300"]);
+  assert.match(result.details.find((item) => item.label === "Expected NOTOC").value, /spare lithium-ion battery in the cabin/i);
+}));
+
+test("two-battery groups between 301 and 320 Wh require confirmation", () => withMobilityPolicy(() => {
+  const removed = evaluateEma(removedLithium({ lithiumLimitBand: "TWO_301_320" }), POLICY_PACK);
+  const spare = evaluateEma(installedLithium({ spareLithiumBand: "TWO_301_320" }), POLICY_PACK);
+  for (const result of [removed, spare]) {
+    assert.equal(result.overallState, STATES.ACTION_OR_INFORMATION_REQUIRED);
+    assert.equal(result.findings[0].heading, "Confirm combined battery limit");
+    assert.match(result.findings[0].explanation, /IATA 2026 guidance limits each group to 300 Wh combined/i);
+  }
+}));
+
+test("lithium quantities outside the stated limits are queried", () => withMobilityPolicy(() => {
   const result = evaluateEma(removedLithium({ lithiumLimitBand: "EXCEEDS" }), POLICY_PACK);
   assert.equal(result.overallState, STATES.POSSIBLE_DISCREPANCY_QUERY);
 }));
 
-test("an unconfirmed lithium quantity requests the manufacturer's rating", () => withMobilityPolicy(() => {
+test("an unconfirmed lithium quantity requests the stated rating", () => withMobilityPolicy(() => {
   const result = evaluateEma(removedLithium({ lithiumLimitBand: "UNKNOWN" }), POLICY_PACK);
   assert.equal(result.overallState, STATES.ACTION_OR_INFORMATION_REQUIRED);
-  assert.match(result.findings[0].action, /manufacturer/i);
-}));
-
-test("removed lithium shown in the hold is a possible discrepancy", () => withMobilityPolicy(() => {
-  const result = evaluateEma(removedLithium({ location: { type: "HOLD", rawText: "CPT 5" } }), POLICY_PACK);
-  assert.equal(result.overallState, STATES.POSSIBLE_DISCREPANCY_QUERY);
-}));
-
-test("a location not shown requests confirmation", () => withMobilityPolicy(() => {
-  const result = evaluateEma(removedLithium({ location: { type: "NOT_SHOWN", rawText: "" } }), POLICY_PACK);
-  assert.equal(result.overallState, STATES.ACTION_OR_INFORMATION_REQUIRED);
+  assert.match(result.findings[0].action, /stated quantity and Wh rating/i);
 }));
 
 test("one dry-cell spare completes while more than one is queried", () => withMobilityPolicy(() => {
   const one = evaluateEma({
     ...installedLithium(),
     batteryType: "DRY_CELL",
-    installedStatus: "SPARE",
     spareCountBand: "ONE",
   }, POLICY_PACK);
   const more = evaluateEma({
     ...installedLithium(),
     batteryType: "DRY_CELL",
-    installedStatus: "SPARE",
     spareCountBand: "MORE_THAN_ONE",
   }, POLICY_PACK);
   assert.equal(one.overallState, STATES.NO_OBVIOUS_INCONSISTENCY);
@@ -426,7 +414,6 @@ test("every accepted mobility-aid branch requires observable NOTOC content", () 
   const result = evaluateEma({
     ...installedLithium(),
     batteryType: "DRY_CELL",
-    installedStatus: "SPARE",
     spareCountBand: "ONE",
     notocContentConfirmed: "NO",
   }, POLICY_PACK);
@@ -436,22 +423,23 @@ test("every accepted mobility-aid branch requires observable NOTOC content", () 
   assert.match(result.findings[0].action, /dispatcher or TRM/i);
 }));
 
-test("every accepted mobility-aid branch requires the final loadsheet NOTOC indicator", () => withMobilityPolicy(() => {
+test("every accepted mobility-aid branch requires the current loadsheet NOTOC indicator", () => withMobilityPolicy(() => {
   const result = evaluateEma({
     ...installedLithium(),
     batteryType: "NON_SPILLABLE",
     installedStatus: "REMOVED",
+    spareCountBand: "NONE",
     loadsheetNotocIndicator: "NO",
   }, POLICY_PACK);
 
   assert.equal(result.overallState, STATES.POSSIBLE_DISCREPANCY_QUERY);
   assert.equal(result.expectation, EXPECTATIONS.REQUIRED);
-  assert.match(result.findings[0].explanation, /final loadsheet shows NOTOC: NO/i);
+  assert.match(result.findings[0].explanation, /current loadsheet shows NOTOC: NO/i);
 }));
 
 test("dry-cell and non-spillable installed branches remain distinct and verified", () => withMobilityPolicy(() => {
-  const dry = evaluateEma({ ...installedLithium(), batteryType: "DRY_CELL" }, POLICY_PACK);
-  const nonSpillable = evaluateEma({ ...installedLithium(), batteryType: "NON_SPILLABLE" }, POLICY_PACK);
+  const dry = evaluateEma({ ...installedLithium(), batteryType: "DRY_CELL", spareCountBand: "NONE" }, POLICY_PACK);
+  const nonSpillable = evaluateEma({ ...installedLithium(), batteryType: "NON_SPILLABLE", spareCountBand: "NONE" }, POLICY_PACK);
   assert.equal(dry.overallState, STATES.NO_OBVIOUS_INCONSISTENCY);
   assert.equal(nonSpillable.overallState, STATES.NO_OBVIOUS_INCONSISTENCY);
   assert.notEqual(dry.details[0].value, nonSpillable.details[0].value);
@@ -461,30 +449,23 @@ test("documented spillable installed and removed branches can complete", () => w
   const installed = evaluateEma({
     ...installedLithium(),
     batteryType: "SPILLABLE",
-    spillableInstalledStatus: "CONFIRMED",
+    spareCountBand: "NONE",
   }, POLICY_PACK);
-  const noUpright = evaluateEma({
+  const removed = evaluateEma({
     ...installedLithium(),
     batteryType: "SPILLABLE",
     installedStatus: "REMOVED",
-    spillableRemovalReason: "NOT_UPRIGHT",
-  }, POLICY_PACK);
-  const unsecured = evaluateEma({
-    ...installedLithium(),
-    batteryType: "SPILLABLE",
-    installedStatus: "REMOVED",
-    spillableRemovalReason: "UNSECURED",
+    spareCountBand: "NONE",
   }, POLICY_PACK);
   assert.equal(installed.overallState, STATES.NO_OBVIOUS_INCONSISTENCY);
-  assert.equal(noUpright.overallState, STATES.NO_OBVIOUS_INCONSISTENCY);
-  assert.equal(unsecured.overallState, STATES.NO_OBVIOUS_INCONSISTENCY);
+  assert.equal(removed.overallState, STATES.NO_OBVIOUS_INCONSISTENCY);
 }));
 
 test("a spare spillable battery is a possible discrepancy", () => withMobilityPolicy(() => {
   const result = evaluateEma({
     ...installedLithium(),
     batteryType: "SPILLABLE",
-    installedStatus: "SPARE",
+    spareCountBand: "ONE",
   }, POLICY_PACK);
   assert.equal(result.overallState, STATES.POSSIBLE_DISCREPANCY_QUERY);
 }));
@@ -496,17 +477,24 @@ test("unknown battery type stays amber and does not fire a configuration rule", 
 }));
 
 test("a NOTOC content or location mismatch is queried without requiring an exact code", () => withMobilityPolicy(() => {
-  const result = evaluateEma(installedLithium({ notocContentConfirmed: "NO" }), POLICY_PACK);
+  const result = evaluateEma(removedLithium({ notocContentConfirmed: "NO" }), POLICY_PACK);
   assert.equal(result.overallState, STATES.POSSIBLE_DISCREPANCY_QUERY);
-  assert.match(result.findings[0].explanation, /mobility aid or battery/i);
-  assert.match(result.findings[0].explanation, /stowage location/i);
+  assert.match(result.findings[0].explanation, /mobility aid in the hold/i);
+  assert.match(result.findings[0].explanation, /removed operating lithium-ion battery in the cabin/i);
   assert.doesNotMatch(result.findings[0].explanation, /WBL/);
+  assert.match(result.findings[0].action, /return to this answer and continue/i);
 }));
 
 test("final loadsheet NOTOC NO is queried and directs the Captain to the dispatcher", () => withMobilityPolicy(() => {
   const result = evaluateEma(installedLithium({ loadsheetNotocIndicator: "NO" }), POLICY_PACK);
   assert.equal(result.overallState, STATES.POSSIBLE_DISCREPANCY_QUERY);
   assert.match(result.findings[0].action, /dispatcher/i);
+}));
+
+test("a complete current-loadsheet check reminds the user to verify the final loadsheet", () => withMobilityPolicy(() => {
+  const result = evaluateEma(removedLithium(), POLICY_PACK);
+  assert.equal(result.overallState, STATES.NO_OBVIOUS_INCONSISTENCY);
+  assert.match(result.findings[0].action, /check that NOTOC: YES remains shown on the final loadsheet/i);
 }));
 
 test("NOTOC NO plus required is a possible discrepancy", () => {
@@ -582,7 +570,7 @@ test("a missing indicator plus required item is amber", () => {
 });
 
 test("an item-level red result overrides indicator-level consistency", () => withMobilityPolicy(() => {
-  const item = evaluateEma(removedLithium({ location: { type: "HOLD", rawText: "CPT 5" } }), POLICY_PACK);
+  const item = evaluateEma(removedLithium({ notocContentConfirmed: "NO" }), POLICY_PACK);
   const result = evaluateNotocSession(
     { loadsheetNotocIndicator: "YES", rawCodes: [], allRelevantVisibleCodesEntered: true },
     [item],
@@ -594,7 +582,7 @@ test("an item-level red result overrides indicator-level consistency", () => wit
 test("every development result retains source traceability", () => {
   const results = [
     evaluateEma(installedLithium(), POLICY_PACK),
-    evaluateEma(removedLithium({ location: { type: "HOLD" } }), POLICY_PACK),
+    evaluateEma(removedLithium({ notocContentConfirmed: "NO" }), POLICY_PACK),
     evaluateNotocSession({ loadsheetNotocIndicator: "NO", rawCodes: ["UNKNOWN"] }, [], POLICY_PACK),
   ];
   const sourceIds = new Set(POLICY_PACK.sources.map((source) => source.id));

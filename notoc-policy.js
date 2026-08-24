@@ -98,6 +98,16 @@
       url: "https://www.caa.co.uk/air-passengers/about-your-trip/baggage/safety-advice-on-what-to-pack/",
     },
     {
+      id: "IATA-2026-MOBILITY-AID-BATTERY-LIMITS",
+      documentId: "IATA-DGR-67-MOBILITY-AID-GUIDANCE",
+      documentTitle: "IATA Battery-Powered Wheelchair and Mobility Aid Guidance 2026",
+      sectionPath: ["Lithium battery-powered mobility aids", "Removed and spare batteries"],
+      supportedText: "Removed lithium batteries are limited to 300 Wh combined. Spare lithium batteries are separately limited to 300 Wh combined per mobility aid. Removed and spare lithium batteries are carried in the cabin.",
+      classification: "OFFICIAL_INDUSTRY_GUIDANCE",
+      verificationStatus: "VERIFIED_CURRENT_OFFICIAL_GUIDANCE",
+      url: "https://www.iata.org/contentassets/6fea26dd84d24b26a7a1fd5788561d6e/mobility-aid-guidance-document.pdf",
+    },
+    {
       id: "BA-PUBLIC-MOBILITY-AID-OWN-USE",
       documentId: "BA-DISABILITY-ASSISTANCE",
       documentTitle: "British Airways disability assistance guidance",
@@ -135,6 +145,20 @@
       verificationStatus: "VERIFIED_CURRENT_PUBLIC_BA",
       sourceIds: ["UK-CAA-PASSENGER-MOBILITY-AID-PROVISION", "BA-PUBLIC-MOBILITY-AID-OWN-USE"],
       requiredInputs: ["mobilityAidConfirmed"],
+      releaseStatus: "ACTIVE",
+    },
+    {
+      id: "OPSDECK-IATA-MOBILITY-AID-CUMULATIVE-LIMIT",
+      title: "Current IATA cumulative lithium mobility-aid limits",
+      domain: "EMA",
+      classification: "OFFICIAL_INDUSTRY_GUIDANCE",
+      verificationStatus: "VERIFIED_CURRENT_OFFICIAL_GUIDANCE",
+      sourceIds: [
+        "IATA-2026-MOBILITY-AID-BATTERY-LIMITS",
+        "UK-CAA-PASSENGER-MOBILITY-AID-PROVISION",
+        "BA-PUBLIC-MOBILITY-AID-OWN-USE",
+      ],
+      requiredInputs: ["lithiumLimitBand", "spareLithiumBand"],
       releaseStatus: "ACTIVE",
     },
   ];

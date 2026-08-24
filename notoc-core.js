@@ -31,12 +31,14 @@
   const VERIFIED_RULE_STATUSES = new Set([
     "VERIFIED_CURRENT_MANUAL",
     "VERIFIED_CURRENT_PUBLIC_BA",
+    "VERIFIED_CURRENT_OFFICIAL_GUIDANCE",
     "REVIEWED_BA_EVIDENCE",
   ]);
   const VERIFIED_SOURCE_STATUSES = new Set([
     "VERIFIED_CURRENT_MANUAL",
     "VERIFIED_SUPPLIED_MANUAL",
     "VERIFIED_CURRENT_PUBLIC_BA",
+    "VERIFIED_CURRENT_OFFICIAL_GUIDANCE",
   ]);
   const VERIFIED_LOOKUP_EXPECTATIONS = new Set([
     EXPECTATIONS.REQUIRED,
@@ -207,9 +209,9 @@
     if (type === "LITHIUM") {
       if (configuration === "INSTALLED") return "LI-I";
       if (configuration === "REMOVED" && entry.lithiumLimitBand === "ONE_300") return "LI-R-1-300";
-      if (configuration === "REMOVED" && entry.lithiumLimitBand === "TWO_160") return "LI-R-2-160";
+      if (configuration === "REMOVED" && ["TWO_160", "TWO_300_TOTAL", "TWO_301_320"].includes(entry.lithiumLimitBand)) return "LI-R-2-160";
       if (configuration === "SPARE" && entry.lithiumLimitBand === "ONE_300") return "LI-S-1-300";
-      if (configuration === "SPARE" && entry.lithiumLimitBand === "TWO_160") return "LI-S-2-160";
+      if (configuration === "SPARE" && ["TWO_160", "TWO_300_TOTAL", "TWO_301_320"].includes(entry.lithiumLimitBand)) return "LI-S-2-160";
     }
     if (type === "DRY_CELL") {
       if (configuration === "INSTALLED") return "DRY-I";
@@ -222,55 +224,143 @@
       if (configuration === "SPARE") return "NSW-S-1";
     }
     if (type === "SPILLABLE") {
-      if (configuration === "INSTALLED" && entry.spillableInstalledStatus === "CONFIRMED") return "WET-I-UP";
+      if (configuration === "INSTALLED") return "WET-I-UP";
       if (configuration === "REMOVED" && entry.spillableRemovalReason === "UNSECURED") return "WET-R-UNSECURED";
-      if (configuration === "REMOVED" && ["NOT_UPRIGHT", "BOTH"].includes(entry.spillableRemovalReason)) return "WET-R-NOUPRIGHT";
+      if (configuration === "REMOVED") return "WET-R-NOUPRIGHT";
       if (configuration === "SPARE") return "WET-S";
     }
     return null;
   }
 
-  function expectedHandling(branch) {
-    const id = branch?.id || "";
-    if (id.endsWith("-I") || id === "WET-I-UP") {
-      return id === "WET-I-UP"
-        ? "Hold; securely attached, isolated and able to remain upright"
-        : "Hold; securely attached and isolated against inadvertent activation";
+  function resolveEmaBranchIds(entry) {
+    const primaryBranch = resolveEmaBranchId(entry);
+    const branchIds = primaryBranch ? [primaryBranch] : [];
+    if (entry?.batteryType === "LITHIUM") {
+      if (entry.spareLithiumBand === "ONE_300") branchIds.push("LI-S-1-300");
+      if (["TWO_300_TOTAL", "TWO_301_320"].includes(entry.spareLithiumBand)) branchIds.push("LI-S-2-160");
+    } else if (["DRY_CELL", "NON_SPILLABLE"].includes(entry?.batteryType) && entry.spareCountBand === "ONE") {
+      branchIds.push(entry.batteryType === "DRY_CELL" ? "DRY-S-1" : "NSW-S-1");
+    } else if (entry?.batteryType === "SPILLABLE" && entry.spareCountBand === "ONE") {
+      branchIds.push("WET-S");
     }
-    if (id.startsWith("LI-")) return "Cabin; each battery protected against short circuit and damage";
-    if (id.startsWith("WET-R")) return "Hold; leakproof package, absorbent material, labels and restraint";
-    if (id.startsWith("DRY-") || id.startsWith("NSW-")) return "Hold; short-circuit protection and strong rigid packaging";
-    return "Refer to the current BA procedure";
+    return [...new Set(branchIds)];
   }
 
-  function expectedNotoc(branch) {
-    if (branch?.id === "WET-S") return "Spare spillable batteries are not permitted";
-    return "Mobility aid or battery, correct stowage location and final loadsheet NOTOC: YES";
+  const BATTERY_TYPE_LABELS = Object.freeze({
+    LITHIUM: "Lithium-ion",
+    DRY_CELL: "Dry cell (NiCd or NiMH)",
+    NON_SPILLABLE: "Non-spillable wet",
+    SPILLABLE: "Spillable wet",
+  });
+  const LITHIUM_BAND_LABELS = Object.freeze({
+    NONE: "None",
+    ONE_300: "One, up to 300 Wh",
+    TWO_300_TOTAL: "Two, each up to 160 Wh and up to 300 Wh combined",
+    TWO_301_320: "Two, each up to 160 Wh and 301-320 Wh combined",
+    TWO_160: "Two, each up to 160 Wh; combined total not confirmed",
+    EXCEEDS: "Outside the stated limits",
+  });
+  const SPARE_COUNT_LABELS = Object.freeze({
+    NONE: "None",
+    ONE: "One",
+    MORE_THAN_ONE: "More than one",
+  });
+
+  function hasLithiumSpares(entry) {
+    return !unknownChoice(entry?.spareLithiumBand) && entry.spareLithiumBand !== "NONE";
   }
 
-  function operationalMobilityExpectation(branch) {
-    return branch?.id === "WET-S" ? EXPECTATIONS.NOT_EXPECTED : EXPECTATIONS.REQUIRED;
+  function hasOtherSpares(entry) {
+    return !unknownChoice(entry?.spareCountBand) && entry.spareCountBand !== "NONE";
   }
 
-  function addMobilityDetails(result, branch) {
-    if (!branch) return result;
-    result.details = [
-      { label: "Configuration", value: BRANCH_LABELS[branch.id] || branch.id },
-      { label: "Expected handling", value: expectedHandling(branch) },
-      { label: "Expected NOTOC", value: expectedNotoc(branch) },
+  function expectedMobilityNotoc(entry) {
+    const type = BATTERY_TYPE_LABELS[entry?.batteryType]?.toLocaleLowerCase("en-GB") || "battery";
+    const parts = [];
+    if (entry?.installedStatus === "INSTALLED") {
+      parts.push(`the mobility aid with its installed ${type} battery in the hold`);
+    } else {
+      parts.push("the mobility aid in the hold");
+      parts.push(`every removed operating ${type} battery in the ${entry?.batteryType === "LITHIUM" ? "cabin" : "hold"}`);
+    }
+    if (entry?.batteryType === "LITHIUM" ? hasLithiumSpares(entry) : hasOtherSpares(entry)) {
+      parts.push(`every spare ${type} battery in the ${entry?.batteryType === "LITHIUM" ? "cabin" : "hold"}`);
+    }
+    if (parts.length === 1) return parts[0];
+    if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
+    return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+  }
+
+  function primaryConfigurationLabel(entry) {
+    if (entry?.installedStatus === "INSTALLED") return "Installed in mobility aid";
+    if (entry?.batteryType === "LITHIUM") return LITHIUM_BAND_LABELS[entry?.lithiumLimitBand] || "Not confirmed";
+    return "Removed from mobility aid";
+  }
+
+  function spareConfigurationLabel(entry) {
+    if (entry?.batteryType === "LITHIUM") return LITHIUM_BAND_LABELS[entry?.spareLithiumBand] || "Not confirmed";
+    return SPARE_COUNT_LABELS[entry?.spareCountBand] || "Not confirmed";
+  }
+
+  function mobilityDetails(entry) {
+    return [
+      { label: "Battery", value: BATTERY_TYPE_LABELS[entry?.batteryType] || "Not confirmed" },
+      { label: "Operating battery", value: primaryConfigurationLabel(entry) },
+      { label: "Spare batteries", value: spareConfigurationLabel(entry) },
+      { label: "Expected NOTOC", value: expectedMobilityNotoc(entry) },
     ];
+  }
+
+  function mobilityResult(policyPack, entry, branches, options) {
+    const sourceIds = [...new Set(branches.flatMap((branch) => branch?.sourceIds || []))];
+    const result = simpleResult(policyPack, {
+      entryId: options.entryId,
+      ruleId: branches[0]?.ruleId || "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
+      sourceIds: sourceIds.length ? sourceIds : undefined,
+      expectation: EXPECTATIONS.REQUIRED,
+      ...options,
+    });
+    result.details = mobilityDetails(entry);
     return result;
   }
 
-  function mobilityResult(policyPack, branch, options) {
-    const result = simpleResult(policyPack, {
-      entryId: options.entryId,
-      ruleId: branch?.ruleId || "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
-      sourceIds: branch?.sourceIds,
-      expectation: branch ? operationalMobilityExpectation(branch) : EXPECTATIONS.UNKNOWN,
-      ...options,
-    });
-    return addMobilityDetails(result, branch);
+  function lithiumCapacityIssue(entry, entryId) {
+    const sourceIds = [
+      "IATA-2026-MOBILITY-AID-BATTERY-LIMITS",
+      "UK-CAA-PASSENGER-MOBILITY-AID-PROVISION",
+      "BA-PUBLIC-MOBILITY-AID-OWN-USE",
+    ];
+    const groups = [];
+    if (entry.installedStatus === "REMOVED") groups.push(["removed operating batteries", entry.lithiumLimitBand]);
+    groups.push(["spare batteries", entry.spareLithiumBand]);
+    const outside = groups.filter(([, band]) => band === "EXCEEDS").map(([label]) => label);
+    if (outside.length) {
+      return {
+        entryId,
+        ruleId: "OPSDECK-IATA-MOBILITY-AID-CUMULATIVE-LIMIT",
+        sourceIds,
+        state: STATES.POSSIBLE_DISCREPANCY_QUERY,
+        expectation: EXPECTATIONS.REQUIRED,
+        explanation: `The ${outside.join(" and ")} fall outside the stated lithium mobility-aid quantity or rating limits.`,
+        action: "Query the battery quantity and stated Wh ratings with the ground team or Dangerous Goods specialist before signing.",
+      };
+    }
+    const unresolved = groups.filter(([, band]) => band === "TWO_160").map(([label]) => label);
+    const aboveIata = groups.filter(([, band]) => band === "TWO_301_320").map(([label]) => label);
+    if (unresolved.length || aboveIata.length) {
+      const affected = [...unresolved, ...aboveIata];
+      return {
+        entryId,
+        ruleId: "OPSDECK-IATA-MOBILITY-AID-CUMULATIVE-LIMIT",
+        sourceIds,
+        state: STATES.ACTION_OR_INFORMATION_REQUIRED,
+        expectation: EXPECTATIONS.REQUIRED,
+        heading: "Confirm combined battery limit",
+        explanation: `The ${affected.join(" and ")} may total more than 300 Wh. Current IATA 2026 guidance limits each group to 300 Wh combined, while current CAA and BA public wording still describes two batteries up to 160 Wh each.`,
+        action: "Confirm acceptance with the ground team or Dangerous Goods specialist before signing.",
+      };
+    }
+    return null;
   }
 
   function evaluateEma(entry, policyPack) {
@@ -311,176 +401,115 @@
         action: "Confirm the battery type shown for the mobility aid.",
       });
     }
-    if (unknownChoice(entry?.installedStatus)) {
+    if (!["INSTALLED", "REMOVED"].includes(entry?.installedStatus)) {
       return simpleResult(policyPack, {
         entryId,
         ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
         state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-        explanation: "Confirm whether the battery is installed, removed or a spare.",
-        action: "Confirm the battery configuration.",
+        explanation: "Confirm whether the operating battery is installed in or removed from the mobility aid.",
+        action: "Confirm the operating-battery configuration.",
       });
     }
 
-    if (entry.batteryType === "LITHIUM" && ["REMOVED", "SPARE"].includes(entry.installedStatus)) {
-      if (entry.lithiumLimitBand === "EXCEEDS") {
+    if (entry.batteryType === "LITHIUM") {
+      if (entry.installedStatus === "REMOVED" && unknownChoice(entry.lithiumLimitBand)) {
         return simpleResult(policyPack, {
           entryId,
-          ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
-          state: STATES.POSSIBLE_DISCREPANCY_QUERY,
-          expectation: EXPECTATIONS.REQUIRED,
-          explanation: "The entered quantity or battery rating is outside the documented lithium mobility-aid limits.",
-          action: "Query with the TRM/Coordinator or equivalent before signing.",
-        });
-      }
-      if (unknownChoice(entry.lithiumLimitBand)) {
-        return simpleResult(policyPack, {
-          entryId,
-          ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
+          ruleId: "OPSDECK-IATA-MOBILITY-AID-CUMULATIVE-LIMIT",
           state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-          explanation: "The lithium battery quantity and Wh category have not been confirmed.",
-          action: "Obtain the manufacturer's stated Wh rating. Do not calculate or round it in this tool.",
+          explanation: "The removed operating-battery quantity and Wh category have not been confirmed.",
+          action: "Confirm the stated quantity and Wh rating shown for each removed battery.",
         });
       }
-    }
-
-    if (["DRY_CELL", "NON_SPILLABLE"].includes(entry.batteryType) && entry.installedStatus === "SPARE") {
-      if (entry.spareCountBand === "MORE_THAN_ONE") {
-        const branch = mobilityBranch(policyPack, entry.batteryType === "DRY_CELL" ? "DRY-S-1" : "NSW-S-1");
-        return mobilityResult(policyPack, branch, {
-          entryId,
-          state: STATES.POSSIBLE_DISCREPANCY_QUERY,
-          explanation: "More than one spare battery is entered, while the reviewed BA guidance permits one spare for this branch.",
-          action: "Query with the TRM/Coordinator or equivalent before signing.",
-        });
-      }
-      if (entry.spareCountBand !== "ONE") {
+      if (unknownChoice(entry.spareLithiumBand)) {
         return simpleResult(policyPack, {
           entryId,
-          ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
+          ruleId: "OPSDECK-IATA-MOBILITY-AID-CUMULATIVE-LIMIT",
           state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-          explanation: "The spare-battery quantity has not been confirmed.",
-          action: "Confirm the number of spare batteries.",
+          explanation: "The presence and rating of any spare lithium batteries have not been confirmed.",
+          action: "Confirm whether spare batteries are carried and their stated Wh ratings.",
         });
       }
-    }
-
-    if (entry.batteryType === "SPILLABLE" && entry.installedStatus === "INSTALLED") {
-      if (["UNSECURED", "NOT_UPRIGHT"].includes(entry.spillableInstalledStatus)) {
-        const branch = mobilityBranch(policyPack, "WET-I-UP");
-        return mobilityResult(policyPack, branch, {
-          entryId,
-          state: STATES.POSSIBLE_DISCREPANCY_QUERY,
-          explanation: entry.spillableInstalledStatus === "UNSECURED"
-            ? "The spillable battery is shown as installed but is not securely attached."
-            : "The spillable battery is shown as installed but the aid cannot remain upright.",
-          action: "Query the configuration and removal requirements before signing.",
-        });
-      }
-      if (entry.spillableInstalledStatus !== "CONFIRMED") {
-        return simpleResult(policyPack, {
-          entryId,
-          ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
-          state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-          explanation: "Secure attachment and upright stowage have not been confirmed for the installed spillable battery.",
-          action: "Confirm the configuration with the loading team.",
-        });
-      }
-    }
-
-    if (entry.batteryType === "SPILLABLE" && entry.installedStatus === "REMOVED" && unknownChoice(entry.spillableRemovalReason)) {
+    } else if (unknownChoice(entry.spareCountBand)) {
       return simpleResult(policyPack, {
         entryId,
         ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
         state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-        explanation: "The reason for removing the spillable battery has not been confirmed.",
-        action: "Confirm whether it was not securely attached, could not remain upright, or both.",
+        explanation: "The presence of any spare battery has not been confirmed.",
+        action: "Confirm whether a spare battery is carried.",
       });
     }
 
-    const branchId = resolveEmaBranchId(entry);
-    const branch = mobilityBranch(policyPack, branchId);
-    if (!branch) {
+    if (["DRY_CELL", "NON_SPILLABLE"].includes(entry.batteryType) && entry.spareCountBand === "MORE_THAN_ONE") {
       return simpleResult(policyPack, {
         entryId,
         ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
-        state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-        explanation: "The selected answers do not describe a complete mobility-aid configuration.",
-        action: "Return to the battery questions and check the selected configuration before signing.",
-      });
-    }
-
-    if (branch.id === "WET-S") {
-      return mobilityResult(policyPack, branch, {
-        entryId,
         state: STATES.POSSIBLE_DISCREPANCY_QUERY,
-        explanation: "Spare spillable batteries are not permitted under the reviewed BA guidance.",
-        action: "Query with the TRM/Coordinator or equivalent before signing.",
-      });
-    }
-
-    if (entry.handlingConfirmed !== "YES") {
-      return mobilityResult(policyPack, branch, {
-        entryId,
-        state: entry.handlingConfirmed === "NO"
-          ? STATES.POSSIBLE_DISCREPANCY_QUERY
-          : STATES.ACTION_OR_INFORMATION_REQUIRED,
-        explanation: entry.handlingConfirmed === "NO"
-          ? "The required secure handling, protection or packaging is not confirmed as complete."
-          : "The required secure handling, protection or packaging has not been confirmed.",
-        action: "Query or confirm the branch-specific handling with the loading team or TRM/Coordinator before signing.",
-      });
-    }
-
-    const requiredLocation = expectedLocation(branch);
-    const actualLocation = locationType(entry);
-    if (["NOT_SHOWN", "UNCLEAR", "UNKNOWN"].includes(actualLocation)) {
-      return mobilityResult(policyPack, branch, {
-        entryId,
-        state: STATES.ACTION_OR_INFORMATION_REQUIRED,
-        explanation: "The carriage location is not shown clearly.",
-        action: "Confirm the cabin or hold location before signing.",
-      });
-    }
-    if (requiredLocation && actualLocation !== requiredLocation) {
-      return mobilityResult(policyPack, branch, {
-        entryId,
-        state: STATES.POSSIBLE_DISCREPANCY_QUERY,
-        explanation: `The item is entered in the ${actualLocation === "CABIN" ? "cabin" : "hold"}, but this branch requires ${requiredLocation === "CABIN" ? "cabin" : "hold"} carriage.`,
-        action: "Query the location with the TRM/Coordinator or equivalent before signing.",
-      });
-    }
-
-    if (entry.notocContentConfirmed !== "YES") {
-      return mobilityResult(policyPack, branch, {
-        entryId,
         expectation: EXPECTATIONS.REQUIRED,
+        explanation: "More than one spare battery is shown, while the reviewed BA guidance permits one spare for this battery type.",
+        action: "Query the spare-battery quantity with the ground team before signing.",
+      });
+    }
+    if (entry.batteryType === "SPILLABLE" && entry.spareCountBand !== "NONE") {
+      return simpleResult(policyPack, {
+        entryId,
+        ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
+        state: STATES.POSSIBLE_DISCREPANCY_QUERY,
+        expectation: EXPECTATIONS.NOT_EXPECTED,
+        explanation: "A spare spillable battery is shown, but spare spillable batteries are not permitted under the reviewed BA guidance.",
+        action: "Query the item with the ground team before signing.",
+      });
+    }
+
+    const capacityIssue = entry.batteryType === "LITHIUM" ? lithiumCapacityIssue(entry, entryId) : null;
+    if (capacityIssue?.state === STATES.POSSIBLE_DISCREPANCY_QUERY) {
+      return simpleResult(policyPack, capacityIssue);
+    }
+
+    const branchIds = resolveEmaBranchIds(entry);
+    const branches = branchIds.map((branchId) => mobilityBranch(policyPack, branchId)).filter(Boolean);
+    if (!branchIds.length || branches.length !== branchIds.length) {
+      return simpleResult(policyPack, {
+        entryId,
+        ruleId: "BA-CDGM-NOTOC-CODE-MAPPING-MISSING",
+        state: STATES.ACTION_OR_INFORMATION_REQUIRED,
+        explanation: "The selected battery configuration is not available in the guidance loaded on this device.",
+        action: "Refresh the app while online before using this check.",
+      });
+    }
+
+    const expectedEntry = expectedMobilityNotoc(entry);
+    if (entry.notocContentConfirmed !== "YES") {
+      return mobilityResult(policyPack, entry, branches, {
+        entryId,
         state: entry.notocContentConfirmed === "NO" ? STATES.POSSIBLE_DISCREPANCY_QUERY : STATES.ACTION_OR_INFORMATION_REQUIRED,
         explanation: entry.notocContentConfirmed === "NO"
-          ? "The NOTOC does not identify the mobility aid or battery and its correct stowage location."
-          : "The mobility aid or battery and its stowage location have not been confirmed on the NOTOC.",
-        action: "Confirm or correct the NOTOC with the dispatcher or TRM before signing.",
+          ? `The NOTOC does not show ${expectedEntry}.`
+          : "The required mobility-aid and battery locations have not been confirmed on the NOTOC.",
+        action: "Ask the dispatcher or TRM to correct the NOTOC, then return to this answer and continue the check.",
       });
     }
 
     if (entry.loadsheetNotocIndicator !== "YES") {
-      return mobilityResult(policyPack, branch, {
+      return mobilityResult(policyPack, entry, branches, {
         entryId,
-        expectation: EXPECTATIONS.REQUIRED,
         state: entry.loadsheetNotocIndicator === "NO" ? STATES.POSSIBLE_DISCREPANCY_QUERY : STATES.ACTION_OR_INFORMATION_REQUIRED,
         explanation: entry.loadsheetNotocIndicator === "NO"
-          ? "The final loadsheet shows NOTOC: NO, although the mobility aid or battery has been confirmed on the NOTOC."
-          : "The final loadsheet NOTOC indicator has not been confirmed.",
-        action: "Ask the dispatcher to provide or correct the NOTOC before signing.",
+          ? "The current loadsheet shows NOTOC: NO, although this mobility aid requires a NOTOC."
+          : "The current loadsheet NOTOC indicator has not been confirmed.",
+        action: "Ask the dispatcher to correct the NOTOC and loadsheet before signing.",
       });
     }
 
-    return mobilityResult(policyPack, branch, {
+    if (capacityIssue) {
+      return mobilityResult(policyPack, entry, branches, capacityIssue);
+    }
+
+    return mobilityResult(policyPack, entry, branches, {
       entryId,
-      expectation: EXPECTATIONS.REQUIRED,
       state: STATES.NO_OBVIOUS_INCONSISTENCY,
-      explanation: ["LI-R-1-300", "LI-R-2-160", "LI-S-1-300", "LI-S-2-160"].includes(branch.id)
-        ? "The entered quantity, protection and cabin stowage are consistent with the reviewed guidance. The mobility aid or battery and its cabin location are confirmed on the NOTOC, and the final loadsheet shows NOTOC: YES."
-        : "The entered configuration, protection, stowage and NOTOC information show no obvious inconsistency against the reviewed guidance.",
+      explanation: "The battery configuration, NOTOC locations and current loadsheet show no obvious inconsistency against the reviewed guidance.",
+      action: "If this is not the final loadsheet, check that NOTOC: YES remains shown on the final loadsheet.",
     });
   }
 
@@ -747,6 +776,7 @@
     evaluateEma,
     evaluateNotocIndicator,
     evaluateNotocSession,
+    expectedMobilityNotoc,
     expectedLocation,
     expectedNotocCode,
     isRuleVerified,
@@ -756,6 +786,7 @@
     normaliseCode,
     normaliseNotocExpectation,
     resolveEmaBranchId,
+    resolveEmaBranchIds,
     searchHandlingCodes,
     validatePolicyPack,
   };

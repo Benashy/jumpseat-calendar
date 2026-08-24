@@ -185,6 +185,19 @@ test("reports barometric indication error against the true 2,500 ft RA altitude"
   );
 });
 
+test("keeps threshold elevation separate from temperature correction", () => {
+  const calculation = calculateRadioAltimeterPosition({
+    thresholdElevationFt: 79,
+    airportTemperatureC: 15,
+    glideSlopeAngleDeg: 3,
+  });
+
+  assert.equal(formatBaroAltitude(calculation.result.expectedBaroAltitudeFtRaw), "~2,580 ft");
+  assert.equal(calculation.result.trueBaroAltitudeFtRaw, 2579);
+  assert.ok(Math.abs(calculation.result.barometricErrorFtRaw) < 2);
+  assert.ok(Math.abs(calculation.result.expectedBaroAltitudeFtRaw - 2500) > 50);
+});
+
 test("uses the published temperature range without silently clamping", () => {
   const below = calculateRadioAltimeterPosition({ thresholdElevationFt: 0, airportTemperatureC: -26, glideSlopeAngleDeg: 3 });
   const above = calculateRadioAltimeterPosition({ thresholdElevationFt: 0, airportTemperatureC: 51, glideSlopeAngleDeg: 3 });

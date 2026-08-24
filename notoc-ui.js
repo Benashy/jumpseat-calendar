@@ -68,116 +68,67 @@
     },
     installedStatus: {
       id: "installedStatus",
-      label: "Battery configuration",
+      label: "Operating battery",
       context: "Battery",
-      question: "How is the battery configured?",
+      question: "Where is the operating battery?",
       type: "choice",
       choices: [
         { value: "INSTALLED", label: "Installed in mobility aid" },
         { value: "REMOVED", label: "Removed from mobility aid" },
-        { value: "SPARE", label: "Spare battery" },
       ],
     },
     lithiumLimitBand: {
       id: "lithiumLimitBand",
       label: "Quantity and rating",
       context: "Lithium battery",
-      question: (answers) => answers.installedStatus === "REMOVED"
-        ? "What removed-battery quantity and rating is shown?"
-        : "What spare-battery quantity and rating is shown?",
+      question: "What removed operating-battery quantity and rating is shown?",
       type: "choice",
       choices: [
         { value: "ONE_300", label: "One, up to 300 Wh" },
-        { value: "TWO_160", label: "Two, up to 160 Wh each" },
+        { value: "TWO_300_TOTAL", label: "Two, each up to 160 Wh and up to 300 Wh combined" },
+        { value: "TWO_301_320", label: "Two, each up to 160 Wh and 301–320 Wh combined" },
+        { value: "EXCEEDS", label: "Outside these limits" },
+      ],
+    },
+    spareLithiumBand: {
+      id: "spareLithiumBand",
+      label: "Spare batteries",
+      context: "Lithium battery",
+      question: "Are any separate spare lithium batteries carried?",
+      type: "choice",
+      choices: [
+        { value: "NONE", label: "None" },
+        { value: "ONE_300", label: "One, up to 300 Wh" },
+        { value: "TWO_300_TOTAL", label: "Two, each up to 160 Wh and up to 300 Wh combined" },
+        { value: "TWO_301_320", label: "Two, each up to 160 Wh and 301–320 Wh combined" },
         { value: "EXCEEDS", label: "Outside these limits" },
       ],
     },
     spareCountBand: {
       id: "spareCountBand",
-      label: "Spare quantity",
+      label: "Spare batteries",
       context: "Spare battery",
-      question: "How many spare batteries are shown?",
+      question: "Are any separate spare batteries carried?",
       type: "choice",
       choices: [
+        { value: "NONE", label: "None" },
         { value: "ONE", label: "One" },
         { value: "MORE_THAN_ONE", label: "More than one" },
-      ],
-    },
-    spillableInstalledStatus: {
-      id: "spillableInstalledStatus",
-      label: "Installed condition",
-      context: "Spillable battery",
-      question: "Is the battery secure, isolated and able to remain upright?",
-      type: "choice",
-      choices: [
-        { value: "CONFIRMED", label: "Yes, all confirmed" },
-        { value: "UNSECURED", label: "Battery not secure" },
-        { value: "NOT_UPRIGHT", label: "Cannot remain upright" },
-      ],
-    },
-    spillableRemovalReason: {
-      id: "spillableRemovalReason",
-      label: "Removal reason",
-      context: "Spillable battery",
-      question: "Why was the spillable battery removed?",
-      type: "choice",
-      choices: [
-        { value: "UNSECURED", label: "Battery not secure" },
-        { value: "NOT_UPRIGHT", label: "Aid cannot remain upright" },
-        { value: "BOTH", label: "Both" },
-      ],
-    },
-    handlingConfirmed: {
-      id: "handlingConfirmed",
-      label: "Handling confirmation",
-      context: "Ground handling",
-      question: (answers) => {
-        if (answers.installedStatus === "INSTALLED") {
-          return "Have secure attachment and isolation against inadvertent activation been confirmed?";
-        }
-        if (answers.batteryType === "LITHIUM") {
-          return "Have short-circuit and damage protection been confirmed?";
-        }
-        if (answers.batteryType === "SPILLABLE") {
-          return "Have leakproof packaging, absorbent material, labels and restraint been confirmed?";
-        }
-        return "Have short-circuit protection and strong rigid packaging been confirmed?";
-      },
-      type: "choice",
-      choices: yesNo,
-    },
-    locationType: {
-      id: "locationType",
-      label: "Stowage location",
-      context: "Location",
-      question: "Where is the battery or mobility aid shown as stowed?",
-      type: "choice",
-      choices: [
-        { value: "CABIN", label: "Cabin" },
-        { value: "HOLD", label: "Hold" },
-        { value: "NOT_SHOWN", label: "Not shown" },
       ],
     },
     notocContentConfirmed: {
       id: "notocContentConfirmed",
       label: "NOTOC entry",
       context: "NOTOC",
-      question: (answers) => {
-        const item = answers.installedStatus === "INSTALLED"
-          ? "the mobility aid"
-          : answers.installedStatus === "REMOVED"
-            ? "the mobility aid or removed battery"
-            : "the mobility aid or spare battery";
-        return `Does the NOTOC identify ${item} and show the correct stowage location?`;
-      },
+      question: (answers) => `Does the NOTOC show ${core.expectedMobilityNotoc(buildEmaEntry(answers))}?`,
       type: "choice",
       choices: yesNo,
     },
     loadsheetNotocIndicator: {
       id: "loadsheetNotocIndicator",
-      label: "Final loadsheet",
-      context: "Final loadsheet",
-      question: "Does the final loadsheet show NOTOC: YES?",
+      label: "Current loadsheet",
+      context: "Loadsheet",
+      question: "Does the current loadsheet show NOTOC: YES?",
       type: "choice",
       choices: yesNo,
     },
@@ -188,11 +139,8 @@
     "batteryType",
     "installedStatus",
     "lithiumLimitBand",
+    "spareLithiumBand",
     "spareCountBand",
-    "spillableInstalledStatus",
-    "spillableRemovalReason",
-    "handlingConfirmed",
-    "locationType",
     "notocContentConfirmed",
     "loadsheetNotocIndicator",
   ];
@@ -207,11 +155,8 @@
       batteryType: null,
       installedStatus: null,
       lithiumLimitBand: null,
+      spareLithiumBand: null,
       spareCountBand: null,
-      spillableInstalledStatus: null,
-      spillableRemovalReason: null,
-      handlingConfirmed: null,
-      locationType: null,
       notocContentConfirmed: null,
       loadsheetNotocIndicator: null,
     };
@@ -444,39 +389,23 @@
     steps.push(stepCatalog.installedStatus);
     if (!emaAnswers.installedStatus) return steps;
 
-    if (emaAnswers.batteryType === "LITHIUM" && ["REMOVED", "SPARE"].includes(emaAnswers.installedStatus)) {
+    if (emaAnswers.batteryType === "LITHIUM" && emaAnswers.installedStatus === "REMOVED") {
       steps.push(stepCatalog.lithiumLimitBand);
       if (!emaAnswers.lithiumLimitBand || emaAnswers.lithiumLimitBand === "EXCEEDS") return steps;
     }
 
-    if (["DRY_CELL", "NON_SPILLABLE"].includes(emaAnswers.batteryType) && emaAnswers.installedStatus === "SPARE") {
+    if (emaAnswers.batteryType === "LITHIUM") {
+      steps.push(stepCatalog.spareLithiumBand);
+      if (!emaAnswers.spareLithiumBand || emaAnswers.spareLithiumBand === "EXCEEDS") return steps;
+    } else {
       steps.push(stepCatalog.spareCountBand);
-      if (!emaAnswers.spareCountBand || emaAnswers.spareCountBand !== "ONE") return steps;
-    }
-
-    if (emaAnswers.batteryType === "SPILLABLE") {
-      if (emaAnswers.installedStatus === "INSTALLED") {
-        steps.push(stepCatalog.spillableInstalledStatus);
-        if (!emaAnswers.spillableInstalledStatus || emaAnswers.spillableInstalledStatus !== "CONFIRMED") return steps;
-      }
-      if (emaAnswers.installedStatus === "REMOVED") {
-        steps.push(stepCatalog.spillableRemovalReason);
-        if (!emaAnswers.spillableRemovalReason) return steps;
-      }
-      if (emaAnswers.installedStatus === "SPARE") return steps;
+      if (!emaAnswers.spareCountBand || emaAnswers.spareCountBand === "MORE_THAN_ONE") return steps;
+      if (emaAnswers.batteryType === "SPILLABLE" && emaAnswers.spareCountBand === "ONE") return steps;
     }
 
     const entry = buildEmaEntry(emaAnswers);
-    const branch = core.mobilityBranch(policyPack, core.resolveEmaBranchId(entry));
-    if (!branch) return steps;
-
-    steps.push(stepCatalog.handlingConfirmed);
-    if (emaAnswers.handlingConfirmed !== "YES") return steps;
-
-    steps.push(stepCatalog.locationType);
-    if (!emaAnswers.locationType) return steps;
-    const expectedLocation = core.expectedLocation(branch);
-    if (emaAnswers.locationType === "NOT_SHOWN" || (expectedLocation && emaAnswers.locationType !== expectedLocation)) return steps;
+    const branchIds = core.resolveEmaBranchIds(entry);
+    if (!branchIds.length || branchIds.some((branchId) => !core.mobilityBranch(policyPack, branchId))) return steps;
 
     steps.push(stepCatalog.notocContentConfirmed);
     if (emaAnswers.notocContentConfirmed !== "YES") return steps;
@@ -638,16 +567,10 @@
       batteryType: answers.batteryType || "UNKNOWN",
       installedStatus: answers.installedStatus || "UNKNOWN",
       lithiumLimitBand: answers.lithiumLimitBand || "UNKNOWN",
+      spareLithiumBand: answers.spareLithiumBand || "UNKNOWN",
       spareCountBand: answers.spareCountBand || "UNKNOWN",
-      spillableInstalledStatus: answers.spillableInstalledStatus || "UNKNOWN",
-      spillableRemovalReason: answers.spillableRemovalReason || "UNKNOWN",
-      handlingConfirmed: answers.handlingConfirmed || "UNKNOWN",
       notocContentConfirmed: answers.notocContentConfirmed || "UNKNOWN",
       loadsheetNotocIndicator: answers.loadsheetNotocIndicator || "UNKNOWN",
-      location: {
-        type: answers.locationType || "NOT_SHOWN",
-        rawText: "",
-      },
     };
   }
 

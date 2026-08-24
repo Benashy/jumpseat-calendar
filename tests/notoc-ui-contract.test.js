@@ -21,9 +21,17 @@ test("the NOTOC interface does not expose internal evidence controls or unknown 
 });
 
 test("the mobility-aid NOTOC question checks observable content rather than an exact code", () => {
-  assert.match(ui, /Does the NOTOC identify/);
-  assert.match(ui, /correct stowage location/);
+  assert.match(ui, /Does the NOTOC show/);
+  assert.match(ui, /expectedMobilityNotoc/);
   assert.doesNotMatch(ui, /Does the NOTOC show.*expected code/);
+});
+
+test("the mobility-aid flow separates operating and spare batteries without repeating ground acceptance", () => {
+  assert.match(ui, /Where is the operating battery/);
+  assert.match(ui, /Are any separate spare lithium batteries carried/);
+  assert.match(ui, /Are any separate spare batteries carried/);
+  assert.doesNotMatch(ui, /secure attachment|short-circuit protection|leakproof packaging|handlingConfirmed/i);
+  assert.match(ui, /Does the current loadsheet show NOTOC: YES/);
 });
 
 test("the opening question distinguishes a travelling passenger's mobility aid", () => {
@@ -55,4 +63,8 @@ test("the RA interface uses concise DME references and a visible threshold marke
   assert.match(index, /ra-threshold-label[^>]*>THR<\/text>/);
   assert.doesNotMatch(raUi, /before the threshold on final/);
   assert.match(raUi, /is-offset-reference/);
+  assert.match(raUi, /Temperature correction is less than/);
+  assert.doesNotMatch(raUi, /Difference below/);
+  assert.ok(index.indexOf('value="BEFORE_THRESHOLD"') < index.indexOf('value="THRESHOLD"'));
+  assert.ok(index.indexOf('value="THRESHOLD"') < index.indexOf('value="BEYOND_THRESHOLD"'));
 });
