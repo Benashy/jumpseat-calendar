@@ -131,6 +131,16 @@ test("development policy pack is structurally valid and visibly development-only
   assert.deepEqual(validatePolicyPack(POLICY_PACK), { valid: true, errors: [] });
 });
 
+test("the operational lithium limit follows current BA and CAA guidance", () => {
+  const rule = POLICY_PACK.rules.find((candidate) => candidate.id === "OPSDECK-BA-MOBILITY-AID-LITHIUM-LIMIT");
+  assert.ok(rule);
+  assert.deepEqual(rule.sourceIds, [
+    "UK-CAA-PASSENGER-MOBILITY-AID-PROVISION",
+    "BA-PUBLIC-MOBILITY-AID-OWN-USE",
+  ]);
+  assert.ok(POLICY_PACK.sources.some((source) => source.id === "IATA-2026-MOBILITY-AID-BATTERY-LIMITS"));
+});
+
 test("normalises only case and harmless whitespace", () => {
   assert.equal(normaliseCode(" w clb \n"), "WCLB");
 });
@@ -374,13 +384,13 @@ test("a removed operating battery and an independent spare are checked together"
   assert.match(result.details.find((item) => item.label === "Expected NOTOC").value, /spare lithium-ion battery in the cabin/i);
 }));
 
-test("two-battery groups between 301 and 320 Wh require confirmation", () => withMobilityPolicy(() => {
+test("two-battery groups between 301 and 320 Wh are accepted under current BA guidance", () => withMobilityPolicy(() => {
   const removed = evaluateEma(removedLithium({ lithiumLimitBand: "TWO_301_320" }), POLICY_PACK);
   const spare = evaluateEma(installedLithium({ spareLithiumBand: "TWO_301_320" }), POLICY_PACK);
   for (const result of [removed, spare]) {
-    assert.equal(result.overallState, STATES.ACTION_OR_INFORMATION_REQUIRED);
-    assert.equal(result.findings[0].heading, "Confirm combined battery limit");
-    assert.match(result.findings[0].explanation, /IATA 2026 guidance limits each group to 300 Wh combined/i);
+    assert.equal(result.overallState, STATES.NO_OBVIOUS_INCONSISTENCY);
+    assert.match(result.findings[0].explanation, /within current BA guidance because each battery is no more than 160 Wh/i);
+    assert.ok(result.details.some((item) => /301-320 Wh combined/i.test(item.value)));
   }
 }));
 

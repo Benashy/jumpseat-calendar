@@ -326,7 +326,6 @@
 
   function lithiumCapacityIssue(entry, entryId) {
     const sourceIds = [
-      "IATA-2026-MOBILITY-AID-BATTERY-LIMITS",
       "UK-CAA-PASSENGER-MOBILITY-AID-PROVISION",
       "BA-PUBLIC-MOBILITY-AID-OWN-USE",
     ];
@@ -337,7 +336,7 @@
     if (outside.length) {
       return {
         entryId,
-        ruleId: "OPSDECK-IATA-MOBILITY-AID-CUMULATIVE-LIMIT",
+        ruleId: "OPSDECK-BA-MOBILITY-AID-LITHIUM-LIMIT",
         sourceIds,
         state: STATES.POSSIBLE_DISCREPANCY_QUERY,
         expectation: EXPECTATIONS.REQUIRED,
@@ -346,18 +345,16 @@
       };
     }
     const unresolved = groups.filter(([, band]) => band === "TWO_160").map(([label]) => label);
-    const aboveIata = groups.filter(([, band]) => band === "TWO_301_320").map(([label]) => label);
-    if (unresolved.length || aboveIata.length) {
-      const affected = [...unresolved, ...aboveIata];
+    if (unresolved.length) {
       return {
         entryId,
-        ruleId: "OPSDECK-IATA-MOBILITY-AID-CUMULATIVE-LIMIT",
+        ruleId: "OPSDECK-BA-MOBILITY-AID-LITHIUM-LIMIT",
         sourceIds,
         state: STATES.ACTION_OR_INFORMATION_REQUIRED,
         expectation: EXPECTATIONS.REQUIRED,
-        heading: "Confirm combined battery limit",
-        explanation: `The ${affected.join(" and ")} may total more than 300 Wh. Current IATA 2026 guidance limits each group to 300 Wh combined, while current CAA and BA public wording still describes two batteries up to 160 Wh each.`,
-        action: "Confirm acceptance with the ground team or Dangerous Goods specialist before signing.",
+        heading: "Confirm battery ratings",
+        explanation: `The combined rating of the ${unresolved.join(" and ")} has not been entered. Current BA guidance permits two batteries up to 160 Wh each.`,
+        action: "Confirm the stated Wh rating of each battery before signing.",
       };
     }
     return null;
@@ -415,7 +412,7 @@
       if (entry.installedStatus === "REMOVED" && unknownChoice(entry.lithiumLimitBand)) {
         return simpleResult(policyPack, {
           entryId,
-          ruleId: "OPSDECK-IATA-MOBILITY-AID-CUMULATIVE-LIMIT",
+          ruleId: "OPSDECK-BA-MOBILITY-AID-LITHIUM-LIMIT",
           state: STATES.ACTION_OR_INFORMATION_REQUIRED,
           explanation: "The removed operating-battery quantity and Wh category have not been confirmed.",
           action: "Confirm the stated quantity and Wh rating shown for each removed battery.",
@@ -424,7 +421,7 @@
       if (unknownChoice(entry.spareLithiumBand)) {
         return simpleResult(policyPack, {
           entryId,
-          ruleId: "OPSDECK-IATA-MOBILITY-AID-CUMULATIVE-LIMIT",
+          ruleId: "OPSDECK-BA-MOBILITY-AID-LITHIUM-LIMIT",
           state: STATES.ACTION_OR_INFORMATION_REQUIRED,
           explanation: "The presence and rating of any spare lithium batteries have not been confirmed.",
           action: "Confirm whether spare batteries are carried and their stated Wh ratings.",
@@ -505,10 +502,13 @@
       return mobilityResult(policyPack, entry, branches, capacityIssue);
     }
 
+    const usesBaTwoBatteryLimit = [entry.lithiumLimitBand, entry.spareLithiumBand].includes("TWO_301_320");
     return mobilityResult(policyPack, entry, branches, {
       entryId,
       state: STATES.NO_OBVIOUS_INCONSISTENCY,
-      explanation: "The battery configuration, NOTOC locations and current loadsheet show no obvious inconsistency against the reviewed guidance.",
+      explanation: usesBaTwoBatteryLimit
+        ? "The two-battery configuration is within current BA guidance because each battery is no more than 160 Wh. The NOTOC locations and current loadsheet show no obvious inconsistency."
+        : "The battery configuration, NOTOC locations and current loadsheet show no obvious inconsistency against the reviewed guidance.",
       action: "If this is not the final loadsheet, check that NOTOC: YES remains shown on the final loadsheet.",
     });
   }

@@ -148,13 +148,12 @@
       releaseStatus: "ACTIVE",
     },
     {
-      id: "OPSDECK-IATA-MOBILITY-AID-CUMULATIVE-LIMIT",
-      title: "Current IATA cumulative lithium mobility-aid limits",
+      id: "OPSDECK-BA-MOBILITY-AID-LITHIUM-LIMIT",
+      title: "Current BA lithium mobility-aid limits",
       domain: "EMA",
-      classification: "OFFICIAL_INDUSTRY_GUIDANCE",
-      verificationStatus: "VERIFIED_CURRENT_OFFICIAL_GUIDANCE",
+      classification: "PUBLIC_BA",
+      verificationStatus: "VERIFIED_CURRENT_PUBLIC_BA",
       sourceIds: [
-        "IATA-2026-MOBILITY-AID-BATTERY-LIMITS",
         "UK-CAA-PASSENGER-MOBILITY-AID-PROVISION",
         "BA-PUBLIC-MOBILITY-AID-OWN-USE",
       ],
