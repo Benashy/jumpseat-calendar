@@ -3928,6 +3928,47 @@ html[data-theme="night"] input[type="time"] {
   outline: none;
 }
 
+.ema-question-summary {
+  display: grid;
+  overflow: hidden;
+  margin: 2px 0 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--silver-soft);
+}
+
+.ema-question-summary.hidden {
+  display: none;
+}
+
+.ema-question-summary > div {
+  display: grid;
+  grid-template-columns: minmax(112px, 0.7fr) minmax(0, 1.3fr);
+  gap: 12px;
+  padding: 8px 10px;
+}
+
+.ema-question-summary > div + div {
+  border-top: 1px solid var(--line);
+}
+
+.ema-question-summary dt,
+.ema-question-summary dd {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.ema-question-summary dt {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.ema-question-summary dd {
+  color: var(--ink);
+  font-weight: 800;
+}
+
 .ema-choice-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4466,12 +4507,14 @@ html[data-theme="night"] input[type="time"] {
 
   .ema-choice-grid,
   .ema-choice-grid.is-three-options,
+  .ema-question-summary > div,
   .ema-answer-summary > div,
   .notoc-result-details > div {
     grid-template-columns: 1fr;
   }
 
   .ema-answer-summary > div,
+  .ema-question-summary > div,
   .notoc-result-details > div {
     gap: 2px;
   }

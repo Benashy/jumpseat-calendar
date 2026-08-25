@@ -274,6 +274,45 @@
     return !unknownChoice(entry?.spareCountBand) && entry.spareCountBand !== "NONE";
   }
 
+  function lithiumBandCount(band) {
+    if (band === "ONE_300") return 1;
+    if (["TWO_160", "TWO_300_TOTAL", "TWO_301_320"].includes(band)) return 2;
+    return null;
+  }
+
+  function operatingBatterySummary(entry) {
+    const type = BATTERY_TYPE_LABELS[entry?.batteryType]?.toLocaleLowerCase("en-GB") || "battery";
+    if (entry?.installedStatus === "INSTALLED") return `Installed in the mobility aid, hold`;
+    if (entry?.batteryType !== "LITHIUM") return `Removed ${type} battery, hold`;
+    const count = lithiumBandCount(entry?.lithiumLimitBand);
+    const rating = LITHIUM_BAND_LABELS[entry?.lithiumLimitBand] || "Rating not confirmed";
+    const quantity = count ? `${count} removed ${count === 1 ? "battery" : "batteries"}` : "Unconfirmed quantity";
+    return `${quantity}, cabin, ${rating.replace(/^One,?\s*/i, "").replace(/^Two,?\s*/i, "")}`;
+  }
+
+  function spareBatterySummary(entry) {
+    const type = BATTERY_TYPE_LABELS[entry?.batteryType]?.toLocaleLowerCase("en-GB") || "battery";
+    if (entry?.batteryType === "LITHIUM") {
+      if (!hasLithiumSpares(entry)) return "None";
+      const count = lithiumBandCount(entry?.spareLithiumBand);
+      const rating = LITHIUM_BAND_LABELS[entry?.spareLithiumBand] || "Rating not confirmed";
+      const quantity = count ? `${count} ${type} ${count === 1 ? "battery" : "batteries"}` : "Unconfirmed quantity";
+      return `${quantity}, cabin, ${rating.replace(/^One,?\s*/i, "").replace(/^Two,?\s*/i, "")}`;
+    }
+    if (!hasOtherSpares(entry)) return "None";
+    const oneSpare = entry?.spareCountBand === "ONE";
+    const count = oneSpare ? "1" : "More than one";
+    return `${count} ${type} ${oneSpare ? "battery" : "batteries"}, hold`;
+  }
+
+  function mobilityNotocSummary(entry) {
+    return [
+      { label: "Mobility aid", value: "Hold" },
+      { label: "Operating battery", value: operatingBatterySummary(entry) },
+      { label: "Additional spares", value: spareBatterySummary(entry) },
+    ];
+  }
+
   function expectedMobilityNotoc(entry) {
     const type = BATTERY_TYPE_LABELS[entry?.batteryType]?.toLocaleLowerCase("en-GB") || "battery";
     const parts = [];
@@ -281,10 +320,22 @@
       parts.push(`the mobility aid with its installed ${type} battery in the hold`);
     } else {
       parts.push("the mobility aid in the hold");
-      parts.push(`every removed operating ${type} battery in the ${entry?.batteryType === "LITHIUM" ? "cabin" : "hold"}`);
+      const operatingCount = entry?.batteryType === "LITHIUM" ? lithiumBandCount(entry?.lithiumLimitBand) : 1;
+      const operatingLabel = operatingCount === 2
+        ? `both removed operating ${type} batteries`
+        : `the removed operating ${type} battery`;
+      parts.push(`${operatingLabel} in the ${entry?.batteryType === "LITHIUM" ? "cabin" : "hold"}`);
     }
     if (entry?.batteryType === "LITHIUM" ? hasLithiumSpares(entry) : hasOtherSpares(entry)) {
-      parts.push(`every spare ${type} battery in the ${entry?.batteryType === "LITHIUM" ? "cabin" : "hold"}`);
+      const spareCount = entry?.batteryType === "LITHIUM"
+        ? lithiumBandCount(entry?.spareLithiumBand)
+        : entry?.spareCountBand === "ONE" ? 1 : null;
+      const spareLabel = spareCount === 2
+        ? `both additional spare ${type} batteries`
+        : spareCount === 1
+          ? `the additional spare ${type} battery`
+          : `all additional spare ${type} batteries`;
+      parts.push(`${spareLabel} in the ${entry?.batteryType === "LITHIUM" ? "cabin" : "hold"}`);
     }
     if (parts.length === 1) return parts[0];
     if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
@@ -367,8 +418,9 @@
         entryId,
         ruleId: "OPSDECK-MOBILITY-AID-PASSENGER-PROVISION",
         state: STATES.STOP_THIS_CHECK,
-        explanation: "This item is not for use by a passenger with reduced mobility travelling on this flight, so this passenger mobility-aid check does not apply.",
-        action: "Stop this check and confirm the correct acceptance route for the item.",
+        heading: "Passenger mobility-aid route not applicable",
+        explanation: "This item cannot be accepted under the passenger mobility-aid allowance because it is not for use by a passenger with reduced mobility travelling on this flight.",
+        action: "Stop this check and ask the dispatcher or TRM to confirm the appropriate baggage or dangerous-goods cargo route.",
       });
     }
     if (entry?.mobilityAidConfirmed !== "YES") {
@@ -777,6 +829,7 @@
     evaluateNotocIndicator,
     evaluateNotocSession,
     expectedMobilityNotoc,
+    mobilityNotocSummary,
     expectedLocation,
     expectedNotocCode,
     isRuleVerified,

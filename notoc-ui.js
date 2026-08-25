@@ -25,6 +25,7 @@
     emaStepLabel: document.querySelector("#emaStepLabel"),
     emaStepContext: document.querySelector("#emaStepContext"),
     emaQuestionTitle: document.querySelector("#emaQuestionTitle"),
+    emaQuestionSummary: document.querySelector("#emaQuestionSummary"),
     emaQuestionOptions: document.querySelector("#emaQuestionOptions"),
     emaQuestionInput: document.querySelector("#emaQuestionInput"),
     emaWizardBack: document.querySelector("#emaWizardBackButton"),
@@ -70,57 +71,58 @@
       id: "installedStatus",
       label: "Operating battery",
       context: "Battery",
-      question: "Where is the operating battery?",
+      question: "Where is the mobility aid's operating battery?",
       type: "choice",
       choices: [
-        { value: "INSTALLED", label: "Installed in mobility aid" },
-        { value: "REMOVED", label: "Removed from mobility aid" },
+        { value: "INSTALLED", label: "Installed in the mobility aid" },
+        { value: "REMOVED", label: "Removed from the mobility aid" },
       ],
     },
     lithiumLimitBand: {
       id: "lithiumLimitBand",
       label: "Quantity and rating",
       context: "Lithium battery",
-      question: "What removed operating-battery quantity and rating is shown?",
+      question: "How many operating batteries were removed from the mobility aid?",
       type: "choice",
       choices: [
-        { value: "ONE_300", label: "One, up to 300 Wh" },
-        { value: "TWO_300_TOTAL", label: "Two, each up to 160 Wh and up to 300 Wh combined" },
-        { value: "TWO_301_320", label: "Two, each up to 160 Wh and 301–320 Wh combined" },
+        { value: "ONE_300", label: "One operating battery, up to 300 Wh" },
+        { value: "TWO_300_TOTAL", label: "Two operating batteries for a device designed to use two, each up to 160 Wh and up to 300 Wh combined" },
+        { value: "TWO_301_320", label: "Two operating batteries for a device designed to use two, each up to 160 Wh and 301–320 Wh combined" },
         { value: "EXCEEDS", label: "Outside these limits" },
       ],
     },
     spareLithiumBand: {
       id: "spareLithiumBand",
-      label: "Spare batteries",
+      label: "Additional spares",
       context: "Lithium battery",
-      question: "Are any separate spare lithium batteries carried?",
+      question: "Are any additional spare lithium-ion batteries carried?",
       type: "choice",
       choices: [
-        { value: "NONE", label: "None" },
-        { value: "ONE_300", label: "One, up to 300 Wh" },
-        { value: "TWO_300_TOTAL", label: "Two, each up to 160 Wh and up to 300 Wh combined" },
-        { value: "TWO_301_320", label: "Two, each up to 160 Wh and 301–320 Wh combined" },
+        { value: "NONE", label: "No additional spares" },
+        { value: "ONE_300", label: "One additional spare, up to 300 Wh" },
+        { value: "TWO_300_TOTAL", label: "Two additional spares, each up to 160 Wh and up to 300 Wh combined" },
+        { value: "TWO_301_320", label: "Two additional spares, each up to 160 Wh and 301–320 Wh combined" },
         { value: "EXCEEDS", label: "Outside these limits" },
       ],
     },
     spareCountBand: {
       id: "spareCountBand",
-      label: "Spare batteries",
+      label: "Additional spares",
       context: "Spare battery",
-      question: "Are any separate spare batteries carried?",
+      question: "Are any additional spare batteries carried?",
       type: "choice",
       choices: [
-        { value: "NONE", label: "None" },
-        { value: "ONE", label: "One" },
-        { value: "MORE_THAN_ONE", label: "More than one" },
+        { value: "NONE", label: "No additional spares" },
+        { value: "ONE", label: "One additional spare" },
+        { value: "MORE_THAN_ONE", label: "More than one additional spare" },
       ],
     },
     notocContentConfirmed: {
       id: "notocContentConfirmed",
       label: "NOTOC entry",
       context: "NOTOC",
-      question: (answers) => `Does the NOTOC show ${core.expectedMobilityNotoc(buildEmaEntry(answers))}?`,
+      question: "Does the NOTOC show this configuration?",
+      summaryRows: (answers) => core.mobilityNotocSummary(buildEmaEntry(answers)),
       type: "choice",
       choices: yesNo,
     },
@@ -523,6 +525,10 @@
     elements.emaQuestionTitle.textContent = typeof step.question === "function"
       ? step.question(emaAnswers)
       : step.question;
+    clearNode(elements.emaQuestionSummary);
+    const summaryRows = step.summaryRows?.(emaAnswers) || [];
+    elements.emaQuestionSummary.classList.toggle("hidden", summaryRows.length === 0);
+    if (summaryRows.length) appendAnswerRows(elements.emaQuestionSummary, summaryRows);
     clearNode(elements.emaQuestionOptions);
     elements.emaQuestionOptions.classList.remove("is-three-options");
     clearNode(elements.emaQuestionInput);

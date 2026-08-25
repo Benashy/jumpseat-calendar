@@ -13,8 +13,10 @@ const {
   evaluateEma,
   evaluateNotocIndicator,
   evaluateNotocSession,
+  expectedMobilityNotoc,
   listVerifiedHandlingCodes,
   lookupHandlingCode,
+  mobilityNotocSummary,
   normaliseCode,
   resolveEmaBranchId,
   resolveEmaBranchIds,
@@ -324,8 +326,9 @@ test("a non-passenger mobility aid directs the user to the correct acceptance ro
   }, POLICY_PACK);
 
   assert.equal(result.overallState, STATES.STOP_THIS_CHECK);
-  assert.equal(result.findings[0].heading, "Use a different acceptance route");
-  assert.match(result.findings[0].action, /stop this check/i);
+  assert.equal(result.findings[0].heading, "Passenger mobility-aid route not applicable");
+  assert.match(result.findings[0].action, /dispatcher or TRM/i);
+  assert.match(result.findings[0].action, /baggage or dangerous-goods cargo route/i);
 });
 
 test("mobility-aid guidance gives a direct refresh action when unavailable", () => {
@@ -382,6 +385,32 @@ test("a removed operating battery and an independent spare are checked together"
   assert.equal(result.overallState, STATES.NO_OBVIOUS_INCONSISTENCY);
   assert.deepEqual(resolveEmaBranchIds(removedLithium({ spareLithiumBand: "ONE_300" })), ["LI-R-1-300", "LI-S-1-300"]);
   assert.match(result.details.find((item) => item.label === "Expected NOTOC").value, /spare lithium-ion battery in the cabin/i);
+}));
+
+test("NOTOC wording distinguishes one additional spare from two", () => {
+  const one = expectedMobilityNotoc(installedLithium({ spareLithiumBand: "ONE_300" }));
+  const two = expectedMobilityNotoc(installedLithium({ spareLithiumBand: "TWO_300_TOTAL" }));
+
+  assert.match(one, /the additional spare lithium-ion battery in the cabin/i);
+  assert.doesNotMatch(one, /every spare/i);
+  assert.match(two, /both additional spare lithium-ion batteries in the cabin/i);
+});
+
+test("two removed operating batteries and two additional spares remain separate", () => withMobilityPolicy(() => {
+  const entry = removedLithium({
+    lithiumLimitBand: "TWO_301_320",
+    spareLithiumBand: "TWO_301_320",
+  });
+  const result = evaluateEma(entry, POLICY_PACK);
+  const expectedNotoc = result.details.find((item) => item.label === "Expected NOTOC").value;
+  const summary = mobilityNotocSummary(entry);
+
+  assert.equal(result.overallState, STATES.NO_OBVIOUS_INCONSISTENCY);
+  assert.deepEqual(resolveEmaBranchIds(entry), ["LI-R-2-160", "LI-S-2-160"]);
+  assert.match(expectedNotoc, /both removed operating lithium-ion batteries in the cabin/i);
+  assert.match(expectedNotoc, /both additional spare lithium-ion batteries in the cabin/i);
+  assert.match(summary.find((item) => item.label === "Operating battery").value, /^2 removed batteries, cabin/i);
+  assert.match(summary.find((item) => item.label === "Additional spares").value, /^2 lithium-ion batteries, cabin/i);
 }));
 
 test("two-battery groups between 301 and 320 Wh are accepted under current BA guidance", () => withMobilityPolicy(() => {

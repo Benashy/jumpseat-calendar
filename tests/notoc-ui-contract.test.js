@@ -21,15 +21,16 @@ test("the NOTOC interface does not expose internal evidence controls or unknown 
 });
 
 test("the mobility-aid NOTOC question checks observable content rather than an exact code", () => {
-  assert.match(ui, /Does the NOTOC show/);
-  assert.match(ui, /expectedMobilityNotoc/);
+  assert.match(ui, /Does the NOTOC show this configuration/);
+  assert.match(ui, /mobilityNotocSummary/);
   assert.doesNotMatch(ui, /Does the NOTOC show.*expected code/);
 });
 
 test("the mobility-aid flow separates operating and spare batteries without repeating ground acceptance", () => {
-  assert.match(ui, /Where is the operating battery/);
-  assert.match(ui, /Are any separate spare lithium batteries carried/);
-  assert.match(ui, /Are any separate spare batteries carried/);
+  assert.match(ui, /Where is the mobility aid's operating battery/);
+  assert.match(ui, /device designed to use two/);
+  assert.match(ui, /Are any additional spare lithium-ion batteries carried/);
+  assert.match(ui, /Are any additional spare batteries carried/);
   assert.doesNotMatch(ui, /secure attachment|short-circuit protection|leakproof packaging|handlingConfirmed/i);
   assert.match(ui, /Does the current loadsheet show NOTOC: YES/);
 });
@@ -40,7 +41,8 @@ test("the opening question distinguishes a travelling passenger's mobility aid",
 
 test("the mobility-aid stop branch is distinct from a prohibition or generic confirmation", () => {
   assert.match(core, /STOP_THIS_CHECK/);
-  assert.match(core, /Use a different acceptance route/);
+  assert.match(core, /Passenger mobility-aid route not applicable/);
+  assert.match(core, /baggage or dangerous-goods cargo route/);
   assert.match(ui, /Stop this check/);
 });
 
