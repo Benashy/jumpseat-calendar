@@ -9,7 +9,7 @@
     KELVIN_OFFSET: 273.15,
     FT_PER_NM: 6076.1154856,
     MIN_THRESHOLD_ELEVATION_FT: -1500,
-    MAX_THRESHOLD_ELEVATION_FT: 15000,
+    MAX_THRESHOLD_ELEVATION_FT: 7500,
     MIN_AIRPORT_TEMPERATURE_C: -25,
     MAX_AIRPORT_TEMPERATURE_C: 50,
     MIN_GLIDE_SLOPE_ANGLE_DEG: 2.5,
@@ -25,6 +25,7 @@
     "BEYOND_THRESHOLD",
     "BEFORE_THRESHOLD",
   ]);
+  // FLS and FINAL APP remain available to tests for possible future validation.
   const APPROACH_MODES = Object.freeze([
     "ILS",
     "FLS",
@@ -64,7 +65,7 @@
       thresholdElevationFt < CONSTANTS.MIN_THRESHOLD_ELEVATION_FT ||
       thresholdElevationFt > CONSTANTS.MAX_THRESHOLD_ELEVATION_FT
     ) {
-      errors.thresholdElevationFt = "Use a threshold elevation between -1,500 and 15,000 ft.";
+      errors.thresholdElevationFt = "Use a threshold elevation between -1,500 and 7,500 ft.";
     }
 
     if (!finiteNumber(airportTemperatureC)) {

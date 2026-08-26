@@ -3247,6 +3247,10 @@ html[data-theme="night"] input[type="time"] {
   padding: 0;
 }
 
+.ra-mode-fieldset[hidden] {
+  display: none;
+}
+
 .ra-mode-fieldset legend {
   margin-bottom: 6px;
   color: var(--ink);

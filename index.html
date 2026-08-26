@@ -34,17 +34,17 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-107" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-108" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-107" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-108" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-107" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-108" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -151,7 +151,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.57</small>
+            <small class="app-version">v2.58</small>
           </section>
 
         </section>
@@ -565,7 +565,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.57</small>
+            <small class="app-version">v2.58</small>
           </section>
         </section>
 
@@ -619,7 +619,7 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.57</small>
+            <small class="app-version">v2.58</small>
           </section>
         </section>
 
@@ -639,7 +639,7 @@
 
           <div class="ra-workspace">
             <form class="ra-form" id="raForm" novalidate>
-              <fieldset class="ra-mode-fieldset">
+              <fieldset class="ra-mode-fieldset" hidden aria-hidden="true">
                 <legend>Approach type</legend>
                 <div class="ra-mode-selector" id="raApproachModeSelector" role="radiogroup" aria-label="Approach type">
                   <button class="ra-mode-button is-selected" type="button" role="radio" aria-checked="true" data-ra-mode="ILS">ILS</button>
@@ -651,7 +651,7 @@
 
               <label for="raThresholdElevation">
                 Landing threshold elevation <span class="field-unit">feet</span>
-                <input id="raThresholdElevation" type="number" min="-1500" max="15000" step="1" inputmode="numeric" autocomplete="off" value="0" aria-describedby="raThresholdError" required />
+                <input id="raThresholdElevation" type="number" min="-1500" max="7500" step="1" inputmode="numeric" autocomplete="off" value="0" aria-describedby="raThresholdError" required />
                 <small class="field-error" id="raThresholdError"></small>
               </label>
 
@@ -732,11 +732,11 @@
               </figure>
               <div class="ra-result-grid">
                 <article>
-                  <span>Expected QNH altitude at 2,500 ft RA</span>
+                  <span>Estimated QNH altitude at 2,500 ft RA</span>
                   <strong id="raBaroResult">-- ft</strong>
                 </article>
                 <article>
-                  <span id="raDistanceResultLabel">Expected DME indication</span>
+                  <span id="raDistanceResultLabel">Estimated DME indication</span>
                   <strong id="raDistanceResult">-- NM</strong>
                   <small id="raDmeReferenceResult">Reference at the threshold</small>
                 </article>
@@ -760,7 +760,7 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.57</small>
+            <small class="app-version">v2.58</small>
           </section>
         </section>
 
@@ -856,7 +856,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.57</small>
+            <small class="app-version">v2.58</small>
           </section>
         </section>
 
@@ -963,7 +963,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.57</small>
+            <small class="app-version">v2.58</small>
           </section>
         </section>
       </main>
@@ -1045,17 +1045,17 @@
       </article>
     </template>
 
-    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-107"></script>
-    <script src="./supabase-config.js?v=cloud-sync-107"></script>
-    <script src="./ltot-core.js?v=cloud-sync-107"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-107"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-107"></script>
-    <script src="./notoc-policy-store.js?v=cloud-sync-107"></script>
-    <script src="./notoc-core.js?v=cloud-sync-107"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-107"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-107"></script>
-    <script src="./data-portability.js?v=cloud-sync-107"></script>
-    <script src="./request-retention.js?v=cloud-sync-107"></script>
-    <script src="./app.js?v=cloud-sync-107"></script>
+    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-108"></script>
+    <script src="./supabase-config.js?v=cloud-sync-108"></script>
+    <script src="./ltot-core.js?v=cloud-sync-108"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-108"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-108"></script>
+    <script src="./notoc-policy-store.js?v=cloud-sync-108"></script>
+    <script src="./notoc-core.js?v=cloud-sync-108"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-108"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-108"></script>
+    <script src="./data-portability.js?v=cloud-sync-108"></script>
+    <script src="./request-retention.js?v=cloud-sync-108"></script>
+    <script src="./app.js?v=cloud-sync-108"></script>
   </body>
 </html>

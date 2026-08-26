@@ -214,7 +214,7 @@ test("warns only when temperature is strictly below ISA minus 25", () => {
 test("accepts every defined input boundary", () => {
   for (const input of [
     { thresholdElevationFt: -1500, airportTemperatureC: -25, glideSlopeAngleDeg: 2.5 },
-    { thresholdElevationFt: 15000, airportTemperatureC: 50, glideSlopeAngleDeg: 4.0 },
+    { thresholdElevationFt: 7500, airportTemperatureC: 50, glideSlopeAngleDeg: 4.0 },
   ]) {
     assert.equal(calculateRadioAltimeterPosition(input).valid, true);
   }
@@ -225,7 +225,7 @@ test("rejects missing, non-finite and out-of-range values without clamping", () 
     { thresholdElevationFt: null, airportTemperatureC: 10, glideSlopeAngleDeg: 3 },
     { thresholdElevationFt: Infinity, airportTemperatureC: 10, glideSlopeAngleDeg: 3 },
     { thresholdElevationFt: -1501, airportTemperatureC: 10, glideSlopeAngleDeg: 3 },
-    { thresholdElevationFt: 15001, airportTemperatureC: 10, glideSlopeAngleDeg: 3 },
+    { thresholdElevationFt: 7501, airportTemperatureC: 10, glideSlopeAngleDeg: 3 },
     { thresholdElevationFt: 0, airportTemperatureC: -26, glideSlopeAngleDeg: 3 },
     { thresholdElevationFt: 0, airportTemperatureC: 51, glideSlopeAngleDeg: 3 },
     { thresholdElevationFt: 0, airportTemperatureC: 10, glideSlopeAngleDeg: 2.4 },

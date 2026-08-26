@@ -13,7 +13,7 @@
       geometryTitle: "ILS geometry",
       selectedPath: "glide slope",
       compactPath: "ILS",
-      distanceLabel: "Expected DME indication",
+      distanceLabel: "Estimated DME indication",
     },
     FLS: {
       angleLabel: "FLS coded slope",
@@ -171,7 +171,7 @@
     elements.diagramNominalPath.classList.add("hidden");
     elements.diagramAltitudeLabel.textContent = "2,500 ft RA";
     elements.diagramDistanceLabel.textContent = "Select valid inputs";
-    elements.baroComparison.textContent = "Enter valid inputs to calculate the expected QNH indication.";
+    elements.baroComparison.textContent = "Enter valid inputs to calculate the estimated QNH indication.";
     resetTemperatureProfile();
   }
 
@@ -279,11 +279,11 @@
     const isOverReading = result.barometricErrorFtRaw > 0;
     const showReference = core.shouldShowThreeDegreeReference(Number(input.glideSlopeAngleDeg));
     const comparison = !isMaterial
-      ? `Temperature effect on expected QNH is less than ${PROFILE_DISPLAY_THRESHOLD_FT} ft`
-      : `Expected QNH ${isOverReading ? "over-reads" : "under-reads"} by ${new Intl.NumberFormat("en-GB").format(roundedError)} ft`;
+      ? `Temperature effect on estimated QNH is less than ${PROFILE_DISPLAY_THRESHOLD_FT} ft`
+      : `Estimated QNH indication ${isOverReading ? "over-reads" : "under-reads"} by ${new Intl.NumberFormat("en-GB").format(roundedError)} ft`;
     const descriptionComparison = !isMaterial
-      ? `The temperature effect on the expected QNH indication is less than ${PROFILE_DISPLAY_THRESHOLD_FT} feet.`
-      : `The expected QNH indication ${isOverReading ? "over-reads" : "under-reads"} by approximately ${roundedError} feet.`;
+      ? `The temperature effect on the estimated QNH indication is less than ${PROFILE_DISPLAY_THRESHOLD_FT} feet.`
+      : `The estimated QNH indication ${isOverReading ? "over-reads" : "under-reads"} by approximately ${roundedError} feet.`;
 
     elements.diagramThreeDegreePath.setAttribute("x2", referenceX.toFixed(1));
     elements.diagramThreeDegreePath.setAttribute("y2", String(nominalY));

@@ -65,13 +65,14 @@ test("the RA interface uses concise DME references and a visible threshold marke
   assert.match(index, /ra-threshold-label[^>]*>THR<\/text>/);
   assert.doesNotMatch(raUi, /before the threshold on final/);
   assert.match(raUi, /is-offset-reference/);
-  assert.match(raUi, /Temperature effect on expected QNH is less than/);
+  assert.match(raUi, /Temperature effect on estimated QNH is less than/);
   assert.doesNotMatch(raUi, /Difference below/);
   assert.ok(index.indexOf('value="BEFORE_THRESHOLD"') < index.indexOf('value="THRESHOLD"'));
   assert.ok(index.indexOf('value="THRESHOLD"') < index.indexOf('value="BEYOND_THRESHOLD"'));
 });
 
-test("the RA interface separates ILS from under-test FLS and FINAL APP modes", () => {
+test("the RA interface exposes ILS only while retaining experimental modes in the source", () => {
+  assert.match(index, /<fieldset class="ra-mode-fieldset" hidden aria-hidden="true">/);
   assert.match(index, /data-ra-mode="ILS"/);
   assert.match(index, /data-ra-mode="FLS"/);
   assert.match(index, /data-ra-mode="FINAL_APP"/);
@@ -81,4 +82,11 @@ test("the RA interface separates ILS from under-test FLS and FINAL APP modes", (
   assert.match(raUi, /cross-source illustration/);
   assert.match(raUi, /FINAL APP unavailable at this temperature/);
   assert.doesNotMatch(`${index}\n${raUi}`, /assumed terrain beneath|first activation/i);
+});
+
+test("the ILS estimate uses cautious wording and the supported threshold range", () => {
+  assert.match(index, /Estimated QNH altitude at 2,500 ft RA/);
+  assert.match(index, /id="raDistanceResultLabel">Estimated DME indication/);
+  assert.match(index, /id="raThresholdElevation"[^>]+max="7500"/);
+  assert.match(raUi, /calculate the estimated QNH indication/);
 });
