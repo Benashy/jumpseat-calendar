@@ -25,6 +25,21 @@
     "BEYOND_THRESHOLD",
     "BEFORE_THRESHOLD",
   ]);
+  const APPROACH_MODES = Object.freeze([
+    "ILS",
+    "FLS",
+    "FINAL_APP",
+  ]);
+  const TEMPERATURE_PROFILES = Object.freeze({
+    ILS_GEOMETRIC: "ILS_GEOMETRIC",
+    FLS_COMPENSATED_BELOW_ISA: "FLS_COMPENSATED_BELOW_ISA",
+    FLS_AT_ISA: "FLS_AT_ISA",
+    FLS_UNCOMPENSATED_ABOVE_ISA: "FLS_UNCOMPENSATED_ABOVE_ISA",
+    FINAL_APP_BELOW_GENERIC_MINIMUM: "FINAL_APP_BELOW_GENERIC_MINIMUM",
+    FINAL_APP_BELOW_ISA: "FINAL_APP_BELOW_ISA",
+    FINAL_APP_AT_ISA: "FINAL_APP_AT_ISA",
+    FINAL_APP_ABOVE_ISA: "FINAL_APP_ABOVE_ISA",
+  });
 
   function finiteNumber(value) {
     return typeof value === "number" && Number.isFinite(value);
@@ -32,11 +47,16 @@
 
   function validateRadioAltimeterInput(input) {
     const errors = {};
+    const approachMode = input?.approachMode ?? "ILS";
     const thresholdElevationFt = input?.thresholdElevationFt;
     const airportTemperatureC = input?.airportTemperatureC;
     const glideSlopeAngleDeg = input?.glideSlopeAngleDeg;
     const dmeReferencePosition = input?.dmeReferencePosition ?? "THRESHOLD";
     const dmeReferenceDistanceNm = input?.dmeReferenceDistanceNm ?? 0;
+
+    if (!APPROACH_MODES.includes(approachMode)) {
+      errors.approachMode = "Select an approach type.";
+    }
 
     if (!finiteNumber(thresholdElevationFt)) {
       errors.thresholdElevationFt = "Enter the landing threshold elevation.";
@@ -56,34 +76,60 @@
       errors.airportTemperatureC = "Use a temperature between -25 and +50 degrees Celsius.";
     }
 
+    const angleName = approachMode === "FLS"
+      ? "FLS coded slope"
+      : approachMode === "FINAL_APP"
+        ? "FINAL APP coded FPA"
+        : "ILS glide slope angle";
     if (!finiteNumber(glideSlopeAngleDeg)) {
-      errors.glideSlopeAngleDeg = "Select an ILS glide slope angle.";
+      errors.glideSlopeAngleDeg = `Select the ${angleName}.`;
     } else if (
       glideSlopeAngleDeg < CONSTANTS.MIN_GLIDE_SLOPE_ANGLE_DEG ||
       glideSlopeAngleDeg > CONSTANTS.MAX_GLIDE_SLOPE_ANGLE_DEG
     ) {
-      errors.glideSlopeAngleDeg = "Use an ILS glide slope angle between 2.5 and 4.0 degrees.";
+      errors.glideSlopeAngleDeg = `Use an angle between 2.5 and 4.0 degrees for the ${angleName}.`;
     }
 
-    if (!DME_REFERENCE_POSITIONS.includes(dmeReferencePosition)) {
-      errors.dmeReferencePosition = "Select the DME reference position.";
-    }
+    if (approachMode === "ILS") {
+      if (!DME_REFERENCE_POSITIONS.includes(dmeReferencePosition)) {
+        errors.dmeReferencePosition = "Select the DME reference position.";
+      }
 
-    if (!finiteNumber(dmeReferenceDistanceNm)) {
-      errors.dmeReferenceDistanceNm = "Enter the DME reference distance.";
-    } else if (
-      dmeReferenceDistanceNm < 0 ||
-      dmeReferenceDistanceNm > CONSTANTS.MAX_DME_REFERENCE_DISTANCE_NM
-    ) {
-      errors.dmeReferenceDistanceNm = "Use a DME reference distance between 0.0 and 50.0 NM.";
-    } else if (dmeReferencePosition === "THRESHOLD" && dmeReferenceDistanceNm !== 0) {
-      errors.dmeReferenceDistanceNm = "Use 0.0 NM when the DME reference is at the threshold.";
+      if (!finiteNumber(dmeReferenceDistanceNm)) {
+        errors.dmeReferenceDistanceNm = "Enter the DME reference distance.";
+      } else if (
+        dmeReferenceDistanceNm < 0 ||
+        dmeReferenceDistanceNm > CONSTANTS.MAX_DME_REFERENCE_DISTANCE_NM
+      ) {
+        errors.dmeReferenceDistanceNm = "Use a DME reference distance between 0.0 and 50.0 NM.";
+      } else if (dmeReferencePosition === "THRESHOLD" && dmeReferenceDistanceNm !== 0) {
+        errors.dmeReferenceDistanceNm = "Use 0.0 NM when the DME reference is at the threshold.";
+      }
     }
 
     return {
       valid: Object.keys(errors).length === 0,
       errors,
     };
+  }
+
+  function classifyTemperatureProfile(approachMode, isaDeviationC) {
+    if (approachMode === "FLS") {
+      if (isaDeviationC < 0) return TEMPERATURE_PROFILES.FLS_COMPENSATED_BELOW_ISA;
+      if (isaDeviationC > 0) return TEMPERATURE_PROFILES.FLS_UNCOMPENSATED_ABOVE_ISA;
+      return TEMPERATURE_PROFILES.FLS_AT_ISA;
+    }
+
+    if (approachMode === "FINAL_APP") {
+      if (isaDeviationC < CONSTANTS.COLD_WARNING_ISA_DEVIATION_C) {
+        return TEMPERATURE_PROFILES.FINAL_APP_BELOW_GENERIC_MINIMUM;
+      }
+      if (isaDeviationC < 0) return TEMPERATURE_PROFILES.FINAL_APP_BELOW_ISA;
+      if (isaDeviationC > 0) return TEMPERATURE_PROFILES.FINAL_APP_ABOVE_ISA;
+      return TEMPERATURE_PROFILES.FINAL_APP_AT_ISA;
+    }
+
+    return TEMPERATURE_PROFILES.ILS_GEOMETRIC;
   }
 
   function calculateRadioAltimeterPosition(input) {
@@ -101,8 +147,13 @@
       airportTemperatureC,
       glideSlopeAngleDeg,
     } = input;
-    const dmeReferencePosition = input.dmeReferencePosition ?? "THRESHOLD";
-    const dmeReferenceDistanceNm = input.dmeReferenceDistanceNm ?? 0;
+    const approachMode = input.approachMode ?? "ILS";
+    const dmeReferencePosition = approachMode === "ILS"
+      ? input.dmeReferencePosition ?? "THRESHOLD"
+      : "THRESHOLD";
+    const dmeReferenceDistanceNm = approachMode === "ILS"
+      ? input.dmeReferenceDistanceNm ?? 0
+      : 0;
     const isaTemperatureAtThresholdC = CONSTANTS.ISA_SEA_LEVEL_TEMP_C -
       (CONSTANTS.ISA_LAPSE_C_PER_FT * thresholdElevationFt);
     const indicatedHeightAboveThresholdFt = CONSTANTS.RA_TRIGGER_FT *
@@ -114,6 +165,8 @@
     const verticalHeightAbovePathAnchorFt = CONSTANTS.RA_TRIGGER_FT - CONSTANTS.ASSUMED_TCH_FT;
     const glideSlopeRadians = glideSlopeAngleDeg * Math.PI / 180;
     const horizontalDistanceFromThresholdFt = verticalHeightAbovePathAnchorFt / Math.tan(glideSlopeRadians);
+    const horizontalDistanceFromThresholdNmRaw = horizontalDistanceFromThresholdFt /
+      CONSTANTS.FT_PER_NM;
     const thresholdSlantDistanceNmRaw = Math.hypot(
       horizontalDistanceFromThresholdFt,
       CONSTANTS.RA_TRIGGER_FT
@@ -132,6 +185,7 @@
       CONSTANTS.RA_TRIGGER_FT
     ) / CONSTANTS.FT_PER_NM;
     const isaDeviationC = airportTemperatureC - isaTemperatureAtThresholdC;
+    const temperatureProfile = classifyTemperatureProfile(approachMode, isaDeviationC);
 
     return {
       valid: true,
@@ -142,10 +196,13 @@
         expectedBaroAltitudeFtRaw,
         barometricErrorFtRaw,
         horizontalDistanceFromThresholdFt,
+        horizontalDistanceFromThresholdNmRaw,
         thresholdSlantDistanceNmRaw,
         expectedDmeIndicationNmRaw,
         isaTemperatureAtThresholdC,
         isaDeviationC,
+        approachMode,
+        temperatureProfile,
         coldWeatherWarning: isaDeviationC < CONSTANTS.COLD_WARNING_ISA_DEVIATION_C,
       },
     };
@@ -170,9 +227,12 @@
   }
 
   const api = {
+    APPROACH_MODES,
     CONSTANTS,
     DME_REFERENCE_POSITIONS,
+    TEMPERATURE_PROFILES,
     calculateRadioAltimeterPosition,
+    classifyTemperatureProfile,
     formatBaroAltitude,
     formatDmeDistance,
     shouldShowThreeDegreeReference,

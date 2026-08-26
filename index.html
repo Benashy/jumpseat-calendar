@@ -34,17 +34,17 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-106" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-107" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-106" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-107" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-106" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-107" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -151,7 +151,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.56</small>
+            <small class="app-version">v2.57</small>
           </section>
 
         </section>
@@ -565,7 +565,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.56</small>
+            <small class="app-version">v2.57</small>
           </section>
         </section>
 
@@ -619,7 +619,7 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.56</small>
+            <small class="app-version">v2.57</small>
           </section>
         </section>
 
@@ -629,8 +629,9 @@
               <button class="icon-button checks-back-button" id="raBackToChecks" type="button" title="Back to Tools" aria-label="Back to Tools">
                 <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
               </button>
-              <div>
+              <div class="ra-title-copy">
                 <h2>Radio Altimeter Position Check</h2>
+                <span class="under-test-badge hidden" id="raUnderTestBadge">Under test</span>
               </div>
             </div>
             <button class="text-button secondary" id="clearRaButton" type="button">Reset</button>
@@ -638,6 +639,16 @@
 
           <div class="ra-workspace">
             <form class="ra-form" id="raForm" novalidate>
+              <fieldset class="ra-mode-fieldset">
+                <legend>Approach type</legend>
+                <div class="ra-mode-selector" id="raApproachModeSelector" role="radiogroup" aria-label="Approach type">
+                  <button class="ra-mode-button is-selected" type="button" role="radio" aria-checked="true" data-ra-mode="ILS">ILS</button>
+                  <button class="ra-mode-button" type="button" role="radio" aria-checked="false" data-ra-mode="FLS">FLS</button>
+                  <button class="ra-mode-button" type="button" role="radio" aria-checked="false" data-ra-mode="FINAL_APP">FINAL APP</button>
+                </div>
+                <small class="field-error" id="raApproachModeError"></small>
+              </fieldset>
+
               <label for="raThresholdElevation">
                 Landing threshold elevation <span class="field-unit">feet</span>
                 <input id="raThresholdElevation" type="number" min="-1500" max="15000" step="1" inputmode="numeric" autocomplete="off" value="0" aria-describedby="raThresholdError" required />
@@ -651,7 +662,7 @@
               </label>
 
               <label for="raGlideSlopeAngle">
-                ILS glide slope angle <span class="field-unit">degrees</span>
+                <span><span id="raAngleLabel">ILS glide slope angle</span> <span class="field-unit">degrees</span></span>
                 <select id="raGlideSlopeAngle" aria-describedby="raAngleError" required>
                   <option value="2.5">2.5</option>
                   <option value="2.6">2.6</option>
@@ -673,7 +684,7 @@
                 <small class="field-error" id="raAngleError"></small>
               </label>
 
-              <label for="raDmeReferencePosition">
+              <label id="raDmeReferencePositionField" for="raDmeReferencePosition">
                 DME reference position
                 <select id="raDmeReferencePosition" aria-describedby="raDmeReferencePositionError" required>
                   <option value="BEFORE_THRESHOLD">Before threshold</option>
@@ -683,7 +694,7 @@
                 <small class="field-error" id="raDmeReferencePositionError"></small>
               </label>
 
-              <label for="raDmeReferenceDistance">
+              <label id="raDmeReferenceDistanceField" for="raDmeReferenceDistance">
                 DME reference distance from threshold <span class="field-unit">NM</span>
                 <input id="raDmeReferenceDistance" type="number" min="0" max="50" step="0.1" inputmode="decimal" autocomplete="off" value="0.0" aria-describedby="raDmeReferenceDistanceError" disabled required />
                 <small class="field-error" id="raDmeReferenceDistanceError"></small>
@@ -691,20 +702,23 @@
             </form>
 
             <section class="ra-result-panel is-empty" id="raResultPanel" aria-live="polite" aria-atomic="true">
-              <span class="result-eyebrow">Position estimate at 2,500 ft RA</span>
+              <span class="result-eyebrow" id="raResultEyebrow">On-final estimate at 2,500 ft RA</span>
               <figure class="ra-geometry-card">
                 <figcaption>
-                  <span>ILS geometry</span>
+                  <span id="raGeometryTitle">ILS geometry</span>
+                  <small class="hidden" id="raGeometryQualifier">Conceptual profile</small>
                 </figcaption>
                 <div class="ra-geometry-legend" aria-hidden="true">
                   <span class="hidden" id="raReferenceLegendItem"><i class="ra-legend-line is-reference"></i><b>3.0&deg; reference</b></span>
                   <span class="hidden" id="raSelectedLegendItem"><i class="ra-legend-line is-nominal"></i><b id="raNominalLegend">Selected glide slope</b></span>
+                  <span class="hidden" id="raTemperatureLegendItem"><i class="ra-legend-line is-temperature"></i><b id="raTemperatureLegend">Temperature effect</b></span>
                 </div>
                 <svg class="ra-geometry" viewBox="0 0 520 250" role="img" aria-labelledby="raDiagramTitle raDiagramDescription">
                   <title id="raDiagramTitle">Radio-altimeter position geometry</title>
                   <desc id="raDiagramDescription">The selected ILS glide slope will appear when valid inputs are available.</desc>
                   <line class="ra-runway-line" x1="20" y1="205" x2="500" y2="205" />
                   <line class="ra-path-line is-reference hidden" id="raDiagramThreeDegreePath" x1="44" y1="205" x2="420" y2="48" />
+                  <line class="ra-path-line is-temperature hidden" id="raDiagramTemperaturePath" x1="44" y1="205" x2="420" y2="48" />
                   <line class="ra-path-line is-nominal hidden" id="raDiagramNominalPath" x1="44" y1="205" x2="420" y2="48" />
                   <line class="ra-height-line" id="raDiagramHeight" x1="420" y1="48" x2="420" y2="205" />
                   <circle class="ra-aircraft-marker" id="raDiagramMarker" cx="420" cy="48" r="6" />
@@ -713,22 +727,23 @@
                   <text class="ra-diagram-label is-strong" id="raDiagramAltitudeLabel" x="428" y="126" text-anchor="start">2,500 ft RA</text>
                   <text class="ra-diagram-label" id="raDiagramDistanceLabel" x="232" y="191" text-anchor="middle">3.0&deg; GP | 7.7 NM</text>
                 </svg>
+                <p class="ra-profile-note hidden" id="raProfileNote"></p>
                 <p class="ra-baro-comparison" id="raBaroComparison">Enter valid inputs to calculate the expected QNH indication.</p>
               </figure>
               <div class="ra-result-grid">
                 <article>
-                  <span>Expected baro altitude on QNH</span>
+                  <span>Expected QNH altitude at 2,500 ft RA</span>
                   <strong id="raBaroResult">-- ft</strong>
                 </article>
                 <article>
-                  <span>Expected DME indication</span>
+                  <span id="raDistanceResultLabel">Expected DME indication</span>
                   <strong id="raDistanceResult">-- NM</strong>
                   <small id="raDmeReferenceResult">Reference at the threshold</small>
                 </article>
               </div>
               <div class="conditional-warning hidden" id="raColdWeatherWarning">
-                <strong>Cold-temperature correction applies</strong>
-                <span>The aerodrome surface temperature is below ISA -25 degrees Celsius. Use the current BA procedure and company Cold Weather Calculator.</span>
+                <strong id="raColdWeatherWarningTitle">Cold-temperature correction applies</strong>
+                <span id="raColdWeatherWarningText">The aerodrome surface temperature is below ISA -25 degrees Celsius. Use the current BA procedure and company Cold Weather Calculator.</span>
               </div>
             </section>
           </div>
@@ -745,7 +760,7 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.56</small>
+            <small class="app-version">v2.57</small>
           </section>
         </section>
 
@@ -841,7 +856,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.56</small>
+            <small class="app-version">v2.57</small>
           </section>
         </section>
 
@@ -948,7 +963,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.56</small>
+            <small class="app-version">v2.57</small>
           </section>
         </section>
       </main>
@@ -1030,17 +1045,17 @@
       </article>
     </template>
 
-    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-106"></script>
-    <script src="./supabase-config.js?v=cloud-sync-106"></script>
-    <script src="./ltot-core.js?v=cloud-sync-106"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-106"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-106"></script>
-    <script src="./notoc-policy-store.js?v=cloud-sync-106"></script>
-    <script src="./notoc-core.js?v=cloud-sync-106"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-106"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-106"></script>
-    <script src="./data-portability.js?v=cloud-sync-106"></script>
-    <script src="./request-retention.js?v=cloud-sync-106"></script>
-    <script src="./app.js?v=cloud-sync-106"></script>
+    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-107"></script>
+    <script src="./supabase-config.js?v=cloud-sync-107"></script>
+    <script src="./ltot-core.js?v=cloud-sync-107"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-107"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-107"></script>
+    <script src="./notoc-policy-store.js?v=cloud-sync-107"></script>
+    <script src="./notoc-core.js?v=cloud-sync-107"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-107"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-107"></script>
+    <script src="./data-portability.js?v=cloud-sync-107"></script>
+    <script src="./request-retention.js?v=cloud-sync-107"></script>
+    <script src="./app.js?v=cloud-sync-107"></script>
   </body>
 </html>

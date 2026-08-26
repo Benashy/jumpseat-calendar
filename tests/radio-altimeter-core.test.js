@@ -1,12 +1,28 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const {
+  APPROACH_MODES,
   CONSTANTS,
+  TEMPERATURE_PROFILES,
   calculateRadioAltimeterPosition,
+  classifyTemperatureProfile,
   formatBaroAltitude,
   formatDmeDistance,
   shouldShowThreeDegreeReference,
 } = require("../radio-altimeter-core");
+
+test("keeps ILS as the default approach mode", () => {
+  const calculation = calculateRadioAltimeterPosition({
+    thresholdElevationFt: 0,
+    airportTemperatureC: 15,
+    glideSlopeAngleDeg: 3,
+  });
+
+  assert.deepEqual(APPROACH_MODES, ["ILS", "FLS", "FINAL_APP"]);
+  assert.equal(calculation.valid, true);
+  assert.equal(calculation.result.approachMode, "ILS");
+  assert.equal(calculation.result.temperatureProfile, TEMPERATURE_PROFILES.ILS_GEOMETRIC);
+});
 
 const CASES = [
   [0, 15, 3.0, 2500.000, "~2,500 ft", "7.7 NM"],
@@ -42,6 +58,60 @@ test("uses geometric slant range for the DME-style distance", () => {
   });
 
   assert.ok(Math.abs(calculation.result.expectedDmeIndicationNmRaw - 7.704854) <= 0.00001);
+  assert.ok(calculation.result.thresholdSlantDistanceNmRaw > calculation.result.horizontalDistanceFromThresholdNmRaw);
+});
+
+test("classifies the supported FLS and FINAL APP temperature profiles", () => {
+  assert.equal(
+    classifyTemperatureProfile("FLS", -10),
+    TEMPERATURE_PROFILES.FLS_COMPENSATED_BELOW_ISA
+  );
+  assert.equal(
+    classifyTemperatureProfile("FLS", 0),
+    TEMPERATURE_PROFILES.FLS_AT_ISA
+  );
+  assert.equal(
+    classifyTemperatureProfile("FLS", 10),
+    TEMPERATURE_PROFILES.FLS_UNCOMPENSATED_ABOVE_ISA
+  );
+  assert.equal(
+    classifyTemperatureProfile("FINAL_APP", -25),
+    TEMPERATURE_PROFILES.FINAL_APP_BELOW_ISA
+  );
+  assert.equal(
+    classifyTemperatureProfile("FINAL_APP", -25.01),
+    TEMPERATURE_PROFILES.FINAL_APP_BELOW_GENERIC_MINIMUM
+  );
+  assert.equal(
+    classifyTemperatureProfile("FINAL_APP", 0),
+    TEMPERATURE_PROFILES.FINAL_APP_AT_ISA
+  );
+  assert.equal(
+    classifyTemperatureProfile("FINAL_APP", 10),
+    TEMPERATURE_PROFILES.FINAL_APP_ABOVE_ISA
+  );
+});
+
+test("keeps DME offsets specific to ILS", () => {
+  const fls = calculateRadioAltimeterPosition({
+    approachMode: "FLS",
+    thresholdElevationFt: 0,
+    airportTemperatureC: 15,
+    glideSlopeAngleDeg: 3,
+    dmeReferencePosition: "UNKNOWN",
+    dmeReferenceDistanceNm: 99,
+  });
+  const invalidMode = calculateRadioAltimeterPosition({
+    approachMode: "GLS",
+    thresholdElevationFt: 0,
+    airportTemperatureC: 15,
+    glideSlopeAngleDeg: 3,
+  });
+
+  assert.equal(fls.valid, true);
+  assert.equal(fls.result.approachMode, "FLS");
+  assert.equal(invalidMode.valid, false);
+  assert.equal(invalidMode.errors.approachMode, "Select an approach type.");
 });
 
 test("calculates DME indications for references beyond and before the threshold", () => {

@@ -65,8 +65,20 @@ test("the RA interface uses concise DME references and a visible threshold marke
   assert.match(index, /ra-threshold-label[^>]*>THR<\/text>/);
   assert.doesNotMatch(raUi, /before the threshold on final/);
   assert.match(raUi, /is-offset-reference/);
-  assert.match(raUi, /Temperature correction is less than/);
+  assert.match(raUi, /Temperature effect on expected QNH is less than/);
   assert.doesNotMatch(raUi, /Difference below/);
   assert.ok(index.indexOf('value="BEFORE_THRESHOLD"') < index.indexOf('value="THRESHOLD"'));
   assert.ok(index.indexOf('value="THRESHOLD"') < index.indexOf('value="BEYOND_THRESHOLD"'));
+});
+
+test("the RA interface separates ILS from under-test FLS and FINAL APP modes", () => {
+  assert.match(index, /data-ra-mode="ILS"/);
+  assert.match(index, /data-ra-mode="FLS"/);
+  assert.match(index, /data-ra-mode="FINAL_APP"/);
+  assert.match(index, /id="raUnderTestBadge">Under test/);
+  assert.match(raUi, /underTestBadge\.classList\.toggle\("hidden", isIls\)/);
+  assert.match(raUi, /BA EGLL guidance says the flown path may be steeper/);
+  assert.match(raUi, /cross-source illustration/);
+  assert.match(raUi, /FINAL APP unavailable at this temperature/);
+  assert.doesNotMatch(`${index}\n${raUi}`, /assumed terrain beneath|first activation/i);
 });

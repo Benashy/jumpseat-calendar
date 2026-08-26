@@ -3146,6 +3146,33 @@ html[data-theme="night"] input[type="time"] {
   line-height: 1.15;
 }
 
+.ra-title-copy {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px 10px;
+  min-width: 0;
+}
+
+.under-test-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border: 1px solid rgba(169, 120, 36, 0.62);
+  border-radius: 6px;
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-size: 0.66rem;
+  font-weight: 850;
+  line-height: 1;
+  padding: 5px 8px;
+  text-transform: uppercase;
+}
+
+.under-test-badge.hidden {
+  display: none;
+}
+
 .checks-back-button {
   flex: 0 0 44px;
 }
@@ -3211,6 +3238,63 @@ html[data-theme="night"] input[type="time"] {
   padding: 16px;
 }
 
+.ra-mode-fieldset {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.ra-mode-fieldset legend {
+  margin-bottom: 6px;
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.ra-mode-selector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--silver-soft);
+  overflow: hidden;
+  padding: 3px;
+}
+
+.ra-mode-button {
+  min-width: 0;
+  min-height: 40px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.1;
+  padding: 7px 5px;
+}
+
+.ra-mode-button:hover {
+  background: var(--panel);
+  color: var(--navy);
+}
+
+.ra-mode-button:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
+  outline: none;
+}
+
+.ra-mode-button.is-selected {
+  background: var(--active-surface);
+  box-shadow: 0 1px 3px rgba(19, 36, 48, 0.15);
+  color: #fff;
+}
+
 .notoc-form.hidden {
   display: none;
 }
@@ -3220,6 +3304,10 @@ html[data-theme="night"] input[type="time"] {
 .notoc-field-grid > label {
   display: grid;
   gap: 6px;
+}
+
+.ra-form label.hidden {
+  display: none;
 }
 
 .ra-form input,
@@ -3402,6 +3490,22 @@ html[data-theme="night"] input[type="time"] {
   border-top-color: var(--navy);
 }
 
+.ra-legend-line.is-temperature.is-cold {
+  border-top-color: var(--cold-profile);
+  border-top-style: dashed;
+}
+
+.ra-legend-line.is-temperature.is-warm {
+  border-top-color: var(--warn);
+  border-top-style: dashed;
+}
+
+.ra-legend-line.is-temperature.is-compensated {
+  border-top-color: var(--cold-profile);
+  border-top-width: 6px;
+  opacity: 0.42;
+}
+
 .ra-geometry {
   display: block;
   width: 100%;
@@ -3433,6 +3537,27 @@ html[data-theme="night"] input[type="time"] {
 .ra-path-line.is-nominal {
   stroke: var(--navy);
   stroke-width: 3.25;
+}
+
+.ra-path-line.is-temperature {
+  fill: none;
+  stroke-width: 2.5;
+}
+
+.ra-path-line.is-temperature.is-cold {
+  stroke: var(--cold-profile);
+  stroke-dasharray: 8 6;
+}
+
+.ra-path-line.is-temperature.is-warm {
+  stroke: var(--warn);
+  stroke-dasharray: 8 6;
+}
+
+.ra-path-line.is-temperature.is-compensated {
+  stroke: var(--cold-profile);
+  stroke-width: 9;
+  opacity: 0.2;
 }
 
 .ra-height-line {
@@ -3484,6 +3609,26 @@ html[data-theme="night"] input[type="time"] {
   font-weight: 760;
   line-height: 1.35;
   text-align: center;
+}
+
+.ra-profile-note {
+  margin: -1px auto 5px;
+  max-width: 720px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 680;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.ra-profile-note.is-warning {
+  color: var(--amber);
+  font-weight: 780;
+}
+
+.ra-geometry-card.is-profile-unavailable .ra-path-line.is-nominal,
+.ra-geometry-card.is-profile-unavailable .ra-aircraft-marker {
+  opacity: 0.45;
 }
 
 .ra-geometry-card.is-empty .ra-baro-comparison,

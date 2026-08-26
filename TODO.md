@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.51.
+- Current visible app version: v2.57.
 - The top navigation contains `Jumpseat`, `FDP & LTOT` and `Tools`. Tools opens a dedicated landing view for the Radio Altimeter Position Check and NOTOC, while Jumpseat retains contextual `Add request` and `Back to requests` actions.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -48,6 +48,7 @@
 - v2.49 scopes the Radio Altimeter Position Check to ILS terminology, keeps temperature compensation confined to the expected QNH indication, and corrects the diagram so temperature cannot appear to move the physical glide slope. It also supports a DME reference at, before or beyond the threshold and keeps threshold geometry separate from the expected DME indication.
 - v2.50 simplifies the mobility-aid battery journey around observable operational facts. It removes visible evidence drawers and unknown-answer buttons, separates exact code lookup from the battery check, confirms NOTOC content and the final loadsheet directly, and replaces development-state referrals with `No obvious inconsistency identified`, `Confirm before signing` or `Possible discrepancy` outcomes. Items outside the passenger mobility-aid provision now receive a specific acceptance-route action.
 - v2.51 limits the visible SHC/DG library to the 45 codes with a verified BA NOTOC yes/no outcome while retaining all unresolved records privately. Required codes are amber, verified not-expected codes are green, and explicit documented inconsistencies are red. It also adds a verified-code browser, removes repetitive lookup boilerplate, gives non-passenger mobility aids a distinct stop route, prevents sticky iPad hover selection, and simplifies the RA DME-reference presentation.
+- v2.57 extends the Radio Altimeter Position Check with selectable ILS, FLS and FINAL APP modes. ILS retains its existing DME-offset calculation, while FLS and FINAL APP use an amber `Under test` state, a threshold-referenced estimate and deliberately conceptual temperature-profile cues without presenting them as Airbus system geometry.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
@@ -71,7 +72,7 @@
 - Split-crew operational testing: verify real Flight crew/Cabin crew report differences on iPad and confirm that the comparison identifies the expected limiting group.
 - FDP lookup redesign: later consider a guided OMA lookup beside Maximum FDP, while retaining the full tables for manual verification.
 - FDP elapsed-time helper: consider optional first-report and next-report date/time inputs that calculate the elapsed Table 1 column without attempting to automate complex acclimatisation states.
-- FLS, FINAL APP and selected FPA research is a separate future project. These modes remain outside the OpsDeck ILS calculation unless their geometry, temperature behaviour and position reference can be verified independently against suitable Airbus and BA sources.
+- FLS and FINAL APP validation: compare the v2.57 under-test presentation with current BA/Airbus material and operational observations. Exact Airbus path displacement, anchor geometry and expected distance remain outside the model unless they can be verified independently.
 - Jumpseat real-use polish: review whether BA ID, queue ordering, search, and daily view are showing exactly what is needed during actual requests.
 - Login reliability: keep watching Supabase magic-link rate limits and mobile sign-in behaviour; consider tuning settings or relying more on password sign-in if magic links remain awkward.
 - Day export/copy option: consider copying a clean text summary of jumpseat requests for messaging or email.
