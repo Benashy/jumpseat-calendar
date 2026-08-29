@@ -690,6 +690,22 @@ input[type="time"],
   font-weight: 900;
 }
 
+.crew-result-name .crew-result-category {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.crew-result-name .crew-limiting-badge {
+  width: max-content;
+  border: 1px solid color-mix(in srgb, var(--amber) 42%, transparent);
+  border-radius: 5px;
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-size: 0.68rem;
+  line-height: 1;
+  padding: 4px 6px;
+}
+
 .crew-result-fdp {
   display: grid;
   gap: 2px;
@@ -709,8 +725,8 @@ input[type="time"],
 }
 
 .crew-result-row.is-limiting {
-  background: rgba(198, 161, 90, 0.12);
-  box-shadow: inset 3px 0 0 var(--gold);
+  background: var(--amber-soft);
+  box-shadow: inset 3px 0 0 var(--amber);
 }
 
 .guidance-panel {
@@ -1387,6 +1403,24 @@ strong.fdp-state-x-label {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.crew-tabs-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.crew-add-button {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.crew-add-button .ui-icon {
+  width: 17px;
+  height: 17px;
+}
+
 .crew-tab {
   min-height: 44px;
   border: 1px solid var(--line);
@@ -1422,6 +1456,45 @@ strong.fdp-state-x-label {
 .crew-limit-card {
   display: grid;
   gap: 12px;
+}
+
+.crew-limit-identity {
+  align-items: end;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 44px;
+}
+
+.crew-limit-identity.hidden {
+  display: none;
+}
+
+.crew-limit-name-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.crew-limit-name-field > span {
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 720;
+}
+
+.crew-limit-name {
+  font-size: 16px;
+  min-height: 44px;
+  width: 100%;
+}
+
+.crew-limit-remove {
+  align-self: end;
+  color: var(--muted);
+}
+
+.crew-limit-remove:hover {
+  border-color: rgba(168, 66, 53, 0.45);
+  color: var(--warn);
 }
 
 .crew-limit-duration-grid {
@@ -2303,6 +2376,12 @@ form label {
     grid-template-columns: 1fr;
   }
 
+  .crew-tabs-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .crew-add-button,
   .crew-remove-button {
     justify-self: stretch;
   }

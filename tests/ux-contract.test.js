@@ -37,6 +37,34 @@ test("FDP workflow routes and the mobile result return are present", () => {
   assert.match(styles, /\.fdp-reference-content h3\[tabindex="-1"\]:focus\s*\{\s*outline: none;/);
 });
 
+test("FDP table selections follow the active crew tab and report the correct target", () => {
+  assert.match(app, /function setActiveFtlCrew\(crewKey\)[\s\S]*?activeFdpTargetId = ftlCrewControls\[crewKey\]/);
+  assert.match(app, /function crewLimitStatusLabel\(control\)[\s\S]*?return "Crew limit";/);
+  assert.match(app, /return `\$\{crewLimitDisplayLabel\(control\)\} limit`;/);
+  assert.match(app, /setMaximumFdpFromReference[\s\S]*?const targetId = activeFdpTargetId;/);
+});
+
+test("optional named crew limits are addable, removable, saved and compared", () => {
+  assert.match(index, /id="addIndividualCrewButton"/);
+  assert.match(index, /class="crew-limit-name"/);
+  assert.match(index, /class="icon-button crew-limit-remove"/);
+  assert.match(app, /const CALCULATOR_SCHEMA_VERSION = 3;/);
+  assert.match(app, /baseline: record\.baseline !== false/);
+  assert.match(app, /name: record\.baseline === false \? crewLimitName\(control\) : ""/);
+  assert.match(app, /function addIndividualCrewLimit\(\)/);
+  assert.match(app, /function removeIndividualCrewLimit\(crewId\)/);
+  assert.match(app, /const showComparison = comparison\.results\.length > 1;/);
+  assert.match(styles, /\.crew-result-row\.is-limiting/);
+  assert.match(styles, /\.crew-limiting-badge/);
+});
+
+test("the short-haul reporting-time clarification is available beside the FDP tables", () => {
+  assert.match(index, /<summary>FTL Clarifications<\/summary>/);
+  assert.match(index, /<h3>OMA 7\.6\.1 - Different reporting times<\/h3>/);
+  assert.match(index, /calculate the FDP limit using the Flight crew report time/);
+  assert.match(index, /giving Cabin crew the same latest end time as Flight crew/);
+});
+
 test("NOTOC uses one contextual Back control and hides an empty Clear session action", () => {
   assert.doesNotMatch(index, /notoc-back-button/);
   assert.match(index, /class="text-button secondary hidden" id="clearNotocSessionButton"/);
