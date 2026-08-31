@@ -12,11 +12,12 @@ const functionNames = [
   "sanitizeCalculatorState", "isIsoDate", "crewCategoryLabel", "isSharedCrewLimitMode",
   "crewLimitName", "crewLimitIsNamed", "crewLimitRoleLabel", "crewLimitDisplayLabel",
   "crewLimitTargetLabel", "crewLimitStatusLabel", "controllingCrewSourceLabel",
-  "canAddIndividualCrewLimit", "addIndividualCrewLimit", "removeIndividualCrewLimit",
+  "canAddIndividualCrewLimit", "addCabinCrew", "addIndividualCrewLimit", "removeIndividualCrewLimit",
   "setFdpReferenceTarget", "setMaximumFdpFromReference", "currentMaximumFdpTableValue",
   "durationStringToParts", "durationStringToMinutes", "hasDurationValue", "hasPartialDurationValue",
   "getDurationMinutes", "buildCrewFtlInput", "serializeCalculatorState", "renderFtlCrewMode",
-  "updateCrewComparison", "crewResultTime", "clearFtlCalculator",
+  "updateCrewComparison", "crewResultTime", "clearFtlCalculator", "setFtlInputSectionOpen",
+  "shouldShowReportingTimeReminder", "returnToFdpInput", "ftlScrollBehaviour", "openReportingTimeClarification",
 ];
 
 function appFunction(name) {
@@ -35,6 +36,7 @@ function element() {
       contains: (name) => classes.has(name),
     },
     setAttribute(name, value) { this.attributes[name] = value; },
+    getAttribute(name) { return this.attributes[name]; },
     append(...children) { this.children.push(...children); },
     replaceChildren(...children) { this.children = children; },
     getBoundingClientRect: () => ({ top: 100 }),
@@ -55,6 +57,8 @@ function harness() {
       "crewTabsRow", "addCabinCrewButton", "flightCrewTab", "cabinCrewTab", "flightCrewInputs",
       "cabinCrewInputs", "addIndividualCrewButton", "fdpTargetBanner", "fdpReferenceStatus",
       "crewResults", "crewResultRows", "crewComparisonStatus",
+      "fdpInputsToggle", "fdpInputsContent", "sectorInputsToggle", "sectorInputsContent",
+      "fdpReferenceMessage", "fdpReferenceReturnButton", "ftlClarifications", "reportingTimeClarification",
     ].map((key) => [key, element()])),
     ftlDurationControls: {
       taxiOut: { minutes: { value: "15" } }, flightTime: { hours: { value: "1" }, minutes: { value: "0" } },
@@ -73,6 +77,7 @@ function harness() {
   context.renderCrewLimitRecords = (records) => {
     records = context.sanitizeStoredCrewLimits(records);
     context.crewLimitRecords = records;
+    context.cabinCrewEnabled = records.some((item) => item.category === "cabin");
     for (const record of records) context.nextCrewNumbers[record.category] = Math.max(context.nextCrewNumbers[record.category], record.displayNumber + 1);
     context.ftlCrewControls = Object.fromEntries(records.map((record) => [record.id, {
       ...record,
@@ -214,6 +219,123 @@ test("adding the first pilot names the original entry without copying timings to
   assert.equal(h.sanitizeCalculatorState(JSON.parse(JSON.stringify(saved))).crewLimits[0].name, "Ben");
 });
 
+test("splitting the shared limit preserves it independently for both groups, not new individuals", () => {
+  const h = harness();
+  const shared = { ...record(h, "flight"), dutyStart: "08:00", discretion: { hours: "1", minutes: "0" }, selectedFdpReferenceKey: "table-two-first-cell" };
+  h.renderCrewLimitRecords([shared]);
+  h.addCabinCrew();
+  assert.equal(h.activeFtlCrew, "cabin");
+  const saved = h.serializeCalculatorState();
+  for (const key of ["dutyDate", "dutyStart", "maximumFdp", "discretion", "selectedFdpReferenceKey"]) {
+    assert.equal(JSON.stringify(saved.crewLimits[1][key]), JSON.stringify(shared[key]), key);
+  }
+  assert.notEqual(saved.crewLimits[0].maximumFdp, saved.crewLimits[1].maximumFdp);
+  h.activeFtlCrew = "flight";
+  h.addIndividualCrewLimit();
+  const individual = h.ftlCrewControls[h.activeFdpTargetId];
+  assert.equal(individual.dutyDate.value, shared.dutyDate);
+  assert.equal(individual.dutyStart.value, "");
+  assert.equal(individual.maxFdp.hours.value, "");
+  assert.equal(individual.discretion.hours.value, "");
+  assert.equal(h.ftlCrewControls.cabin.dutyStart.value, "08:00");
+  h.ftlCrewControls.flight.maxFdp.hours.value = "12";
+  assert.equal(h.ftlCrewControls.cabin.maxFdp.hours.value, "13");
+  const count = h.crewLimitRecords.length;
+  h.addCabinCrew();
+  assert.equal(h.crewLimitRecords.length, count);
+});
+
+test("collapsing input sections preserves every input and exposes its expanded state", () => {
+  const h = harness();
+  h.renderCrewLimitRecords([record(h, "flight"), record(h, "cabin")]);
+  const before = JSON.stringify(h.serializeCalculatorState());
+  for (const section of ["fdp", "sector"]) {
+    h.setFtlInputSectionOpen(section, false);
+    assert.equal(h.elements[`${section}InputsToggle`].getAttribute("aria-expanded"), "false");
+    assert.equal(h.elements[`${section}InputsContent`].classList.contains("hidden"), true);
+    h.setFtlInputSectionOpen(section, true);
+    assert.equal(h.elements[`${section}InputsToggle`].getAttribute("aria-expanded"), "true");
+    assert.equal(h.elements[`${section}InputsContent`].classList.contains("hidden"), false);
+  }
+  assert.equal(JSON.stringify(h.serializeCalculatorState()), before);
+});
+
+test("the table confirmation returns to its recorded crew target and reopens the inputs", () => {
+  const h = harness();
+  const individual = record(h, "cabin", { baseline: false });
+  h.renderCrewLimitRecords([record(h, "flight"), record(h, "cabin"), individual]);
+  h.setFtlInputSectionOpen("fdp", false);
+  h.elements.fdpReferenceReturnButton.dataset.crewId = individual.id;
+  h.window.requestAnimationFrame = (callback) => callback();
+  h.window.matchMedia = () => ({ matches: true });
+  let scroll, focus;
+  h.ftlCrewControls[individual.id].lookupButton = {
+    scrollIntoView: (value) => { scroll = value; }, focus: (value) => { focus = value; },
+  };
+  const before = JSON.stringify(h.serializeCalculatorState());
+  h.returnToFdpInput();
+  assert.equal(h.activeFdpTargetId, individual.id);
+  assert.equal(h.activeFtlCrew, "cabin");
+  assert.equal(h.elements.fdpInputsToggle.getAttribute("aria-expanded"), "true");
+  assert.equal(scroll.behavior, "instant");
+  assert.equal(focus.preventScroll, true);
+  assert.equal(JSON.stringify(h.serializeCalculatorState()), before);
+  h.elements.fdpReferenceReturnButton.dataset.crewId = "removed-crew";
+  assert.doesNotThrow(() => h.returnToFdpInput());
+});
+
+test("OMA reminder opens the clarification without changing any limit", () => {
+  const h = harness();
+  h.renderCrewLimitRecords([record(h, "flight"), record(h, "cabin")]);
+  h.window.matchMedia = () => ({ matches: true });
+  let scrolled = false, focused = false;
+  h.elements.reportingTimeClarification.scrollIntoView = () => { scrolled = true; };
+  h.elements.reportingTimeClarification.focus = () => { focused = true; };
+  const before = JSON.stringify(h.serializeCalculatorState());
+  h.openReportingTimeClarification();
+  assert.equal(h.elements.ftlClarifications.open, true);
+  assert.equal(scrolled && focused, true);
+  assert.equal(JSON.stringify(h.serializeCalculatorState()), before);
+});
+
+test("OMA reminder requires complete baseline crew inputs and the requested discretion trigger", () => {
+  const h = harness();
+  const flight = { ...record(h, "flight"), dutyStart: "16:00" };
+  const cabin = { ...record(h, "cabin"), dutyStart: "15:50", discretion: { hours: "1", minutes: "0" } };
+  const compare = (records) => {
+    h.renderCrewLimitRecords(records);
+    return ltot.calculateCrewLimits({ anchorDate: "2026-08-31", crewLimits: h.crewLimitRecords.map((item) => h.buildCrewFtlInput(item.id)), sectorTiming: {} });
+  };
+  assert.equal(h.shouldShowReportingTimeReminder(compare([flight])), false);
+  assert.equal(h.shouldShowReportingTimeReminder(compare([{ ...flight, discretion: { hours: "1", minutes: "0" } }])), true);
+  const comparison = compare([flight, cabin]);
+  const unchanged = JSON.stringify(comparison);
+  assert.equal(h.shouldShowReportingTimeReminder(comparison), true);
+  assert.equal(JSON.stringify(comparison), unchanged);
+  assert.equal(h.shouldShowReportingTimeReminder(compare([flight, { ...cabin, discretion: { hours: "0", minutes: "0" } }])), false);
+  assert.equal(h.shouldShowReportingTimeReminder(compare([flight, { ...cabin, discretion: { hours: "1", minutes: "" } }])), false);
+  assert.equal(h.shouldShowReportingTimeReminder(compare([flight, { ...cabin, maximumFdp: { hours: "", minutes: "" } }])), false);
+  assert.equal(h.shouldShowReportingTimeReminder(compare([flight, cabin, record(h, "flight", { baseline: false })])), false);
+  assert.equal(h.shouldShowReportingTimeReminder(compare([flight, cabin, record(h, "cabin", { baseline: false })])), false);
+  assert.equal(h.shouldShowReportingTimeReminder(null), false);
+});
+
+test("OMA reminder uses earlier cabin reports of 1 to 60 minutes, with explicit overnight dates", () => {
+  const h = harness();
+  const flight = { ...record(h, "flight"), dutyStart: "16:00" };
+  const cabin = { ...record(h, "cabin"), discretion: { hours: "1", minutes: "0" } };
+  const visible = (flightRecord, cabinRecord) => {
+    h.renderCrewLimitRecords([flightRecord, cabinRecord]);
+    return h.shouldShowReportingTimeReminder(ltot.calculateCrewLimits({ anchorDate: "2026-08-31", crewLimits: h.crewLimitRecords.map((item) => h.buildCrewFtlInput(item.id)), sectorTiming: {} }));
+  };
+  for (const [time, expected] of [["14:59", false], ["15:00", true], ["15:59", true], ["16:00", false], ["16:01", false], ["16:50", false]]) {
+    assert.equal(visible(flight, { ...cabin, dutyStart: time }), expected, time);
+  }
+  assert.equal(visible({ ...flight, dutyDate: "2026-09-01", dutyStart: "00:10" }, { ...cabin, dutyDate: "2026-08-31", dutyStart: "23:20" }), true);
+  assert.equal(visible({ ...flight, dutyDate: "2026-09-01", dutyStart: "00:10" }, { ...cabin, dutyDate: "2026-09-01", dutyStart: "23:20" }), false);
+  assert.equal(visible(flight, { ...cabin, dutyDate: "2026-08-30", dutyStart: "15:50" }), false);
+});
+
 test("old split-pilot saves migrate once and a deliberately cleared new name stays blank", () => {
   const h = harness();
   const crewLimits = [record(h, "flight"), record(h, "flight", { baseline: false })];
@@ -260,11 +382,11 @@ test("switching table target changes no inputs, preserves table position and cle
   h.calculateFtl = () => assert.fail("Target selection must not save or recalculate");
   let scrolled = null;
   h.window.scrollBy = (options) => { scrolled = options; };
-  h.elements.fdpReferenceStatus.textContent = "Previous crew set";
+  h.elements.fdpReferenceMessage.textContent = "Previous crew set";
   h.setFdpReferenceTarget(individual.id, true);
   assert.equal(h.activeFdpTargetId, individual.id);
   assert.equal(h.activeFtlCrew, "cabin");
-  assert.equal(h.elements.fdpReferenceStatus.textContent, "");
+  assert.equal(h.elements.fdpReferenceMessage.textContent, "");
   assert.equal(scrolled.top, 0);
   assert.equal(JSON.stringify(h.serializeCalculatorState()), saved);
   h.setFdpReferenceTarget("flight", true);

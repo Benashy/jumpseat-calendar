@@ -106,9 +106,19 @@ test("report dates are explicit and mobile deadline colours follow the selected 
 
 test("the short-haul reporting-time clarification is available beside the FDP tables", () => {
   assert.match(index, /<summary>FTL Clarifications<\/summary>/);
-  assert.match(index, /<h3>OMA 7\.6\.1 - Different reporting times<\/h3>/);
+  assert.match(index, /<h3 id="reportingTimeClarification" tabindex="-1">OMA 7\.6\.1 - Different reporting times<\/h3>/);
   assert.match(index, /calculate the FDP limit using the Flight crew report time/);
   assert.match(index, /giving Cabin crew the same latest end time as Flight crew/);
+});
+
+test("the reporting-time reminder and input disclosure controls have accessible destinations", () => {
+  assert.match(index, /id="reportingTimeReminder"[^>]*aria-controls="ftlClarifications"/);
+  assert.match(index, /id="fdpInputsToggle"[^>]*aria-expanded="true"[^>]*aria-controls="fdpInputsContent"/);
+  assert.match(index, /id="sectorInputsToggle"[^>]*aria-expanded="true"[^>]*aria-controls="sectorInputsContent"/);
+  assert.match(index, /id="fdpReferenceReturnButton" type="button"/);
+  assert.match(app, /reportingTimeReminder\.addEventListener\("click", openReportingTimeClarification\)/);
+  assert.match(app, /fdpReferenceReturnButton\.addEventListener\("click", returnToFdpInput\)/);
+  assert.match(styles, /\.reporting-time-reminder\s*\{[^}]*min-height: 44px;/);
 });
 
 test("NOTOC uses one contextual Back control and hides an empty Clear session action", () => {

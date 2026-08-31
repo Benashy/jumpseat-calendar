@@ -2,7 +2,7 @@ const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
 const JUMPSEAT_DRAFT_KEY = "opsdeck-jumpseat-draft-v1";
 const JUMPSEAT_DRAFT_SCHEMA_VERSION = 1;
-const APP_VERSION = "2.62";
+const APP_VERSION = "2.63";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 5;
 const CREW_LIMIT_CAPS = { flight: 3, cabin: 6 };
@@ -110,12 +110,21 @@ const elements = {
   notes: document.querySelector("#notes"),
   template: document.querySelector("#requestTemplate"),
   ftlForm: document.querySelector("#ftlForm"),
+  fdpInputsToggle: document.querySelector("#fdpInputsToggle"),
+  fdpInputsContent: document.querySelector("#fdpInputsContent"),
+  sectorInputsToggle: document.querySelector("#sectorInputsToggle"),
+  sectorInputsContent: document.querySelector("#sectorInputsContent"),
+  reportingTimeReminder: document.querySelector("#reportingTimeReminder"),
+  ftlClarifications: document.querySelector("#ftlClarifications"),
+  reportingTimeClarification: document.querySelector("#reportingTimeClarification"),
   clearFtlButton: document.querySelector("#clearFtlButton"),
   sendLtotTelegramButton: document.querySelector("#sendLtotTelegramButton"),
   ftlTelegramStatus: document.querySelector("#ftlTelegramStatus"),
   fdpTableTwoContainer: document.querySelector("#fdpTableTwoContainer"),
   fdpTableThreeContainer: document.querySelector("#fdpTableThreeContainer"),
   fdpReferenceStatus: document.querySelector("#fdpReferenceStatus"),
+  fdpReferenceMessage: document.querySelector("#fdpReferenceMessage"),
+  fdpReferenceReturnButton: document.querySelector("#fdpReferenceReturnButton"),
   bdxInfoButton: document.querySelector("#bdxInfoButton"),
   bdxInfoDialog: document.querySelector("#bdxInfoDialog"),
   bdxInfoCloseButton: document.querySelector("#bdxInfoCloseButton"),
@@ -1399,7 +1408,8 @@ function setFdpReferenceTarget(crewId, preservePosition = false) {
   updateFdpTargetBanner();
   updateFdpReferenceSelection();
   window.clearTimeout(fdpReferenceStatusTimer);
-  elements.fdpReferenceStatus.textContent = "";
+  elements.fdpReferenceMessage.textContent = "";
+  elements.fdpReferenceReturnButton.dataset.crewId = "";
   elements.fdpReferenceStatus.classList.add("hidden");
   if (preservePosition) {
     window.scrollBy({ top: elements.fdpTargetBanner.getBoundingClientRect().top - previousTop, behavior: "instant" });
@@ -1423,15 +1433,63 @@ function openFdpWorkflowSection(targetId) {
   window.setTimeout(() => section.querySelector("h3")?.focus({ preventScroll: true }), 350);
 }
 
+function scheduleFdpReferenceDismiss() {
+  window.clearTimeout(fdpReferenceStatusTimer);
+  fdpReferenceStatusTimer = window.setTimeout(() => {
+    if (elements.fdpReferenceStatus.contains(document.activeElement)) return;
+    elements.fdpReferenceStatus.classList.add("hidden");
+  }, 8000);
+}
+
 function showFdpReferenceStatus(message) {
   if (!elements.fdpReferenceStatus) return;
 
-  window.clearTimeout(fdpReferenceStatusTimer);
-  elements.fdpReferenceStatus.textContent = message;
+  elements.fdpReferenceMessage.textContent = message;
+  elements.fdpReferenceReturnButton.dataset.crewId = activeFdpTargetId;
+  elements.fdpReferenceReturnButton.setAttribute("aria-label", `Return to Maximum FDP for ${crewLimitDisplayLabel(ftlCrewControls[activeFdpTargetId])}`);
   elements.fdpReferenceStatus.classList.remove("hidden");
-  fdpReferenceStatusTimer = window.setTimeout(() => {
-    elements.fdpReferenceStatus.classList.add("hidden");
-  }, 5000);
+  scheduleFdpReferenceDismiss();
+}
+
+function setFtlInputSectionOpen(section, open) {
+  elements[`${section}InputsToggle`].setAttribute("aria-expanded", String(open));
+  elements[`${section}InputsContent`].classList.toggle("hidden", !open);
+}
+
+function returnToFdpInput() {
+  const crewId = elements.fdpReferenceReturnButton.dataset.crewId;
+  const crew = ftlCrewControls[crewId];
+  if (!crew) return;
+
+  setFdpReferenceTarget(crewId);
+  setFtlInputSectionOpen("fdp", true);
+  window.requestAnimationFrame(() => {
+    crew.lookupButton.scrollIntoView({ behavior: ftlScrollBehaviour(), block: "center" });
+    crew.lookupButton.focus({ preventScroll: true });
+  });
+}
+
+function ftlScrollBehaviour() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth";
+}
+
+function openReportingTimeClarification() {
+  elements.ftlClarifications.open = true;
+  elements.reportingTimeClarification.scrollIntoView({ behavior: ftlScrollBehaviour(), block: "center" });
+  elements.reportingTimeClarification.focus({ preventScroll: true });
+}
+
+// A UI reminder only: these inputs cannot establish the briefing or sector-sequence conditions.
+function shouldShowReportingTimeReminder(comparison) {
+  if (!comparison?.comparisonComplete) return false;
+  const flight = comparison.results.find((result) => result.id === "flight");
+  if (!flight) return false;
+  if (comparison.results.length === 1) return flight.discretionMinutes > 0;
+  if (comparison.results.length !== 2) return false;
+  const cabin = comparison.results.find((result) => result.id === "cabin");
+  if (!cabin || cabin.discretionMinutes <= 0) return false;
+  const earlierReportMinutes = flight.dutyStartMinutes - cabin.dutyStartMinutes;
+  return earlierReportMinutes > 0 && earlierReportMinutes <= 60;
 }
 
 function setMaximumFdpFromReference(value, rowLabel, columnLabel, tableLabel, referenceKey) {
@@ -2096,6 +2154,7 @@ function calculateFtl(shouldPersist = true) {
   const contingency = sectorTiming.contingencyMinutes;
 
   currentCrewComparison = comparison;
+  elements.reportingTimeReminder.classList.toggle("hidden", !shouldShowReportingTimeReminder(comparison));
   controllingFtlCrewIds = comparison.controllingIds;
   comparison.results.forEach((result) => updateCrewMaximumAllowableFdp(result.id, result.calculation));
   updateCrewComparison(comparison);
@@ -2177,7 +2236,15 @@ function setActiveFtlCrew(crewKey) {
 function addCabinCrew() {
   if (cabinCrewEnabled) return;
   const state = serializeCalculatorState();
-  state.crewLimits.push(createDefaultCrewLimitRecord("cabin", { dutyDate: ftlCrewControls.flight.dutyDate.value }));
+  const shared = state.crewLimits.find((record) => record.id === "flight");
+  state.crewLimits.push({
+    ...createDefaultCrewLimitRecord("cabin", { dutyDate: shared.dutyDate }),
+    dutyStart: shared.dutyStart,
+    maximumFdp: { ...shared.maximumFdp },
+    discretion: { ...shared.discretion },
+    selectedFdpReferenceKey: shared.selectedFdpReferenceKey,
+  });
+  setFtlInputSectionOpen("fdp", true);
   activeFtlCrew = "cabin";
   activeFdpTargetId = "cabin";
   renderCrewLimitRecords(state.crewLimits);
@@ -2190,6 +2257,7 @@ function canAddIndividualCrewLimit(category) {
 
 function addIndividualCrewLimit() {
   if (!cabinCrewEnabled || !canAddIndividualCrewLimit(activeFtlCrew)) return;
+  setFtlInputSectionOpen("fdp", true);
   const state = serializeCalculatorState();
   if (activeFtlCrew === "flight" && !state.crewLimits.some((record) => record.category === "flight" && !record.baseline)) {
     const flight = state.crewLimits.find((record) => record.id === "flight");
@@ -2254,6 +2322,16 @@ function setupFtlCalculator() {
   elements.flightCrewTab.addEventListener("click", () => setActiveFtlCrew("flight"));
   elements.cabinCrewTab.addEventListener("click", () => setActiveFtlCrew("cabin"));
   elements.fdpTargetSelect.addEventListener("change", () => setFdpReferenceTarget(elements.fdpTargetSelect.value, true));
+  elements.fdpReferenceReturnButton.addEventListener("click", returnToFdpInput);
+  elements.fdpReferenceStatus.addEventListener("pointerenter", () => window.clearTimeout(fdpReferenceStatusTimer));
+  elements.fdpReferenceStatus.addEventListener("pointerleave", scheduleFdpReferenceDismiss);
+  elements.fdpReferenceStatus.addEventListener("focusin", () => window.clearTimeout(fdpReferenceStatusTimer));
+  elements.fdpReferenceStatus.addEventListener("focusout", scheduleFdpReferenceDismiss);
+  elements.reportingTimeReminder.addEventListener("click", openReportingTimeClarification);
+  ["fdp", "sector"].forEach((section) => {
+    const toggle = elements[`${section}InputsToggle`];
+    toggle.addEventListener("click", () => setFtlInputSectionOpen(section, toggle.getAttribute("aria-expanded") !== "true"));
+  });
   renderFtlCrewMode();
   calculatorInitialised = true;
   calculateFtl(false);
@@ -2284,6 +2362,8 @@ function clearFtlCalculator() {
   const confirmed = window.confirm("Reset all crew limits and final sector inputs?");
   if (!confirmed) return;
 
+  setFtlInputSectionOpen("fdp", true);
+  setFtlInputSectionOpen("sector", true);
   window.clearTimeout(fdpReferenceStatusTimer);
   elements.fdpReferenceStatus?.classList.add("hidden");
   const state = createDefaultCalculatorState();

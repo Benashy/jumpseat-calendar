@@ -604,6 +604,35 @@ input[type="time"],
   color: var(--accent);
 }
 
+.ftl-limit-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  min-height: 44px;
+  margin-top: 6px;
+}
+
+.ftl-results .ftl-limit-badges .limit-note {
+  margin-top: 0;
+}
+
+.reporting-time-reminder {
+  background: var(--amber-soft);
+  border: 1px solid var(--amber-ink);
+  border-radius: 7px;
+  color: var(--amber-ink);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 750;
+  min-height: 44px;
+  padding: 6px 9px;
+}
+
+#reportingTimeClarification:focus {
+  outline: none;
+}
+
 .ftl-results .result-discretion-note {
   color: var(--warn);
   overflow-wrap: anywhere;
@@ -1257,8 +1286,32 @@ input[type="time"],
   font-size: 0.84rem;
   font-weight: 850;
   line-height: 1.35;
-  padding: 12px 14px;
+  padding: 0;
   text-align: center;
+}
+
+.fdp-reference-return {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: none;
+  border: 0;
+  border-radius: inherit;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  min-height: 44px;
+  padding: 12px 14px;
+  width: 100%;
+}
+
+.fdp-reference-return span {
+  min-width: 0;
+}
+
+.fdp-reference-return .ui-icon {
+  flex: 0 0 20px;
 }
 
 .modal-backdrop {
@@ -1508,6 +1561,39 @@ strong.fdp-state-x-label {
   display: flex;
   gap: 10px;
   justify-content: space-between;
+}
+
+.ftl-section-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  appearance: none;
+  background: none;
+  border: 0;
+  border-radius: 3px;
+  color: inherit;
+  font: inherit;
+  min-height: 44px;
+  padding: 0;
+  text-align: left;
+}
+
+.ftl-section-toggle::before {
+  content: "";
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid currentColor;
+  flex: 0 0 auto;
+}
+
+.ftl-section-toggle[aria-expanded="true"]::before {
+  transform: rotate(90deg);
+}
+
+.ftl-input-content {
+  display: grid;
+  gap: 13px;
+  min-width: 0;
 }
 
 .compact-button {
@@ -5033,6 +5119,10 @@ html[data-theme="night"] .ftl-panel {
 
   .ftl-panel.is-fdp-only .ftl-result-card.is-pending:not(.is-reference) strong {
     font-size: 1.4rem;
+  }
+
+  .ftl-panel.is-fdp-only .ftl-result-card.is-pending .ftl-limit-badges {
+    min-height: 26px;
   }
 
   .ftl-panel.is-fdp-only .ftl-result-card.is-pending:not(.is-reference) > small:not(.limit-note) {
