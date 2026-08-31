@@ -7,10 +7,9 @@
   const introduction = document.querySelector("#gpsIntroduction");
   const sectionsPicker = document.querySelector("#gpsSectionChoices");
   const sectionsDetails = document.querySelector("#gpsSectionsControl");
-  const count = document.querySelector("#gpsProgress");
+  const hiddenStatus = document.querySelector("#gpsHiddenStatus");
   const status = document.querySelector("#gpsStatus");
   const revision = document.querySelector("#gpsRevision");
-  const sources = document.querySelector("#gpsSources");
   const resetButton = document.querySelector("#gpsResetButton");
   const clearButton = document.querySelector("#gpsClearTicksButton");
   const restoreButton = document.querySelector("#gpsRestoreSectionsButton");
@@ -103,12 +102,11 @@
 
   function updateProgress() {
     if (!policy || !state) return;
-    const progress = core.progress(policy, state);
-    count.textContent = `${progress.checked} of ${progress.total} visible items checked${progress.hiddenSections ? ` · ${progress.hiddenSections} sections hidden` : ""}`;
-    const started = new Date(state.startedAt).toLocaleString("en-GB", {
-      day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC", hour12: false,
-    });
-    revision.textContent = `${policy.revision} · Started ${started}Z · Device-only progress`;
+    const hidden = core.hiddenStatus(policy, state);
+    hiddenStatus.textContent = hidden.count ? `${hidden.count} ${hidden.count === 1 ? "section" : "sections"} hidden` : "";
+    hiddenStatus.dataset.severity = hidden.severity || "";
+    hiddenStatus.classList.toggle("hidden", !hidden.count);
+    revision.textContent = core.updatedLabel(state.updatedAt);
     root.querySelectorAll("[data-gps-item]").forEach((input) => {
       input.checked = state.completedIds.includes(input.dataset.gpsItem);
       input.closest(".gps-check-row").classList.toggle("is-checked", input.checked);
@@ -123,9 +121,10 @@
     root.querySelectorAll("[data-gps-visibility]").forEach((input) => {
       input.checked = !state.hiddenSectionIds.includes(input.dataset.gpsVisibility);
     });
-    root.querySelectorAll("[data-gps-section-count]").forEach((label) => {
-      const sectionProgress = core.progress(policy, state, label.dataset.gpsSectionCount);
-      label.textContent = state.hiddenSectionIds.includes(label.dataset.gpsSectionCount) ? "Hidden · Show" : `${sectionProgress.checked}/${sectionProgress.total}`;
+    root.querySelectorAll("[data-gps-section-status]").forEach((label) => {
+      const isHidden = state.hiddenSectionIds.includes(label.dataset.gpsSectionStatus);
+      label.textContent = isHidden ? "Hidden · Show" : "";
+      label.classList.toggle("hidden", !isHidden);
     });
     resetButton.disabled = false;
     clearButton.disabled = !state.completedIds.length;
@@ -137,8 +136,8 @@
     introduction.replaceChildren();
     content.replaceChildren();
     sectionsPicker.replaceChildren();
-    sources.replaceChildren();
-    count.textContent = "";
+    hiddenStatus.textContent = "";
+    hiddenStatus.classList.add("hidden");
     revision.textContent = "";
     resetButton.disabled = true;
     clearButton.disabled = true;
@@ -156,14 +155,12 @@
         const input = node("input");
         input.type = "checkbox";
         input.dataset.gpsVisibility = section.id;
-        input.disabled = group.some((entry) => !entry.canHide);
         input.addEventListener("change", () => {
           readLatestState();
           state = core.setSectionVisible(policy, state, section.id, input.checked);
           persist();
         });
         label.append(input, node("span", "", group.map((entry) => entry.title).join(" + ")));
-        if (input.disabled) label.append(node("small", "", "Always shown"));
         sectionsPicker.append(label);
       }
       const panel = node("details", "gps-section");
@@ -178,21 +175,14 @@
         persist();
       });
       const title = node("h3", "", section.title);
-      const sectionCount = node("span", "gps-section-count");
-      sectionCount.dataset.gpsSectionCount = section.id;
-      summary.append(title, sectionCount);
+      const sectionStatus = node("span", "gps-hidden-badge hidden");
+      sectionStatus.dataset.gpsSectionStatus = section.id;
+      sectionStatus.dataset.severity = core.hiddenSeverity(section.id);
+      summary.append(title, sectionStatus);
       const body = node("div", "gps-section-body");
       section.blocks.forEach((block) => renderBlock(block, body));
       panel.append(summary, body);
       content.append(panel);
-    }
-    for (const source of policy.sources) {
-      sources.append(node("p", "", `${source.document} · ${source.section} · ${source.revision} · ${source.pages}`));
-    }
-    for (const entry of policy.context || []) {
-      const detail = node("details", "gps-source-context");
-      detail.append(node("summary", "gps-disclosure", entry.title), node("p", "", entry.text));
-      sources.append(detail);
     }
     updateProgress();
   }

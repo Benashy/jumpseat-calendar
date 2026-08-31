@@ -34,17 +34,17 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-118" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-119" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-118" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-119" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-118" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-119" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -151,7 +151,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.66</small>
+            <small class="app-version">v2.67</small>
           </section>
 
         </section>
@@ -599,7 +599,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.66</small>
+            <small class="app-version">v2.67</small>
           </section>
         </section>
 
@@ -660,7 +660,7 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.66</small>
+            <small class="app-version">v2.67</small>
           </section>
         </section>
 
@@ -672,25 +672,23 @@
               </button>
               <div><h2>GPS interference procedures</h2><span class="under-test-badge">Under test</span></div>
             </div>
-            <button class="text-button secondary gps-new-button" id="gpsResetButton" type="button" disabled>
-              <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8M3 3v5h5" /></svg>
-              New checklist
-            </button>
+            <div class="gps-actions">
+              <button class="text-button secondary" id="gpsClearTicksButton" type="button" disabled>Clear ticks</button>
+              <button class="text-button secondary gps-new-button" id="gpsResetButton" type="button" disabled>
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8M3 3v5h5" /></svg>
+                New checklist
+              </button>
+            </div>
           </div>
           <p id="gpsRevision" class="gps-revision"></p>
           <p id="gpsStatus" class="gps-status" role="status">Sign in to load the checklist.</p>
           <div id="gpsIntroduction" class="gps-introduction"></div>
-          <div class="gps-session-bar">
-            <p id="gpsProgress" aria-live="polite" aria-atomic="true"></p>
-            <button class="text-button secondary" id="gpsClearTicksButton" type="button" disabled>Clear ticks</button>
-          </div>
           <details class="gps-section-options hidden" id="gpsSectionsControl">
-            <summary class="gps-disclosure">Sections</summary>
+            <summary class="gps-disclosure"><span class="gps-disclosure-title">Sections</span><span id="gpsHiddenStatus" class="gps-hidden-badge hidden" role="status" aria-atomic="true"></span></summary>
             <div id="gpsSectionChoices" class="gps-section-choices"></div>
             <button class="text-button secondary" id="gpsRestoreSectionsButton" type="button" disabled>Show all sections</button>
           </details>
           <div id="gpsChecklistContent" class="gps-checklist-content"></div>
-          <details class="gps-references"><summary class="gps-disclosure">References</summary><div id="gpsSources"></div></details>
           <section class="account-panel hidden" id="gpsAccountPanel" aria-label="Account">
             <span id="gpsSyncStatus" aria-live="polite">Cloud ready</span>
             <div class="account-actions">
@@ -700,7 +698,7 @@
               <button class="text-button secondary" id="gpsSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="gpsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.66</small>
+            <small class="app-version">v2.67</small>
           </section>
         </section>
 
@@ -841,7 +839,7 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.66</small>
+            <small class="app-version">v2.67</small>
           </section>
         </section>
 
@@ -937,7 +935,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.66</small>
+            <small class="app-version">v2.67</small>
           </section>
         </section>
 
@@ -1044,7 +1042,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.66</small>
+            <small class="app-version">v2.67</small>
           </section>
         </section>
       </main>
@@ -1148,19 +1146,19 @@
       </article>
     </template>
 
-    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-118"></script>
-    <script src="./supabase-config.js?v=cloud-sync-118"></script>
-    <script src="./ltot-core.js?v=cloud-sync-118"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-118"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-118"></script>
-    <script src="./notoc-policy-store.js?v=cloud-sync-118"></script>
-    <script src="./notoc-core.js?v=cloud-sync-118"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-118"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-118"></script>
-    <script src="./gps-checklist-core.js?v=cloud-sync-118"></script>
-    <script src="./gps-checklist-ui.js?v=cloud-sync-118"></script>
-    <script src="./data-portability.js?v=cloud-sync-118"></script>
-    <script src="./request-retention.js?v=cloud-sync-118"></script>
-    <script src="./app.js?v=cloud-sync-118"></script>
+    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-119"></script>
+    <script src="./supabase-config.js?v=cloud-sync-119"></script>
+    <script src="./ltot-core.js?v=cloud-sync-119"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-119"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-119"></script>
+    <script src="./notoc-policy-store.js?v=cloud-sync-119"></script>
+    <script src="./notoc-core.js?v=cloud-sync-119"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-119"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-119"></script>
+    <script src="./gps-checklist-core.js?v=cloud-sync-119"></script>
+    <script src="./gps-checklist-ui.js?v=cloud-sync-119"></script>
+    <script src="./data-portability.js?v=cloud-sync-119"></script>
+    <script src="./request-retention.js?v=cloud-sync-119"></script>
+    <script src="./app.js?v=cloud-sync-119"></script>
   </body>
 </html>

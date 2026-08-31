@@ -81,11 +81,52 @@ test("GPS linked sections hide together without counting hidden checks as comple
   assert.equal(core.progress(p, state).checked, 1);
 });
 
-test("GPS required sections cannot be omitted and partial linked groups restore visibly", () => {
+test("GPS every section can be hidden, while partial linked groups restore visibly", () => {
   const p = fixture(); const state = core.newState("one", "hash");
-  assert.equal(core.setSectionVisible(p, state, "fixed", false), state);
+  assert.deepEqual(core.setSectionVisible(p, state, "fixed", false).hiddenSectionIds, ["fixed"]);
   const stored = { ...state, hiddenSectionIds: ["fixed", "optional-a", "unknown"] };
-  assert.deepEqual(core.restoreState(p, "one", "hash", stored).hiddenSectionIds, []);
+  assert.deepEqual(core.restoreState(p, "one", "hash", stored).hiddenSectionIds, ["fixed"]);
+});
+
+test("GPS hidden alerts use amber only for the three nominated sections", () => {
+  for (const id of ["preliminary-cockpit", "cockpit-preparation", "unexpected-interference"]) {
+    assert.equal(core.hiddenSeverity(id), "amber");
+  }
+  for (const id of ["before-area", "within-area", "top-of-descent", "arrival-precautions",
+    "every-approach", "after-area", "after-landing", "future-section"]) {
+    assert.equal(core.hiddenSeverity(id), "red");
+  }
+});
+
+test("GPS aggregate alert counts actual hidden sections and gives red precedence", () => {
+  const p = fixture(); p.sections[0].id = "unexpected-interference";
+  let state = core.newState("one", "hash");
+  assert.deepEqual(core.hiddenStatus(p, state), { count: 0, severity: null });
+  state = core.setSectionVisible(p, state, "unexpected-interference", false);
+  assert.deepEqual(core.hiddenStatus(p, state), { count: 1, severity: "amber" });
+  state = core.setSectionVisible(p, state, "optional-a", false);
+  assert.deepEqual(core.hiddenStatus(p, state), { count: 3, severity: "red" });
+  state = core.setSectionVisible(p, state, "optional-b", true);
+  assert.deepEqual(core.hiddenStatus(p, state), { count: 1, severity: "amber" });
+  state.hiddenSectionIds.push("unexpected-interference", "unknown");
+  assert.deepEqual(core.hiddenStatus(p, state), { count: 1, severity: "amber" });
+});
+
+test("GPS visibility changes do not alter source content or lose existing ticks", async () => {
+  const p = fixture(); const before = await core.policyHash(p, webcrypto);
+  let state = core.setChecked(p, core.newState("one", before), "step-a", true);
+  for (const section of p.sections) state = core.setSectionVisible(p, state, section.id, false);
+  const restored = core.restoreState(p, "one", before, state);
+  assert.equal(restored.hiddenSectionIds.length, p.sections.length);
+  assert.deepEqual(restored.completedIds, ["step-a"]);
+  assert.equal(await core.policyHash(p, webcrypto), before);
+});
+
+test("GPS updated label uses the recorded time in Zulu, including midnight and date rollover", () => {
+  assert.equal(core.updatedLabel("2026-08-31T16:20:00Z"), "Updated 31 August at 16:20Z");
+  assert.equal(core.updatedLabel("2026-09-01T01:20:00+03:00"), "Updated 31 August at 22:20Z");
+  assert.equal(core.updatedLabel("2026-09-01T00:00:00Z"), "Updated 1 September at 00:00Z");
+  assert.equal(core.updatedLabel("invalid"), "");
 });
 
 test("GPS owner and source revision changes clear old progress", () => {

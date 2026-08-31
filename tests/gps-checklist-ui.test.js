@@ -24,22 +24,45 @@ function harness(storage = new Map()) {
   class Element {
     constructor(tag = "div") {
       this.tagName = tag; this.dataset = {}; this.listeners = {}; this.children = [];
-      this.classList = { toggle() {}, add() {}, remove() {} }; created.push(this);
+      this.classes = new Set();
+      this.classList = {
+        toggle: (name, force) => {
+          const add = force ?? !this.classes.has(name);
+          if (add) this.classes.add(name); else this.classes.delete(name);
+          return add;
+        },
+        add: (...names) => names.forEach(name => this.classes.add(name)),
+        remove: (...names) => names.forEach(name => this.classes.delete(name)),
+        contains: name => this.classes.has(name),
+      };
+      created.push(this);
     }
+    set className(value) { this.classes = new Set(value.split(/\s+/)); }
+    get className() { return [...this.classes].join(" "); }
     append(...nodes) { nodes.forEach((n) => { n.parent = this; this.children.push(n); }); }
     replaceChildren(...nodes) { this.children = []; this.append(...nodes); }
     addEventListener(name, action) { this.listeners[name] = action; }
     closest() { return this.parent; }
-    querySelectorAll() { return []; }
+    querySelectorAll(selector) {
+      const match = selector.match(/^\[data-([a-z-]+)\]$/);
+      if (!match) throw new Error(`Unsupported fixture selector: ${selector}`);
+      const key = match[1].replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+      const descendants = (element) => element.children.flatMap(child => [child, ...descendants(child)]);
+      return descendants(this).filter(element => element.dataset && key in element.dataset);
+    }
   }
   const elements = new Map();
   const document = {
     querySelector: (id) => {
-      if (!elements.has(id)) elements.set(id, new Element());
+      if (!elements.has(id)) {
+        const element = new Element();
+        elements.set(id, element);
+        if (id !== "#gpsView") elements.get("#gpsView").append(element);
+      }
       return elements.get(id);
     },
     createElement: (tag) => new Element(tag),
-    createTextNode: (text) => ({ textContent: text }),
+    createTextNode: (text) => ({ textContent: text, children: [] }),
   };
   let confirmResult = true;
   const window = {
@@ -56,6 +79,12 @@ function harness(storage = new Map()) {
     status: () => elements.get("#gpsStatus").textContent,
     progress: () => JSON.parse(storage.get(core.storageKey("progress", "one")) || "null"),
     tick(id) { const input = created.filter((e) => e.dataset.gpsItem === id).at(-1); input.checked = true; input.listeners.change(); },
+    item(id) { return created.filter(e => e.dataset.gpsItem === id).at(-1); },
+    visible(id, value) {
+      const input = created.filter(e => e.dataset.gpsVisibility === id).at(-1);
+      assert.notEqual(input.disabled, true);
+      input.checked = value; input.listeners.change();
+    },
   };
 }
 
@@ -66,7 +95,9 @@ test("GPS UI loads authenticated content and restores device-local ticks after r
   assert.deepEqual(h.progress().completedIds, ["first"]);
   const reopened = harness(h.storage);
   await reopened.load("one", async () => data);
-  assert.match(reopened.elements.get("#gpsProgress").textContent, /^1 of 2/);
+  assert.equal(reopened.item("first").checked, true);
+  assert.equal(reopened.item("second").checked, false);
+  assert.equal(reopened.elements.get("#gpsRevision").textContent, core.updatedLabel(h.progress().updatedAt));
 });
 
 test("GPS UI uses a validated saved source offline without a network request", async () => {
@@ -131,7 +162,8 @@ test("GPS UI source updates discard ticks from old wording", async () => {
   data.content_sha256 = await core.policyHash(data.checklist, webcrypto);
   await h.ui.load({ force: true });
   assert.match(h.status(), /Checklist revised/);
-  assert.match(h.elements.get("#gpsProgress").textContent, /^0 of 2/);
+  assert.equal(h.item("first").checked, false);
+  assert.equal(h.item("second").checked, false);
 });
 
 test("GPS UI can postpone a source update without replacing the saved source or progress", async () => {
@@ -177,4 +209,49 @@ test("GPS public shell includes no private source payload and preview is localho
   assert.match(app, /from\("opsdeck_gps_checklist"\)/);
   assert.doesNotMatch(html, /content_sha256|checklist-exact\.md/);
   assert.doesNotMatch(uiSource, /innerHTML/);
+  assert.doesNotMatch(html, /gpsProgress|gpsSources|gps-references/);
+  assert.doesNotMatch(uiSource, /visible items checked|section-count|Device-only progress|Started /);
+  const styles = fs.readFileSync(new URL("../styles.css", `file://${__filename}`), "utf8");
+  assert.match(styles, /\.gps-hidden-badge\.hidden\s*\{\s*display: none;/);
+});
+
+test("GPS UI permits hiding legacy fixed sections and updates the red/amber badge", async () => {
+  const data = await record();
+  data.checklist.sections.push({ id: "unexpected-interference", title: "Test amber phase", canHide: false,
+    blocks: [{ id: "third", type: "action", text: "Third test action" }] });
+  data.content_sha256 = await core.policyHash(data.checklist, webcrypto);
+  const h = harness(); await h.load("one", async () => data);
+  const badge = h.elements.get("#gpsHiddenStatus");
+  assert.equal(badge.classList.contains("hidden"), true);
+  h.visible("unexpected-interference", false);
+  assert.equal(badge.textContent, "1 section hidden");
+  assert.equal(badge.dataset.severity, "amber");
+  assert.equal(badge.classList.contains("hidden"), false);
+  h.visible("phase", false);
+  assert.equal(badge.textContent, "2 sections hidden");
+  assert.equal(badge.dataset.severity, "red");
+  const hiddenPanel = h.created.find(e => e.dataset.gpsSection === "phase");
+  assert.equal(hiddenPanel.open, false);
+  const label = h.created.find(e => e.dataset.gpsSectionStatus === "phase");
+  assert.equal(label.textContent, "Hidden · Show");
+  assert.equal(label.dataset.severity, "red");
+  hiddenPanel.children[0].listeners.click({ preventDefault() {} });
+  assert.equal(hiddenPanel.open, true);
+  assert.equal(badge.dataset.severity, "amber");
+  h.elements.get("#gpsRestoreSectionsButton").listeners.click();
+  assert.equal(badge.classList.contains("hidden"), true);
+  assert.equal(badge.textContent, "");
+  assert.equal(label.classList.contains("hidden"), true);
+});
+
+test("GPS UI hides source/context presentation without stripping it from the private offline copy", async () => {
+  const data = await record();
+  data.checklist.context = [{ title: "Private context", text: "Retained source explanation" }];
+  data.content_sha256 = await core.policyHash(data.checklist, webcrypto);
+  const h = harness(); await h.load("one", async () => data);
+  const cached = JSON.parse(h.storage.get(core.storageKey("policy", "one")));
+  assert.deepEqual(cached.checklist.sources, data.checklist.sources);
+  assert.deepEqual(cached.checklist.context, data.checklist.context);
+  assert.equal(cached.content_sha256, data.content_sha256);
+  assert.equal(h.created.some(e => /Private context|Retained source explanation|Test document/.test(e.textContent || "")), false);
 });

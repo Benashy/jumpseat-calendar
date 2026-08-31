@@ -4,6 +4,7 @@
   const SCHEMA_VERSION = 1;
   const BLOCK_TYPES = new Set(["action", "acknowledgement", "note", "condition", "heading", "bullet"]);
   const CHECKABLE_TYPES = new Set(["action", "acknowledgement"]);
+  const AMBER_SECTIONS = new Set(["preliminary-cockpit", "cockpit-preparation", "unexpected-interference"]);
   const validId = (value) => typeof value === "string" && /^[a-z][a-z0-9-]{0,79}$/.test(value);
   const validText = (value) => typeof value === "string" && value.trim().length > 0 && value.length <= 6000;
   const isObject = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -67,11 +68,11 @@
       const members = available.filter((item) => item.exclusiveGroup === group && completed.has(item.id));
       if (members.length > 1) members.forEach((item) => completed.delete(item.id));
     }
-    const hidden = new Set(stored.hiddenSectionIds.filter((id) => policy.sections.some((s) => s.id === id && s.canHide)));
+    const hidden = new Set(stored.hiddenSectionIds.filter((id) => policy.sections.some((s) => s.id === id)));
     // A linked section group is either all visible or all hidden.
     for (const section of policy.sections.filter((s) => s.visibilityGroup)) {
       const members = policy.sections.filter((s) => s.visibilityGroup === section.visibilityGroup);
-      if (members.some((s) => !s.canHide || !hidden.has(s.id))) members.forEach((s) => hidden.delete(s.id));
+      if (members.some((s) => !hidden.has(s.id))) members.forEach((s) => hidden.delete(s.id));
     }
     return { ...fresh, startedAt: Number.isFinite(Date.parse(stored.startedAt)) ? stored.startedAt : fresh.startedAt,
       updatedAt: Number.isFinite(Date.parse(stored.updatedAt)) ? stored.updatedAt : fresh.updatedAt,
@@ -93,9 +94,8 @@
 
   function setSectionVisible(policy, state, sectionId, visible, now = new Date().toISOString()) {
     const section = policy.sections.find((entry) => entry.id === sectionId);
-    if (!section || !section.canHide) return state;
+    if (!section) return state;
     const group = section.visibilityGroup ? policy.sections.filter((entry) => entry.visibilityGroup === section.visibilityGroup) : [section];
-    if (group.some((entry) => !entry.canHide)) return state;
     const hidden = new Set(state.hiddenSectionIds);
     group.forEach((entry) => visible ? hidden.delete(entry.id) : hidden.add(entry.id));
     return { ...state, hiddenSectionIds: [...hidden], updatedAt: now };
@@ -106,6 +106,24 @@
       (!sectionId || item.sectionId === sectionId));
     return { checked: visible.filter((item) => state.completedIds.includes(item.id)).length,
       total: visible.length, hiddenSections: state.hiddenSectionIds.length };
+  }
+
+  function hiddenSeverity(sectionId) {
+    return AMBER_SECTIONS.has(sectionId) ? "amber" : "red";
+  }
+
+  function hiddenStatus(policy, state) {
+    const hidden = policy.sections.filter((section) => state.hiddenSectionIds.includes(section.id));
+    return { count: hidden.length, severity: hidden.length ?
+      (hidden.some((section) => hiddenSeverity(section.id) === "red") ? "red" : "amber") : null };
+  }
+
+  function updatedLabel(timestamp) {
+    const date = new Date(timestamp);
+    if (!Number.isFinite(date.getTime())) return "";
+    const day = date.toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" });
+    const time = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "UTC" });
+    return `Updated ${day} at ${time}Z`;
   }
 
   function storageKey(kind, userId) {
@@ -121,7 +139,7 @@
   }
 
   const api = { SCHEMA_VERSION, CHECKABLE_TYPES, validatePolicy, canonicalJson, policyHash, items,
-    newState, restoreState, setChecked, setSectionVisible, progress, storageKey, readSaved };
+    newState, restoreState, setChecked, setSectionVisible, progress, hiddenSeverity, hiddenStatus, updatedLabel, storageKey, readSaved };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else globalScope.OpsDeckGpsChecklist = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);
