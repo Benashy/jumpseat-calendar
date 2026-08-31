@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.59.
+- Current visible app version: v2.60.
 - The top navigation contains `Jumpseat`, `FDP & LTOT` and `Tools`. Tools opens a dedicated landing view for the Radio Altimeter Position Check and NOTOC, while Jumpseat retains contextual `Add request` and `Back to requests` actions.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -51,6 +51,7 @@
 - v2.57 extends the Radio Altimeter Position Check with selectable ILS, FLS and FINAL APP modes. ILS retains its existing DME-offset calculation, while FLS and FINAL APP use an amber `Under test` state, a threshold-referenced estimate and deliberately conceptual temperature-profile cues without presenting them as Airbus system geometry.
 - v2.58 returns the visible Radio Altimeter Position Check to ILS only. The unvalidated FLS and FINAL APP work remains disabled in the source for possible future research, result wording now says `Estimated`, and landing-threshold elevation is limited to 7,500 ft so the full range remains compatible with the -25 degrees Celsius temperature floor.
 - v2.59 fixes FDP-table selections so they update the active shared, Flight crew, Cabin crew or named individual limit. It also adds optional persistent named limits within either crew group, highlights the controlling limit more clearly in the comparison, and adds the OMA 7.6.1 different-reporting-times explanation under `FTL Clarifications`.
+- v2.60 places a Table shortcut beside each Maximum FDP input and adds direct crew selection above the FDP tables. Splitting Flight crew names the original entry Ben Ashurst, with an editable name and unchanged timings. Result cards and Telegram summaries identify the crew category and every jointly limiting name. New entries are capped at three Flight crew and six Cabin crew calculation rows, including the original entries; existing saved rows are never discarded to enforce these caps. Named limits and table targeting have automated regression coverage and responsive iPhone/iPad checks.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.

@@ -34,17 +34,17 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-109" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-110" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-109" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-110" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-109" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-110" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -151,7 +151,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.59</small>
+            <small class="app-version">v2.60</small>
           </section>
 
         </section>
@@ -377,7 +377,10 @@
           <details class="guidance-panel fdp-reference-panel" id="fdpReferencePanel">
             <summary>FDP Tables</summary>
             <div class="guidance-content fdp-reference-content">
-              <div class="fdp-target-banner" id="fdpTargetBanner" role="status">Selecting Maximum FDP for all crew</div>
+              <div class="fdp-target-banner" id="fdpTargetBanner">
+                <label for="fdpTargetSelect">Maximum FDP for</label>
+                <select id="fdpTargetSelect" aria-label="Maximum FDP for"><option value="flight">All crew</option></select>
+              </div>
               <section>
                 <h3>FDP lookup workflow</h3>
                 <p class="fdp-time-context"><strong>Time reference:</strong> the LTOT calculator uses Zulu, while FDP table start times use the applicable local or reference report time.</p>
@@ -581,7 +584,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.59</small>
+            <small class="app-version">v2.60</small>
           </section>
         </section>
 
@@ -635,7 +638,7 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.59</small>
+            <small class="app-version">v2.60</small>
           </section>
         </section>
 
@@ -776,7 +779,7 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.59</small>
+            <small class="app-version">v2.60</small>
           </section>
         </section>
 
@@ -872,7 +875,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.59</small>
+            <small class="app-version">v2.60</small>
           </section>
         </section>
 
@@ -979,7 +982,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.59</small>
+            <small class="app-version">v2.60</small>
           </section>
         </section>
       </main>
@@ -1047,7 +1050,16 @@
             </span>
           </div>
           <div class="duration-control required-duration">
-            <span class="duration-label">Maximum FDP</span>
+            <span class="duration-label">
+              <span>Maximum FDP</span>
+              <button class="text-button secondary fdp-lookup-button" type="button">
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+                </svg>
+                <span>Table</span>
+              </button>
+            </span>
             <span class="duration-picker">
               <select class="crew-limit-max-hours"></select>
               <small>hr</small>
@@ -1071,22 +1083,21 @@
             <span>Maximum allowable FDP</span>
             <strong class="crew-limit-allowable">--</strong>
           </div>
-          <button class="text-button secondary fdp-lookup-button" type="button">Select from FDP table</button>
         </div>
       </article>
     </template>
 
-    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-109"></script>
-    <script src="./supabase-config.js?v=cloud-sync-109"></script>
-    <script src="./ltot-core.js?v=cloud-sync-109"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-109"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-109"></script>
-    <script src="./notoc-policy-store.js?v=cloud-sync-109"></script>
-    <script src="./notoc-core.js?v=cloud-sync-109"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-109"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-109"></script>
-    <script src="./data-portability.js?v=cloud-sync-109"></script>
-    <script src="./request-retention.js?v=cloud-sync-109"></script>
-    <script src="./app.js?v=cloud-sync-109"></script>
+    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-110"></script>
+    <script src="./supabase-config.js?v=cloud-sync-110"></script>
+    <script src="./ltot-core.js?v=cloud-sync-110"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-110"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-110"></script>
+    <script src="./notoc-policy-store.js?v=cloud-sync-110"></script>
+    <script src="./notoc-core.js?v=cloud-sync-110"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-110"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-110"></script>
+    <script src="./data-portability.js?v=cloud-sync-110"></script>
+    <script src="./request-retention.js?v=cloud-sync-110"></script>
+    <script src="./app.js?v=cloud-sync-110"></script>
   </body>
 </html>

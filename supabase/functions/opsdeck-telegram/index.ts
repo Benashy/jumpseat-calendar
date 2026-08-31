@@ -202,10 +202,13 @@ function normaliseFlightNumber(value: unknown) {
   return normaliseText(value).toUpperCase();
 }
 
-function cleanSummaryText(value: unknown, fallback = "--") {
+function cleanSummaryText(value: unknown, fallback = "--", maxLength = 80) {
   const text = normaliseText(value);
   if (!text) return fallback;
-  return text.slice(0, 80);
+  if (text.length > maxLength && maxLength > 80) {
+    fail(400, "ltot_summary_too_long", "The joint crew summary is too long to send in one Telegram message.");
+  }
+  return text.slice(0, maxLength);
 }
 
 function isIsoDate(value: unknown) {
@@ -321,12 +324,12 @@ function buildLtotSummaryMessage(summary: LtotSummary) {
     `Latest pushback: ${latestPushback} (soft limit)`,
     `Latest takeoff: ${latestTakeoff} (hard limit)`,
     `Latest on-chocks: ${latestOnChocks} (FDP limit)`,
-    `Limiting crew: ${cleanSummaryText(summary.limiting_crew)}`,
+    `Limiting crew: ${cleanSummaryText(summary.limiting_crew, "--", 640)}`,
     "",
     "FDP",
-    `Duty start: ${cleanSummaryText(summary.duty_start)}`,
-    `Maximum FDP: ${cleanSummaryText(summary.maximum_fdp)}`,
-    `Commander's discretion: ${cleanSummaryText(summary.commander_discretion)}`,
+    `Duty start: ${cleanSummaryText(summary.duty_start, "--", 640)}`,
+    `Maximum FDP: ${cleanSummaryText(summary.maximum_fdp, "--", 640)}`,
+    `Commander's discretion: ${cleanSummaryText(summary.commander_discretion, "--", 640)}`,
     "",
     "Final sector timing",
     `Flight time: ${cleanSummaryText(summary.flight_time)}`,

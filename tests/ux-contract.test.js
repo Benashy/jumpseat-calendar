@@ -48,14 +48,28 @@ test("optional named crew limits are addable, removable, saved and compared", ()
   assert.match(index, /id="addIndividualCrewButton"/);
   assert.match(index, /class="crew-limit-name"/);
   assert.match(index, /class="icon-button crew-limit-remove"/);
-  assert.match(app, /const CALCULATOR_SCHEMA_VERSION = 3;/);
+  assert.match(app, /const CALCULATOR_SCHEMA_VERSION = 4;/);
   assert.match(app, /baseline: record\.baseline !== false/);
-  assert.match(app, /name: record\.baseline === false \? crewLimitName\(control\) : ""/);
+  assert.match(app, /name: crewLimitName\(control\)/);
   assert.match(app, /function addIndividualCrewLimit\(\)/);
   assert.match(app, /function removeIndividualCrewLimit\(crewId\)/);
   assert.match(app, /const showComparison = comparison\.results\.length > 1;/);
   assert.match(styles, /\.crew-result-row\.is-limiting/);
   assert.match(styles, /\.crew-limiting-badge/);
+});
+
+test("each Maximum FDP has a compact table shortcut and the table can change its target", () => {
+  assert.match(index, /<label for="fdpTargetSelect">Maximum FDP for<\/label>/);
+  assert.match(index, /<select id="fdpTargetSelect"/);
+  assert.match(index, /<span>Maximum FDP<\/span>\s*<button class="text-button secondary fdp-lookup-button"/);
+  assert.doesNotMatch(index, /Select from FDP table/);
+  assert.match(app, /setFdpReferenceTarget\(elements\.fdpTargetSelect\.value, true\)/);
+  assert.match(styles, /#fdpTargetSelect\s*\{[^}]*font-size: 16px;/);
+  assert.match(styles, /\.fdp-lookup-button\s*\{[^}]*min-height: 44px;/);
+});
+
+test("renaming the original pilot cannot reset the calculation's saved duty date", () => {
+  assert.match(app, /if \(record\.id === "flight" && event\.currentTarget === dutyStart\)\s*\{\s*ftlAnchorDate =/);
 });
 
 test("the short-haul reporting-time clarification is available beside the FDP tables", () => {
