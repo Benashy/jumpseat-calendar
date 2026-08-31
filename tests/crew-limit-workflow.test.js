@@ -16,7 +16,7 @@ const functionNames = [
   "setFdpReferenceTarget", "setMaximumFdpFromReference", "currentMaximumFdpTableValue",
   "durationStringToParts", "durationStringToMinutes", "hasDurationValue", "hasPartialDurationValue",
   "getDurationMinutes", "buildCrewFtlInput", "serializeCalculatorState", "renderFtlCrewMode",
-  "updateCrewComparison", "crewResultTime",
+  "updateCrewComparison", "crewResultTime", "clearFtlCalculator",
 ];
 
 function appFunction(name) {
@@ -46,8 +46,10 @@ function harness() {
   const context = {
     crewLimitRecords: [], ftlCrewControls: {}, activeFtlCrew: "flight", activeFdpTargetId: "flight",
     cabinCrewEnabled: true, ftlAnchorDate: "2026-08-31", fdpReferenceStatusTimer: 0,
+    nextCrewNumbers: { flight: 2, cabin: 1 },
+    controllingFtlCrewIds: [], currentCrewComparison: null,
     createId: () => `test-${++nextId}`,
-    window: { requestAnimationFrame() {}, clearTimeout() {}, scrollBy() {}, confirm: () => true },
+    window: { OpsDeckLtot: { ...ltot, utcTodayIso: () => "2026-08-31" }, requestAnimationFrame() {}, clearTimeout() {}, scrollBy() {}, confirm: () => true },
     document: { activeElement: null, createElement: () => element() },
     elements: Object.fromEntries([
       "crewTabsRow", "addCabinCrewButton", "flightCrewTab", "cabinCrewTab", "flightCrewInputs",
@@ -69,10 +71,13 @@ function harness() {
     .map((name) => app.match(new RegExp(`^const ${name} = .+;`, "m"))[0]);
   vm.runInNewContext([...constants, ...functionNames.map(appFunction)].join("\n"), context);
   context.renderCrewLimitRecords = (records) => {
+    records = context.sanitizeStoredCrewLimits(records);
     context.crewLimitRecords = records;
+    for (const record of records) context.nextCrewNumbers[record.category] = Math.max(context.nextCrewNumbers[record.category], record.displayNumber + 1);
     context.ftlCrewControls = Object.fromEntries(records.map((record) => [record.id, {
       ...record,
       nameInput: { value: record.name || "" }, dutyStart: { value: record.dutyStart || "" },
+      dutyDate: { value: record.dutyDate || "" },
       maxFdp: { hours: { value: record.maximumFdp.hours }, minutes: { value: record.maximumFdp.minutes } },
       discretion: { hours: { value: record.discretion.hours }, minutes: { value: record.discretion.minutes } },
     }]));
@@ -85,6 +90,92 @@ function harness() {
 function record(context, category, options = {}) {
   return { ...context.createDefaultCrewLimitRecord(category, options), dutyStart: "11:45", maximumFdp: { hours: "13", minutes: "0" } };
 }
+
+test("crew identifiers survive deletion, reload and a new addition without reuse", () => {
+  const h = harness();
+  h.renderCrewLimitRecords([record(h, "flight"), record(h, "cabin")]);
+  h.activeFtlCrew = "cabin";
+  h.addIndividualCrewLimit();
+  const first = h.activeFdpTargetId;
+  h.addIndividualCrewLimit();
+  const second = h.activeFdpTargetId;
+  h.removeIndividualCrewLimit(first);
+  assert.equal(h.crewLimitRoleLabel(h.ftlCrewControls[second]), "Cabin crew 2");
+  const saved = h.serializeCalculatorState();
+  const reloaded = harness();
+  const state = reloaded.sanitizeCalculatorState(JSON.parse(JSON.stringify(saved)));
+  reloaded.nextCrewNumbers = state.nextCrewNumbers;
+  reloaded.renderCrewLimitRecords(state.crewLimits);
+  reloaded.removeIndividualCrewLimit(second);
+  reloaded.activeFtlCrew = "cabin";
+  reloaded.addIndividualCrewLimit();
+  assert.equal(reloaded.crewLimitRoleLabel(reloaded.ftlCrewControls[reloaded.activeFdpTargetId]), "Cabin crew 3");
+});
+
+test("v4 saved inputs migrate dates and preserve timings, names and selections", () => {
+  const h = harness();
+  const flight = { ...record(h, "flight"), dutyStart: "23:00" };
+  const cabin = { ...record(h, "cabin"), dutyStart: "00:15", selectedFdpReferenceKey: "saved-table-key" };
+  delete flight.dutyDate;
+  delete cabin.dutyDate;
+  const state = h.sanitizeCalculatorState({ schemaVersion: 4, anchorDate: "2026-08-31", crewLimits: [flight, cabin] });
+  assert.equal(state.crewLimits[0].dutyDate, "2026-08-31");
+  assert.equal(state.crewLimits[1].dutyDate, "2026-09-01");
+  assert.equal(state.crewLimits[1].selectedFdpReferenceKey, "saved-table-key");
+  assert.equal(state.crewLimits[1].maximumFdp.hours, "13");
+  assert.equal(JSON.stringify(h.sanitizeCalculatorState(state)), JSON.stringify(state));
+});
+
+test("legacy data without a recorded date requires an explicit date instead of guessing", () => {
+  const h = harness();
+  const flight = record(h, "flight");
+  delete flight.dutyDate;
+  const state = h.sanitizeCalculatorState({ schemaVersion: 4, anchorDate: null, crewLimits: [flight] });
+  assert.equal(state.anchorDate, null);
+  assert.equal(state.crewLimits[0].dutyDate, "");
+  h.renderCrewLimitRecords(state.crewLimits);
+  const result = ltot.calculateCrewLimits({ anchorDate: state.anchorDate, crewLimits: [h.buildCrewFtlInput("flight")] });
+  assert.equal(result.comparisonComplete, false);
+});
+
+test("report dates and numbering counters survive the existing portable state format", () => {
+  const h = harness();
+  h.renderCrewLimitRecords([record(h, "flight", { dutyDate: "2026-08-30" })]);
+  const state = h.serializeCalculatorState();
+  assert.equal(state.anchorDate, "2026-08-30");
+  assert.equal(state.crewLimits[0].dutyDate, "2026-08-30");
+  assert.equal(h.sanitizeCalculatorState(state).crewLimits[0].dutyDate, "2026-08-30");
+});
+
+test("reset starts a blank shared limit on today's UTC date and restarts identifiers", () => {
+  const h = harness();
+  h.renderCrewLimitRecords([record(h, "flight", { dutyDate: "2026-08-30" }), record(h, "cabin")]);
+  h.activeFtlCrew = "cabin";
+  h.nextCrewNumbers.cabin = 8;
+  let timing;
+  h.applySectorTimingState = (value) => { timing = value; };
+  h.clearFtlCalculator();
+  assert.equal(h.crewLimitRecords.length, 1);
+  assert.equal(h.ftlCrewControls.flight.dutyDate.value, "2026-08-31");
+  assert.equal(h.ftlCrewControls.flight.dutyStart.value, "");
+  assert.equal(h.ftlCrewControls.flight.maxFdp.hours.value, "");
+  assert.equal(h.ftlAnchorDate, "2026-08-31");
+  assert.equal(h.nextCrewNumbers.cabin, 1);
+  assert.equal(h.nextCrewNumbers.flight, 2);
+  assert.equal(h.activeFdpTargetId, "flight");
+  assert.equal(timing.flightTime.hours, "");
+  assert.equal(timing.taxiOutMinutes, "15");
+});
+
+test("cancelling reset preserves explicit dates, limits and identifiers", () => {
+  const h = harness();
+  h.renderCrewLimitRecords([record(h, "flight", { dutyDate: "2026-08-30" }), record(h, "cabin")]);
+  h.window.confirm = () => false;
+  h.applySectorTimingState = () => assert.fail("Cancelled reset must not change timing inputs");
+  const before = JSON.stringify(h.serializeCalculatorState());
+  h.clearFtlCalculator();
+  assert.equal(JSON.stringify(h.serializeCalculatorState()), before);
+});
 
 test("the shared entry is labelled All crew and only split pilots get personal labels", () => {
   const h = harness();
@@ -127,7 +218,7 @@ test("old split-pilot saves migrate once and a deliberately cleared new name sta
   const h = harness();
   const crewLimits = [record(h, "flight"), record(h, "flight", { baseline: false })];
   const migrated = h.sanitizeCalculatorState({ schemaVersion: 3, crewLimits });
-  assert.equal(migrated.schemaVersion, 4);
+  assert.equal(migrated.schemaVersion, 5);
   assert.equal(migrated.crewLimits[0].name, "Ben Ashurst");
   migrated.crewLimits[0].name = "";
   assert.equal(h.sanitizeCalculatorState(migrated).crewLimits[0].name, "");
@@ -219,7 +310,7 @@ test("numbering includes the first pilot but never counts the cabin group as an 
   const cabin1 = record(h, "cabin", { baseline: false });
   const cabin2 = record(h, "cabin", { baseline: false });
   h.renderCrewLimitRecords([record(h, "flight"), pilot2, pilot3, record(h, "cabin"), cabin1, cabin2]);
-  const labels = h.crewLimitRecords.map((item) => h.crewLimitDisplayLabel(h.ftlCrewControls[item.id]));
+  const labels = Array.from(h.crewLimitRecords, (item) => h.crewLimitDisplayLabel(h.ftlCrewControls[item.id]));
   assert.deepEqual(labels, ["Flight crew 1", "Flight crew 2", "Flight crew 3", "Cabin crew group", "Cabin crew 1", "Cabin crew 2"]);
   const restored = h.sanitizeCalculatorState(JSON.parse(JSON.stringify(h.serializeCalculatorState())));
   h.renderCrewLimitRecords(restored.crewLimits);
@@ -266,6 +357,6 @@ test("comparison is role-first, highlights only used discretion and omits redund
   assert.equal(h.elements.crewResultRows.children[2].children[0].children.length, 1);
   h.ftlCrewControls[individual.id].maxFdp.hours.value = "";
   h.updateCrewComparison(compare());
-  assert.equal(h.elements.crewComparisonStatus.textContent, "Complete: Cabin crew 1");
+  assert.equal(h.elements.crewComparisonStatus.textContent, "Cabin crew 1 incomplete");
   assert.equal(h.elements.crewComparisonStatus.classList.contains("hidden"), false);
 });

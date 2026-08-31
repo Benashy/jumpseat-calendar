@@ -34,17 +34,17 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-111" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-114" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-111" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-114" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-111" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-114" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -151,7 +151,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.61</small>
+            <small class="app-version">v2.62</small>
           </section>
 
         </section>
@@ -247,6 +247,7 @@
             <div class="ftl-result-card is-soft">
               <span>Latest pushback</span>
               <strong id="latestPushback">--:--Z</strong>
+              <small class="result-date hidden"></small>
               <small class="limit-note soft-limit">Soft limit</small>
               <small class="crew-limit-source hidden" id="pushbackCrewLimit"></small>
               <small id="latestPushbackCountdown">Set required inputs</small>
@@ -256,6 +257,7 @@
             <div class="ftl-result-card is-hard">
               <span>Latest takeoff</span>
               <strong id="latestTakeoff">--:--Z</strong>
+              <small class="result-date hidden"></small>
               <small class="limit-note hard-limit">Hard limit</small>
               <small class="crew-limit-source hidden" id="takeoffCrewLimit"></small>
               <small id="latestTakeoffCountdown">Set required inputs</small>
@@ -265,6 +267,7 @@
             <div class="ftl-result-card is-reference">
               <span>Latest on-chocks</span>
               <strong id="latestOnChocks">--:--Z</strong>
+              <small class="result-date hidden"></small>
               <small class="limit-note fdp-limit">FDP limit</small>
               <small class="crew-limit-source hidden" id="onChocksCrewLimit"></small>
               <small id="latestOnChocksCountdown">Set required inputs</small>
@@ -273,15 +276,15 @@
           </section>
 
           <button class="ftl-mobile-result-strip hidden" id="ftlMobileResultStrip" type="button" aria-label="View calculated latest times">
-            <span><small>Pushback</small><strong id="ftlMobilePushback">--:--Z</strong></span>
-            <span><small>Takeoff</small><strong id="ftlMobileTakeoff">--:--Z</strong></span>
-            <span><small>On-chocks</small><strong id="ftlMobileOnChocks">--:--Z</strong></span>
+            <span><small>Pushback</small><strong id="ftlMobilePushback">--:--Z</strong><small class="mobile-result-date"></small><small class="mobile-result-status"></small></span>
+            <span><small>Takeoff</small><strong id="ftlMobileTakeoff">--:--Z</strong><small class="mobile-result-date"></small><small class="mobile-result-status"></small></span>
+            <span><small>On-chocks</small><strong id="ftlMobileOnChocks">--:--Z</strong><small class="mobile-result-date"></small><small class="mobile-result-status"></small></span>
           </button>
 
           <section class="crew-results hidden" id="crewResults" aria-label="Crew limit comparison">
             <div class="crew-results-heading">
               <strong>Crew comparison</strong>
-              <small id="crewComparisonStatus">Complete all crew limits</small>
+              <small id="crewComparisonStatus">Crew limits incomplete</small>
             </div>
             <div class="crew-result-grid" role="table" aria-label="Calculated limits by crew member or group">
               <div class="crew-result-row crew-result-header" role="row">
@@ -584,7 +587,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.61</small>
+            <small class="app-version">v2.62</small>
           </section>
         </section>
 
@@ -638,7 +641,7 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.61</small>
+            <small class="app-version">v2.62</small>
           </section>
         </section>
 
@@ -779,7 +782,7 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.61</small>
+            <small class="app-version">v2.62</small>
           </section>
         </section>
 
@@ -875,7 +878,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.61</small>
+            <small class="app-version">v2.62</small>
           </section>
         </section>
 
@@ -982,7 +985,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.61</small>
+            <small class="app-version">v2.62</small>
           </section>
         </section>
       </main>
@@ -1026,6 +1029,7 @@
 
     <template id="crewLimitTemplate">
       <article class="crew-limit-card">
+        <h4 class="crew-limit-heading"></h4>
         <div class="crew-limit-identity hidden">
           <label class="crew-limit-name-field">
             <span>Name or identifier <small class="field-optional">Optional</small></span>
@@ -1041,12 +1045,18 @@
           </button>
         </div>
         <div class="duration-grid crew-limit-duration-grid">
-          <div class="duration-control required-duration native-time-control">
-            <span class="duration-label">Duty start time (Zulu)</span>
-            <span class="time-input-shell is-empty">
-              <input class="native-time-input crew-limit-duty-start" type="time" />
-              <span class="time-placeholder" aria-hidden="true">Select time</span>
-            </span>
+          <div class="duration-control required-duration crew-report-control">
+            <div class="crew-report-date-field">
+              <span class="duration-label">Report date (Zulu)</span>
+              <input class="crew-limit-duty-date" type="date" />
+            </div>
+            <div class="crew-report-time-field">
+              <span class="duration-label">Duty start (Zulu)</span>
+              <span class="time-input-shell is-empty">
+                <input class="native-time-input crew-limit-duty-start" type="time" />
+                <span class="time-placeholder" aria-hidden="true">Select time</span>
+              </span>
+            </div>
           </div>
           <div class="duration-control required-duration">
             <span class="duration-label">
@@ -1079,17 +1089,17 @@
       </article>
     </template>
 
-    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-111"></script>
-    <script src="./supabase-config.js?v=cloud-sync-111"></script>
-    <script src="./ltot-core.js?v=cloud-sync-111"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-111"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-111"></script>
-    <script src="./notoc-policy-store.js?v=cloud-sync-111"></script>
-    <script src="./notoc-core.js?v=cloud-sync-111"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-111"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-111"></script>
-    <script src="./data-portability.js?v=cloud-sync-111"></script>
-    <script src="./request-retention.js?v=cloud-sync-111"></script>
-    <script src="./app.js?v=cloud-sync-111"></script>
+    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-114"></script>
+    <script src="./supabase-config.js?v=cloud-sync-114"></script>
+    <script src="./ltot-core.js?v=cloud-sync-114"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-114"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-114"></script>
+    <script src="./notoc-policy-store.js?v=cloud-sync-114"></script>
+    <script src="./notoc-core.js?v=cloud-sync-114"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-114"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-114"></script>
+    <script src="./data-portability.js?v=cloud-sync-114"></script>
+    <script src="./request-retention.js?v=cloud-sync-114"></script>
+    <script src="./app.js?v=cloud-sync-114"></script>
   </body>
 </html>

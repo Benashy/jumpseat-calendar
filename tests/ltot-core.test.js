@@ -6,11 +6,75 @@ const {
   calculateCrewLtot,
   calculateLtot,
   countdownSeconds,
+  countdownPresentation,
+  dateForMinutes,
+  isIsoDate,
+  migrateReportDate,
+  utcTodayIso,
   formatZuluTime,
   resolveNearestUtcDateIso,
 } = require("../ltot-core");
 
 const hr = (hours) => hours * 60;
+
+test("late entry of a report uses its explicit date, never tomorrow's nearest time", () => {
+  const input = { anchorDate: "2026-08-31", crewLimits: [{ id: "flight", dutyDate: "2026-08-31", dutyStartMinutes: hr(5), maximumFdpMinutes: hr(13) }] };
+  const result = calculateCrewLimits(input).controllingResult;
+  for (const now of ["2026-08-31T17:00:00Z", "2026-08-31T18:01:00Z", "2026-09-01T00:01:00Z"]) {
+    assert.equal(absoluteTargetMs(input.anchorDate, result.latestOnChocksMinutes), Date.parse("2026-08-31T18:00:00Z"));
+    assert.equal(countdownSeconds(input.anchorDate, result.latestOnChocksMinutes, Date.parse(now)), (Date.parse("2026-08-31T18:00:00Z") - Date.parse(now)) / 1000);
+  }
+  assert.equal(countdownPresentation(input.anchorDate, result.latestOnChocksMinutes, Date.parse("2026-08-31T18:01:00Z")).text, "Exceeded by 1m 0s");
+});
+
+test("explicit dates handle report differences longer than twelve hours", () => {
+  const result = calculateCrewLimits({ anchorDate: "2026-08-31", anchorId: "flight", crewLimits: [
+    { id: "flight", dutyDate: "2026-08-31", dutyStartMinutes: hr(18) + 15, maximumFdpMinutes: hr(9) },
+    { id: "colleague", dutyDate: "2026-08-31", dutyStartMinutes: hr(6), maximumFdpMinutes: hr(13) },
+  ] });
+  assert.deepEqual(result.controllingIds, ["colleague"]);
+  assert.equal(result.controllingResult.latestOnChocksMinutes, hr(19));
+});
+
+test("explicit overnight dates retain the correct calendar day across a month boundary", () => {
+  const result = calculateCrewLimits({ anchorDate: "2026-08-31", crewLimits: [
+    { id: "flight", dutyDate: "2026-08-31", dutyStartMinutes: hr(23), maximumFdpMinutes: hr(9), discretionMinutes: 30 },
+    { id: "cabin", dutyDate: "2026-09-01", dutyStartMinutes: 15, maximumFdpMinutes: hr(9) },
+  ] });
+  assert.equal(result.controllingResult.latestOnChocksMinutes, hr(32) + 30);
+  assert.equal(dateForMinutes("2026-08-31", result.controllingResult.latestOnChocksMinutes), "2026-09-01");
+});
+
+test("an absent or invalid explicit date blocks the combined limit", () => {
+  for (const date of ["", "2026-02-30", undefined]) {
+    const result = calculateCrewLimits({ anchorDate: "2026-08-31", crewLimits: [
+      { id: "flight", dutyDate: date, dutyStartMinutes: hr(5), maximumFdpMinutes: hr(13) },
+    ] });
+    assert.equal(result.comparisonComplete, false);
+    assert.equal(result.controllingResult, null);
+  }
+  assert.equal(isIsoDate("2024-02-29"), true);
+  assert.equal(utcTodayIso(Date.parse("2026-08-31T23:55:00Z")), "2026-08-31");
+});
+
+test("legacy date migration preserves known day alignment without using the current clock", () => {
+  assert.equal(migrateReportDate("2026-08-31", 30, hr(23)), "2026-09-01");
+  assert.equal(migrateReportDate("2026-09-01", hr(23), 30), "2026-08-31");
+  assert.equal(migrateReportDate(null, hr(5), hr(5)), "");
+});
+
+test("countdown presentation shares warning, exceeded and expired states with conservative rounding", () => {
+  const target = hr(18);
+  const present = (time) => countdownPresentation("2026-08-31", target, Date.parse(time));
+  assert.equal(present("2026-08-31T17:29:59Z").state, "normal");
+  assert.equal(present("2026-08-31T17:30:00Z").state, "warning");
+  assert.equal(present("2026-08-31T18:00:00Z").text, "0s remaining");
+  assert.equal(present("2026-08-31T18:00:01Z").shortText, "Exceeded");
+  assert.equal(present("2026-08-31T15:45:01Z").text, "2h 14m remaining");
+  assert.equal(present("2026-08-31T19:00:01Z").text, "Exceeded by 1h 1m");
+  assert.equal(present("2026-09-01T06:00:01Z").shortText, "Expired");
+  assert.equal(countdownPresentation(null, target).state, "incomplete");
+});
 
 test("formats Zulu times with day rollover suffixes", () => {
   assert.equal(formatZuluTime(hr(8) + 15), "08:15Z");

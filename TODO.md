@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- Current visible app version: v2.61.
+- Current visible app version: v2.62.
 - The top navigation contains `Jumpseat`, `FDP & LTOT` and `Tools`. Tools opens a dedicated landing view for the Radio Altimeter Position Check and NOTOC, while Jumpseat retains contextual `Add request` and `Back to requests` actions.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
@@ -53,6 +53,7 @@
 - v2.59 fixes FDP-table selections so they update the active shared, Flight crew, Cabin crew or named individual limit. It also adds optional persistent named limits within either crew group, highlights the controlling limit more clearly in the comparison, and adds the OMA 7.6.1 different-reporting-times explanation under `FTL Clarifications`.
 - v2.60 places a Table shortcut beside each Maximum FDP input and adds direct crew selection above the FDP tables. Splitting Flight crew names the original entry Ben Ashurst, with an editable name and unchanged timings. Result cards and Telegram summaries identify the crew category and every jointly limiting name. New entries are capped at three Flight crew and six Cabin crew calculation rows, including the original entries; existing saved rows are never discarded to enforce these caps. Named limits and table targeting have automated regression coverage and responsive iPhone/iPad checks.
 - v2.61 makes crew names optional without relaxing required timing inputs. Split pilots are labelled Flight crew 1, 2 and 3; the unnumbered Cabin crew group is separate from Cabin crew 1 onwards. The comparison is role-first with names underneath, active discretion is red, and the redundant controlling-crew sentence is removed. The Maximum FDP label itself now opens the table. Long names wrap without page overflow, while crew caps, saved data and FDP calculation rules are unchanged.
+- v2.62 adds an explicit Zulu report date for every crew limit and dates on the result cards, replacing nearest-day guesses for current calculations. Saved dates are migrated without consulting the current clock. Crew numbers remain stable after deletion and reload. Table 2/3 keep the selected recipient and horizontally aligned sector headings visible while scrolling. iPhone deadline summaries retain warning/expired status in both themes, unused LTOT cards are compact during FDP-only use, countdowns are shorter, joint-limit labels are condensed, and the limiting badge has stronger contrast. iPad landscape keeps report date/time alongside FDP and discretion, with a roomier portrait layout.
 - Latest on-chocks includes a live countdown and Commander’s discretion note when discretion is used.
 - Midnight rollover has been tested, including latest takeoff and latest on-chocks showing the next Zulu day with `+1`.
 - Telegram reminder database tables and Edge Function have been added for fixed 75-minute jumpseat reminders.
@@ -102,4 +103,4 @@
 - BA form status: optionally add a single `BA form submitted` status per flight, shown discreetly in green on the flight card.
 - Telegram behaviour: if BA form status is added, decide whether a completed flight should suppress the 75-minute reminder or receive a brief confirmation instead.
 - LTOT scope: retain one agreed calculation snapshot without revision history unless operational experience demonstrates a genuine need for multiple revisions.
-- Multi-crew date scope: clock-only report times currently use nearest-day alignment and assume all final-sector crew reports are no more than 12 hours apart. Add explicit dates before extending this workflow to long-haul patterns outside that assumption.
+- Long-haul scope: explicit report dates are now implemented. Long-haul-specific FTL rules, augmented crews and acclimatisation automation remain outside the current short-haul calculator.

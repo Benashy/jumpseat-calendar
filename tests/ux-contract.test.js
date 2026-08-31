@@ -48,7 +48,7 @@ test("optional named crew limits are addable, removable, saved and compared", ()
   assert.match(index, /id="addIndividualCrewButton"/);
   assert.match(index, /class="crew-limit-name"/);
   assert.match(index, /class="icon-button crew-limit-remove"/);
-  assert.match(app, /const CALCULATOR_SCHEMA_VERSION = 4;/);
+  assert.match(app, /const CALCULATOR_SCHEMA_VERSION = 5;/);
   assert.match(app, /baseline: record\.baseline !== false/);
   assert.match(app, /name: crewLimitName\(control\)/);
   assert.match(app, /function addIndividualCrewLimit\(\)/);
@@ -80,7 +80,28 @@ test("crew names are optional and active discretion has a distinct red treatment
 });
 
 test("renaming the original pilot cannot reset the calculation's saved duty date", () => {
-  assert.match(app, /if \(record\.id === "flight" && event\.currentTarget === dutyStart\)\s*\{\s*ftlAnchorDate =/);
+  assert.match(app, /if \(record\.id === "flight" && event\.currentTarget === dutyDate\)\s*\{\s*ftlAnchorDate =/);
+  assert.doesNotMatch(app, /resolveNearestUtcDateIso/);
+});
+
+test("FDP table context remains visible without losing the real accessible headings", () => {
+  assert.match(app, /toolbar\.className = "fdp-table-toolbar"/);
+  assert.match(app, /select\.addEventListener\("change", \(\) => setFdpReferenceTarget\(select\.value, true\)\)/);
+  assert.match(app, /headingsViewport\.setAttribute\("aria-hidden", "true"\)/);
+  assert.match(app, /headingsViewport\.scrollLeft = scroll\.scrollLeft/);
+  assert.match(styles, /\.fdp-table-toolbar\s*\{[^}]*position: sticky;/);
+  assert.match(styles, /\.fdp-table-toolbar\s*\{[^}]*top: calc\(var\(--ftl-nav-height/);
+  assert.match(styles, /\.fdp-column-headings span:first-child\s*\{[^}]*white-space: normal;/);
+  assert.match(styles, /\.fdp-reference-content\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\);/);
+  assert.match(styles, /\.fdp-reference-table\.fdp-value-table tbody th\s*\{[^}]*white-space: normal;/);
+});
+
+test("report dates are explicit and mobile deadline colours follow the selected theme", () => {
+  assert.match(index, /class="crew-limit-duty-date" type="date"/);
+  assert.match(index, /class="crew-limit-heading"/);
+  assert.match(styles, /\.crew-report-control input\s*\{[^}]*font-size: 16px;/);
+  assert.match(styles, /\.ftl-mobile-result-strip \[data-state="warning"\]\s*\{\s*background: var\(--amber-soft\);/);
+  assert.match(styles, /\.ftl-mobile-result-strip \[data-state="expired"\]\s*\{\s*background: var\(--warn-soft\);/);
 });
 
 test("the short-haul reporting-time clarification is available beside the FDP tables", () => {

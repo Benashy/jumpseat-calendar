@@ -25,7 +25,22 @@
 
   function isIsoDate(value) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))) return false;
-    return !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+    const time = Date.parse(`${value}T00:00:00Z`);
+    return Number.isFinite(time) && new Date(time).toISOString().slice(0, 10) === value;
+  }
+
+  function utcTodayIso(nowMs = Date.now()) {
+    return new Date(nowMs).toISOString().slice(0, 10);
+  }
+
+  function dateForMinutes(anchorDate, minutes) {
+    const time = absoluteTargetMs(anchorDate, minutes);
+    return time === null ? "" : new Date(time).toISOString().slice(0, 10);
+  }
+
+  function migrateReportDate(anchorDate, timeMinutes, referenceMinutes) {
+    if (!isIsoDate(anchorDate)) return "";
+    return dateForMinutes(anchorDate, alignToNearestOperationalDay(timeMinutes ?? 0, referenceMinutes));
   }
 
   function resolveNearestUtcDateIso(timeMinutes, nowMs = Date.now()) {
@@ -57,6 +72,22 @@
     const targetMs = absoluteTargetMs(anchorDateIso, targetMinutes);
     if (targetMs === null || !Number.isFinite(nowMs)) return null;
     return Math.floor((targetMs - nowMs) / 1000);
+  }
+
+  function countdownPresentation(anchorDate, targetMinutes, nowMs = Date.now(), staleSeconds = 12 * 60 * 60) {
+    const remaining = countdownSeconds(anchorDate, targetMinutes, nowMs);
+    if (remaining === null) return { state: "incomplete", text: "Set required inputs", shortText: "Not set" };
+    if (remaining < -staleSeconds) return { state: "expired", text: "Calculation expired", shortText: "Expired" };
+    const seconds = Math.abs(remaining);
+    const wholeMinutes = remaining < 0 ? Math.ceil(seconds / 60) : Math.floor(seconds / 60);
+    let duration = wholeMinutes >= 60 ? `${Math.floor(wholeMinutes / 60)}h ${wholeMinutes % 60}m` : `${wholeMinutes}m`;
+    if (seconds <= 300) duration = seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+    const state = remaining < 0 ? "overdue" : remaining <= 1800 ? "warning" : "normal";
+    return {
+      state,
+      text: remaining < 0 ? `Exceeded by ${duration}` : `${duration} remaining`,
+      shortText: remaining < 0 ? "Exceeded" : `${duration} left`,
+    };
   }
 
   function alignToNearestOperationalDay(value, reference) {
@@ -130,9 +161,16 @@
     const anchor = preferredAnchor || crewLimits.find((crewLimit) => isFiniteMinute(crewLimit.dutyStartMinutes));
     const anchorDutyStart = anchor?.dutyStartMinutes;
     const results = crewLimits.map((crewLimit) => {
-      const dutyStartMinutes = isFiniteMinute(anchorDutyStart) && isFiniteMinute(crewLimit.dutyStartMinutes)
-        ? alignToNearestOperationalDay(crewLimit.dutyStartMinutes, anchorDutyStart)
-        : crewLimit.dutyStartMinutes;
+      // Explicit dates take precedence. Legacy callers retain their original day alignment.
+      const usesDates = Object.hasOwn(input, "anchorDate");
+      let dutyStartMinutes = crewLimit.dutyStartMinutes;
+      if (usesDates) {
+        dutyStartMinutes = isIsoDate(input.anchorDate) && isIsoDate(crewLimit.dutyDate) && isFiniteMinute(dutyStartMinutes)
+          ? dutyStartMinutes + ((Date.parse(`${crewLimit.dutyDate}T00:00:00Z`) - Date.parse(`${input.anchorDate}T00:00:00Z`)) / MILLISECONDS_IN_MINUTE)
+          : null;
+      } else if (isFiniteMinute(anchorDutyStart) && isFiniteMinute(dutyStartMinutes)) {
+        dutyStartMinutes = alignToNearestOperationalDay(dutyStartMinutes, anchorDutyStart);
+      }
       const calculation = calculateLtot({
         ...sectorTiming,
         ...crewLimit,
@@ -206,7 +244,12 @@
     calculateCrewLtot,
     calculateLtot,
     countdownSeconds,
+    countdownPresentation,
     formatZuluTime,
+    isIsoDate,
+    utcTodayIso,
+    dateForMinutes,
+    migrateReportDate,
     resolveNearestUtcDateIso,
   };
 
