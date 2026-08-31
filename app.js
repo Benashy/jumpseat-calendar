@@ -2,7 +2,7 @@ const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
 const JUMPSEAT_DRAFT_KEY = "opsdeck-jumpseat-draft-v1";
 const JUMPSEAT_DRAFT_SCHEMA_VERSION = 1;
-const APP_VERSION = "2.60";
+const APP_VERSION = "2.61";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 4;
 const CREW_LIMIT_CAPS = { flight: 3, cabin: 6 };
@@ -1113,20 +1113,21 @@ function crewLimitIsNamed(control) {
   )));
 }
 
-function crewLimitShortLabel(control) {
+function crewLimitRoleLabel(control) {
   if (!control) return "Crew";
-  if (!crewLimitIsNamed(control)) return crewCategoryLabel(control.category);
-  const name = crewLimitName(control);
-  if (name) return name;
-  const position = crewLimitRecords.filter((record) => record.category === control.category).findIndex((record) => record.id === control.id) + 1;
-  return `Unnamed individual ${position}`;
+  if (isSharedCrewLimitMode() && control.id === "flight") return "All crew";
+  const group = crewLimitRecords.filter((record) => record.category === control.category);
+  if (!group.some((record) => record.baseline === false)) return crewCategoryLabel(control.category);
+  if (control.category === "cabin" && control.baseline !== false) return "Cabin crew group";
+  const individuals = control.category === "flight" ? group : group.filter((record) => record.baseline === false);
+  const position = individuals.findIndex((record) => record.id === control.id) + 1;
+  return `${crewCategoryLabel(control.category)} ${position}`;
 }
 
 function crewLimitDisplayLabel(control) {
-  if (!control) return "Crew";
-  if (isSharedCrewLimitMode() && control.id === "flight") return "All crew";
-  if (crewLimitIsNamed(control)) return `${crewCategoryLabel(control.category)}: ${crewLimitShortLabel(control)}`;
-  return crewCategoryLabel(control.category);
+  const role = crewLimitRoleLabel(control);
+  const name = crewLimitIsNamed(control) ? crewLimitName(control) : "";
+  return name ? `${role}: ${name}` : role;
 }
 
 function crewLimitTargetLabel(control) {
@@ -1160,7 +1161,6 @@ function createCrewLimitCard(record) {
   const isNamed = crewLimitIsNamed(record);
   const identity = card.querySelector(".crew-limit-identity");
   const nameInput = card.querySelector(".crew-limit-name");
-  const nameError = card.querySelector(".crew-limit-name-error");
   const removeButton = card.querySelector(".crew-limit-remove");
   const dutyStart = card.querySelector(".crew-limit-duty-start");
   const dutyStartShell = card.querySelector(".time-input-shell");
@@ -1183,7 +1183,7 @@ function createCrewLimitCard(record) {
     baseline: !isIndividual,
     name: record.name || "",
     nameInput,
-    nameError,
+    removeButton,
     label: title,
     card,
     dutyStart,
@@ -1201,10 +1201,6 @@ function createCrewLimitCard(record) {
   identity.classList.toggle("is-baseline", !isIndividual);
   removeButton.classList.toggle("hidden", !isIndividual);
   nameInput.value = record.name || "";
-  nameInput.required = isNamed;
-  nameInput.setAttribute("aria-label", `${title} ${isIndividual ? "individual" : "original"} name or identifier`);
-  removeButton.setAttribute("aria-label", `Remove ${title} individual limit`);
-  removeButton.title = `Remove ${title} individual limit`;
   dutyStart.value = record.dutyStart || "";
   dutyStart.setAttribute("aria-label", `${title} duty start time Zulu`);
 
@@ -1214,9 +1210,6 @@ function createCrewLimitCard(record) {
   discretion.minutes.setAttribute("aria-label", `${title} Commander's discretion minutes`);
   setupDurationControl(maxFdp);
   setupDurationControl(discretion);
-  [maxFdp.hours, maxFdp.minutes, discretion.hours, discretion.minutes].forEach((input) => {
-    input.addEventListener("change", () => updateIndividualCrewNameState(control));
-  });
   setDurationControl(maxFdp, record.maximumFdp?.hours ?? "", record.maximumFdp?.minutes ?? "");
   setDurationControl(discretion, record.discretion?.hours ?? "", record.discretion?.minutes ?? "");
   updateDurationIncompleteState(maxFdp);
@@ -1230,7 +1223,6 @@ function createCrewLimitCard(record) {
         ? window.OpsDeckLtot.resolveNearestUtcDateIso(getDutyStartMinutes("flight"))
         : null;
     }
-    updateIndividualCrewNameState(control);
     updateCrewLimitAccessibleLabels(control);
     updateFdpTargetBanner();
     calculateFtl();
@@ -1247,12 +1239,16 @@ function createCrewLimitCard(record) {
   lookupButton.addEventListener("click", () => openFdpReferenceFor(record.id));
   ftlCrewControls[record.id] = control;
   updateCrewLimitAccessibleLabels(control);
-  updateIndividualCrewNameState(control);
   return card;
 }
 
 function updateCrewLimitAccessibleLabels(control) {
   const label = crewLimitDisplayLabel(control);
+  const role = crewLimitRoleLabel(control);
+  control.nameInput.placeholder = role;
+  control.nameInput.setAttribute("aria-label", `${role} name or identifier (optional)`);
+  control.removeButton.setAttribute("aria-label", `Remove ${label} limit`);
+  control.removeButton.title = `Remove ${label} limit`;
   control.card.setAttribute("aria-label", `${label} FDP limit`);
   control.dutyStart.setAttribute("aria-label", `${label} duty start time Zulu`);
   control.maxFdp.hours.setAttribute("aria-label", `${label} Maximum FDP hours`);
@@ -1292,14 +1288,6 @@ function crewLimitHasOperationalData(control) {
     hasDurationValue(control.discretion) ||
     hasPartialDurationValue(control.discretion)
   );
-}
-
-function updateIndividualCrewNameState(control) {
-  if (!crewLimitIsNamed(control)) return;
-  const isMissing = crewLimitHasOperationalData(control) && !crewLimitName(control);
-  control.nameInput.classList.toggle("invalid", isMissing);
-  control.nameInput.setAttribute("aria-invalid", String(isMissing));
-  control.nameError.textContent = isMissing ? "Enter a name or identifier." : "";
 }
 
 function crewLimitHasData(control) {
@@ -1405,7 +1393,6 @@ function setMaximumFdpFromReference(value, rowLabel, columnLabel, tableLabel, re
     crew.selectedFdpReferenceKey = null;
     setDurationControl(crew.maxFdp, "", "");
     updateDurationIncompleteState(crew.maxFdp);
-    updateIndividualCrewNameState(crew);
     calculateFtl();
     if (document.activeElement?.classList?.contains("fdp-table-button")) {
       document.activeElement.blur();
@@ -1419,7 +1406,6 @@ function setMaximumFdpFromReference(value, rowLabel, columnLabel, tableLabel, re
   const { hours, minutes } = durationStringToParts(value);
   setDurationControl(crew.maxFdp, hours, minutes);
   updateDurationIncompleteState(crew.maxFdp);
-  updateIndividualCrewNameState(crew);
   calculateFtl();
 
   showFdpReferenceStatus(
@@ -1890,6 +1876,8 @@ function updateCrewComparison(comparison) {
   elements.crewResults.classList.toggle("hidden", !showComparison);
   elements.crewResults.setAttribute("aria-hidden", String(!showComparison));
   elements.crewResultRows.replaceChildren();
+  elements.crewComparisonStatus.textContent = "";
+  elements.crewComparisonStatus.classList.toggle("hidden", comparison.comparisonComplete);
   if (!showComparison) return;
 
   comparison.results.forEach((result) => {
@@ -1908,12 +1896,12 @@ function updateCrewComparison(comparison) {
     row.classList.toggle("is-limiting", isLimiting);
     name.className = "crew-result-name";
     name.setAttribute("role", "rowheader");
-    name.textContent = crewLimitShortLabel(control);
-    if (crewLimitIsNamed(control)) {
-      const category = document.createElement("small");
-      category.className = "crew-result-category";
-      category.textContent = crewCategoryLabel(control.category);
-      name.append(category);
+    name.textContent = crewLimitRoleLabel(control);
+    if (crewLimitIsNamed(control) && crewLimitName(control)) {
+      const person = document.createElement("small");
+      person.className = "crew-result-person";
+      person.textContent = crewLimitName(control);
+      name.append(person);
     }
     if (isLimiting) {
       const badge = document.createElement("small");
@@ -1933,6 +1921,7 @@ function updateCrewComparison(comparison) {
     discretion.textContent = result.discretionMinutes > 0
       ? `+ ${formatDurationWithZeroMinutes(result.discretionMinutes)} discretion`
       : "No discretion";
+    discretion.classList.toggle("crew-discretion-active", result.discretionMinutes > 0);
     allowable.append(allowableValue, discretion);
     onChocks.setAttribute("role", "cell");
     onChocks.dataset.label = "On-chocks";
@@ -1946,12 +1935,7 @@ function updateCrewComparison(comparison) {
     elements.crewComparisonStatus.textContent = incomplete.length === 1
       ? `Complete: ${crewLimitDisplayLabel(ftlCrewControls[incomplete[0].id])}`
       : `Complete ${incomplete.length} crew limits`;
-    return;
   }
-
-  elements.crewComparisonStatus.textContent = comparison.controllingIds.length > 1
-    ? "Equal earliest limits"
-    : `${crewLimitDisplayLabel(ftlCrewControls[comparison.controllingIds[0]])} controls`;
 }
 
 function resetFtlResults() {
@@ -1979,7 +1963,6 @@ function resetFinalSectorResults() {
 function buildCrewFtlInput(crewId) {
   const crew = ftlCrewControls[crewId];
   const name = crewLimitName(crew);
-  const hasRequiredName = !crewLimitIsNamed(crew) || Boolean(name);
   const hasDutyStart = hasDutyStartValue(crewId);
   const hasMaximumFdp = hasDurationValue(crew.maxFdp);
   const hasPartialDiscretion = hasPartialDurationValue(crew.discretion);
@@ -1989,7 +1972,7 @@ function buildCrewFtlInput(crewId) {
     category: crew.category,
     name,
     dutyStartMinutes: hasDutyStart ? getDutyStartMinutes(crewId) : null,
-    maximumFdpMinutes: hasRequiredName && hasMaximumFdp && !hasPartialDiscretion
+    maximumFdpMinutes: hasMaximumFdp && !hasPartialDiscretion
       ? getDurationMinutes(crew.maxFdp)
       : null,
     discretionMinutes: getDurationMinutes(crew.discretion),

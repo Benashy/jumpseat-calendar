@@ -58,14 +58,25 @@ test("optional named crew limits are addable, removable, saved and compared", ()
   assert.match(styles, /\.crew-limiting-badge/);
 });
 
-test("each Maximum FDP has a compact table shortcut and the table can change its target", () => {
+test("each Maximum FDP label is the table shortcut and the table can change its target", () => {
   assert.match(index, /<label for="fdpTargetSelect">Maximum FDP for<\/label>/);
   assert.match(index, /<select id="fdpTargetSelect"/);
-  assert.match(index, /<span>Maximum FDP<\/span>\s*<button class="text-button secondary fdp-lookup-button"/);
+  assert.match(index, /<button class="fdp-lookup-button" type="button">Maximum FDP<\/button>/);
+  assert.doesNotMatch(index, /text-button secondary fdp-lookup-button/);
   assert.doesNotMatch(index, /Select from FDP table/);
   assert.match(app, /setFdpReferenceTarget\(elements\.fdpTargetSelect\.value, true\)/);
   assert.match(styles, /#fdpTargetSelect\s*\{[^}]*font-size: 16px;/);
   assert.match(styles, /\.fdp-lookup-button\s*\{[^}]*min-height: 44px;/);
+  assert.match(styles, /\.fdp-lookup-button\s*\{[^}]*padding: 0;/);
+  assert.match(styles, /\.fdp-lookup-button\s*\{[^}]*background: none;/);
+});
+
+test("crew names are optional and active discretion has a distinct red treatment", () => {
+  assert.doesNotMatch(app, /nameInput\.required|hasRequiredName|updateIndividualCrewNameState/);
+  assert.doesNotMatch(index, /crew-limit-name-error/);
+  assert.match(styles, /\.crew-result-fdp \.crew-discretion-active\s*\{\s*color: var\(--warn\);/);
+  assert.match(styles, /\.crew-result-name \.crew-result-person\s*\{\s*color: var\(--muted\);/);
+  assert.match(styles, /\.crew-result-name\s*\{[^}]*overflow-wrap: anywhere;/);
 });
 
 test("renaming the original pilot cannot reset the calculation's saved duty date", () => {

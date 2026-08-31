@@ -606,10 +606,12 @@ input[type="time"],
 
 .ftl-results .result-discretion-note {
   color: var(--warn);
+  overflow-wrap: anywhere;
 }
 
 .ftl-results .crew-limit-source {
   color: var(--accent);
+  overflow-wrap: anywhere;
 }
 
 .crew-results {
@@ -638,6 +640,8 @@ input[type="time"],
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 850;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .crew-result-grid {
@@ -677,11 +681,13 @@ input[type="time"],
 }
 
 .crew-result-name {
-  color: var(--ink);
+  color: var(--navy);
   display: grid;
   font-size: 0.82rem;
   font-weight: 900;
   gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .crew-result-name small {
@@ -690,9 +696,13 @@ input[type="time"],
   font-weight: 900;
 }
 
-.crew-result-name .crew-result-category {
+.crew-result-name .crew-result-person {
   color: var(--muted);
   font-weight: 700;
+}
+
+.crew-result-row.is-limiting .crew-result-person {
+  color: color-mix(in srgb, var(--muted) 85%, var(--ink));
 }
 
 .crew-result-name .crew-limiting-badge {
@@ -722,6 +732,11 @@ input[type="time"],
   font-size: 0.75rem;
   font-weight: 800;
   line-height: 1.2;
+}
+
+.crew-result-fdp .crew-discretion-active {
+  color: var(--warn);
+  font-weight: 750;
 }
 
 .crew-result-row.is-limiting {
@@ -1583,14 +1598,16 @@ strong.fdp-state-x-label {
 }
 
 .fdp-lookup-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
+  appearance: none;
+  background: none;
+  border: 0;
+  border-radius: 3px;
+  color: inherit;
+  font: inherit;
   min-height: 44px;
-  padding: 0 8px;
-  margin-left: auto;
-  white-space: nowrap;
+  max-width: 100%;
+  padding: 0;
+  text-align: left;
 }
 
 .calculation-strip {
@@ -2387,17 +2404,6 @@ form label {
 
   .ftl-results strong {
     font-size: clamp(1.3rem, 3.2vw, 1.65rem);
-  }
-}
-
-@media (min-width: 701px) and (max-width: 1024px) {
-  .fdp-lookup-button {
-    width: 44px;
-    padding: 0;
-  }
-
-  .fdp-lookup-button > span {
-    display: none;
   }
 }
 
