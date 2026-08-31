@@ -2,7 +2,8 @@
 
 ## Current Status
 
-- Current visible app version: v2.64.
+- Current visible app version: v2.65.
+- v2.65 shortens the joint-limit result note to `Discretion: crew comparison.` so it fits the narrower iPad portrait cards without reducing text size. Discretion calculations and the OMA 7.6.1 reminder are unchanged.
 - The top navigation contains `Jumpseat`, `FDP & LTOT` and `Tools`. Tools opens a dedicated landing view for the Radio Altimeter Position Check and NOTOC, while Jumpseat retains contextual `Add request` and `Back to requests` actions.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.

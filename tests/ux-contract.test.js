@@ -80,6 +80,11 @@ test("crew names are optional and active discretion has a distinct red treatment
   assert.match(styles, /\.crew-result-name\s*\{[^}]*overflow-wrap: anywhere;/);
 });
 
+test("joint limiting results keep the discretion note concise", () => {
+  assert.match(app, /\? "Discretion: crew comparison\."/);
+  assert.doesNotMatch(app, /Commander's discretion included\. See crew comparison\./);
+});
+
 test("renaming the original pilot cannot reset the calculation's saved duty date", () => {
   assert.match(app, /if \(record\.id === "flight" && event\.currentTarget === dutyDate\)\s*\{\s*ftlAnchorDate =/);
   assert.doesNotMatch(app, /resolveNearestUtcDateIso/);

@@ -2,7 +2,7 @@ const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
 const JUMPSEAT_DRAFT_KEY = "opsdeck-jumpseat-draft-v1";
 const JUMPSEAT_DRAFT_SCHEMA_VERSION = 1;
-const APP_VERSION = "2.64";
+const APP_VERSION = "2.65";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 5;
 const CREW_LIMIT_CAPS = { flight: 3, cabin: 6 };
@@ -2174,7 +2174,7 @@ function calculateFtl(shouldPersist = true) {
   }
 
   const discretionText = comparison.controllingIds.length > 1 && comparison.controllingIds.some((id) => getCrewDiscretionMinutes(id) > 0)
-    ? "Commander's discretion included. See crew comparison."
+    ? "Discretion: crew comparison."
     : controllingDiscretionText(comparison.controllingIds);
   const latestOnChocks = controllingResult.latestOnChocksMinutes;
   elements.latestOnChocks.textContent = formatZuluTime(latestOnChocks);
