@@ -12,7 +12,7 @@ const functionNames = [
   "sanitizeCalculatorState", "isIsoDate", "crewCategoryLabel", "isSharedCrewLimitMode",
   "crewLimitName", "crewLimitIsNamed", "crewLimitRoleLabel", "crewLimitDisplayLabel",
   "crewLimitTargetLabel", "crewLimitStatusLabel", "controllingCrewSourceLabel",
-  "canAddIndividualCrewLimit", "addCabinCrew", "addIndividualCrewLimit", "removeIndividualCrewLimit",
+  "canAddIndividualCrewLimit", "addCabinCrew", "removeCabinCrew", "addIndividualCrewLimit", "removeIndividualCrewLimit",
   "setFdpReferenceTarget", "setMaximumFdpFromReference", "currentMaximumFdpTableValue",
   "durationStringToParts", "durationStringToMinutes", "hasDurationValue", "hasPartialDurationValue",
   "getDurationMinutes", "buildCrewFtlInput", "serializeCalculatorState", "renderFtlCrewMode",
@@ -40,6 +40,7 @@ function element() {
     append(...children) { this.children.push(...children); },
     replaceChildren(...children) { this.children = children; },
     getBoundingClientRect: () => ({ top: 100 }),
+    cloneNode() { return { ...element(), textContent: this.textContent, value: this.value }; },
   };
 }
 
@@ -258,6 +259,69 @@ test("collapsing input sections preserves every input and exposes its expanded s
     assert.equal(h.elements[`${section}InputsContent`].classList.contains("hidden"), false);
   }
   assert.equal(JSON.stringify(h.serializeCalculatorState()), before);
+});
+
+test("shared-limit confirmation identifies the retained baseline pilot, not the selected individual", () => {
+  const h = harness();
+  const flight = { ...record(h, "flight", { name: "Ben Ashurst" }), dutyStart: "08:45" };
+  const individual = { ...record(h, "flight", { baseline: false, name: "Test colleague" }), dutyStart: "06:00" };
+  let prompt = "";
+  h.window.confirm = (message) => { prompt = message; return false; };
+  h.renderCrewLimitRecords([flight, record(h, "cabin")]);
+  h.removeCabinCrew();
+  assert.match(prompt, /values entered for Flight crew\.$/);
+  h.renderCrewLimitRecords([flight, individual, record(h, "cabin")]);
+  h.activeFdpTargetId = individual.id;
+  const before = JSON.stringify(h.serializeCalculatorState());
+  h.removeCabinCrew();
+  assert.match(prompt, /values entered for Flight crew 1 \(Ben Ashurst\)\.$/);
+  assert.equal(JSON.stringify(h.serializeCalculatorState()), before);
+  h.window.confirm = () => true;
+  h.removeCabinCrew();
+  assert.equal(h.crewLimitRecords.length, 1);
+  assert.equal(h.ftlCrewControls.flight.dutyStart.value, "08:45");
+  assert.equal(h.activeFdpTargetId, "flight");
+  assert.equal(h.crewLimitRoleLabel(h.ftlCrewControls.flight), "All crew");
+});
+
+test("unnamed split pilots retain an unambiguous shared-limit confirmation", () => {
+  const h = harness();
+  h.renderCrewLimitRecords([record(h, "flight"), record(h, "flight", { baseline: false }), record(h, "cabin")]);
+  let prompt = "";
+  h.window.confirm = (message) => { prompt = message; return false; };
+  h.removeCabinCrew();
+  assert.match(prompt, /values entered for Flight crew 1\.$/);
+  assert.doesNotMatch(prompt, /\(\)/);
+});
+
+test("the FDP recipient is readable text in shared mode and selectable for every split limit", () => {
+  const h = harness();
+  const selects = [element(), element()];
+  const values = [element(), element(), element()];
+  h.elements.fdpTargetSelect = element();
+  h.document.querySelectorAll = (selector) => selector === ".fdp-table-target-select" ? selects : values;
+  vm.runInNewContext(appFunction("updateFdpTargetBanner"), h);
+  h.renderCrewLimitRecords([record(h, "flight")]);
+  h.updateFdpTargetBanner();
+  for (const select of [h.elements.fdpTargetSelect, ...selects]) {
+    assert.equal(select.disabled, true);
+    assert.equal(select.classList.contains("hidden"), true);
+  }
+  for (const value of values) {
+    assert.equal(value.textContent, "All crew");
+    assert.equal(value.classList.contains("hidden"), false);
+  }
+  const individual = record(h, "cabin", { baseline: false, name: "Test crew" });
+  h.renderCrewLimitRecords([record(h, "flight"), record(h, "cabin"), individual]);
+  h.activeFdpTargetId = individual.id;
+  h.updateFdpTargetBanner();
+  for (const select of [h.elements.fdpTargetSelect, ...selects]) {
+    assert.equal(select.disabled, false);
+    assert.equal(select.classList.contains("hidden"), false);
+    assert.equal(select.value, individual.id);
+    assert.equal(select.children.length, 3);
+  }
+  for (const value of values) assert.equal(value.classList.contains("hidden"), true);
 });
 
 test("the table confirmation returns to its recorded crew target and reopens the inputs", () => {

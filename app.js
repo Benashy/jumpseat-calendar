@@ -2,7 +2,7 @@ const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
 const JUMPSEAT_DRAFT_KEY = "opsdeck-jumpseat-draft-v1";
 const JUMPSEAT_DRAFT_SCHEMA_VERSION = 1;
-const APP_VERSION = "2.63";
+const APP_VERSION = "2.64";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 5;
 const CREW_LIMIT_CAPS = { flight: 3, cabin: 6 };
@@ -1382,19 +1382,22 @@ function updateFdpReferenceSelection() {
 
 function updateFdpTargetBanner() {
   if (!elements.fdpTargetSelect) return;
+  const shared = crewLimitRecords.length === 1;
   const options = crewLimitRecords.map((record) => {
     const option = document.createElement("option");
     option.value = record.id;
     option.textContent = crewLimitTargetLabel(ftlCrewControls[record.id]);
     return option;
   });
-  elements.fdpTargetSelect.replaceChildren(...options);
-  elements.fdpTargetSelect.value = activeFdpTargetId;
-  elements.fdpTargetSelect.disabled = crewLimitRecords.length === 1;
-  document.querySelectorAll(".fdp-table-target-select").forEach((select) => {
+  [elements.fdpTargetSelect, ...document.querySelectorAll(".fdp-table-target-select")].forEach((select) => {
     select.replaceChildren(...options.map((option) => option.cloneNode(true)));
     select.value = activeFdpTargetId;
-    select.disabled = crewLimitRecords.length === 1;
+    select.disabled = shared;
+    select.classList.toggle("hidden", shared);
+  });
+  document.querySelectorAll(".fdp-target-value").forEach((value) => {
+    value.textContent = crewLimitTargetLabel(ftlCrewControls[activeFdpTargetId]);
+    value.classList.toggle("hidden", !shared);
   });
 }
 
@@ -1580,7 +1583,7 @@ function renderFdpReferenceTable(container, rows, columns, firstColumnLabel, tab
 
   const toolbar = document.createElement("div");
   toolbar.className = "fdp-table-toolbar";
-  const target = document.createElement("label");
+  const target = document.createElement("div");
   target.className = "fdp-table-target";
   const caption = document.createElement("span");
   caption.textContent = "Maximum FDP for";
@@ -1588,7 +1591,9 @@ function renderFdpReferenceTable(container, rows, columns, firstColumnLabel, tab
   select.className = "fdp-table-target-select";
   select.setAttribute("aria-label", `${tableLabel} Maximum FDP for`);
   select.addEventListener("change", () => setFdpReferenceTarget(select.value, true));
-  target.append(caption, select);
+  const targetValue = document.createElement("strong");
+  targetValue.className = "fdp-target-value hidden";
+  target.append(caption, targetValue, select);
   const headingsViewport = document.createElement("div");
   headingsViewport.className = "fdp-column-viewport";
   headingsViewport.setAttribute("aria-hidden", "true");
@@ -2296,7 +2301,10 @@ function removeCabinCrew() {
     .filter((record) => record.id !== "flight")
     .map((record) => ftlCrewControls[record.id]);
   const hasSeparateData = separateControls.some(crewLimitHasData);
-  if (hasSeparateData && !window.confirm("Use shared crew limit? Separate and individual crew inputs will be removed, and the Flight crew values will be retained for all crew.")) return;
+  const retainedCrew = ftlCrewControls.flight;
+  const retainedName = crewLimitIsNamed(retainedCrew) ? crewLimitName(retainedCrew) : "";
+  const retainedLabel = `${crewLimitRoleLabel(retainedCrew)}${retainedName ? ` (${retainedName})` : ""}`;
+  if (hasSeparateData && !window.confirm(`Use shared crew limit? Separate and individual crew inputs will be removed. All crew will use the values entered for ${retainedLabel}.`)) return;
   state.crewLimits = state.crewLimits.filter((record) => record.id === "flight");
   activeFtlCrew = "flight";
   activeFdpTargetId = "flight";

@@ -59,7 +59,8 @@ test("optional named crew limits are addable, removable, saved and compared", ()
 });
 
 test("each Maximum FDP label is the table shortcut and the table can change its target", () => {
-  assert.match(index, /<label for="fdpTargetSelect">Maximum FDP for<\/label>/);
+  assert.match(index, /<span>Maximum FDP for<\/span>/);
+  assert.match(index, /<strong class="fdp-target-value hidden">All crew<\/strong>/);
   assert.match(index, /<select id="fdpTargetSelect"/);
   assert.match(index, /<button class="fdp-lookup-button" type="button">Maximum FDP<\/button>/);
   assert.doesNotMatch(index, /text-button secondary fdp-lookup-button/);
@@ -105,10 +106,21 @@ test("report dates are explicit and mobile deadline colours follow the selected 
 });
 
 test("the short-haul reporting-time clarification is available beside the FDP tables", () => {
-  assert.match(index, /<summary>FTL Clarifications<\/summary>/);
+  assert.match(index, /<summary class="ftl-disclosure">FTL Clarifications<\/summary>/);
   assert.match(index, /<h3 id="reportingTimeClarification" tabindex="-1">OMA 7\.6\.1 - Different reporting times<\/h3>/);
   assert.match(index, /calculate the FDP limit using the Flight crew report time/);
   assert.match(index, /giving Cabin crew the same latest end time as Flight crew/);
+});
+
+test("FDP disclosures share one marker and the small OMA badge keeps a comfortable touch target", () => {
+  assert.equal((index.match(/class="(?:ftl-section-toggle )?ftl-disclosure"/g) || []).length, 5);
+  assert.match(styles, /summary\.ftl-disclosure::-webkit-details-marker\s*\{\s*display: none;/);
+  assert.match(styles, /\.ftl-disclosure\[aria-expanded="true"\]::before,\s*details\[open\] > \.ftl-disclosure::before/);
+  assert.match(index, /<small class="limit-note reporting-time-label">OMA 7\.6\.1<\/small>/);
+  assert.match(styles, /\.reporting-time-reminder\s*\{[^}]*background: none;[^}]*min-height: 44px;/);
+  const confirmation = index.match(/<button class="fdp-reference-return"[^]*?<\/button>/)?.[0];
+  assert.ok(confirmation);
+  assert.doesNotMatch(confirmation, /<svg/);
 });
 
 test("the reporting-time reminder and input disclosure controls have accessible destinations", () => {

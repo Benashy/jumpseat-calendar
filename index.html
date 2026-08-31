@@ -34,17 +34,17 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-115" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-116" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-115" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-116" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-115" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-116" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -151,7 +151,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.63</small>
+            <small class="app-version">v2.64</small>
           </section>
 
         </section>
@@ -270,7 +270,7 @@
               <small class="result-date hidden"></small>
               <div class="ftl-limit-badges">
                 <small class="limit-note fdp-limit">FDP limit</small>
-                <button class="reporting-time-reminder hidden" id="reportingTimeReminder" type="button" aria-label="Open OMA 7.6.1 reporting-time clarification" aria-controls="ftlClarifications" title="Review the earlier Cabin crew reporting allowance. Not applied automatically.">OMA 7.6.1</button>
+                <button class="reporting-time-reminder hidden" id="reportingTimeReminder" type="button" aria-label="Open OMA 7.6.1 reporting-time clarification" aria-controls="ftlClarifications" title="Review the earlier Cabin crew reporting allowance. Not applied automatically."><small class="limit-note reporting-time-label">OMA 7.6.1</small></button>
               </div>
               <small class="crew-limit-source hidden" id="onChocksCrewLimit"></small>
               <small id="latestOnChocksCountdown">Set required inputs</small>
@@ -303,7 +303,7 @@
           <form class="ftl-form" id="ftlForm">
             <section class="duration-section" aria-label="FDP limit">
               <div class="duration-section-heading">
-                <h3><button class="ftl-section-toggle" id="fdpInputsToggle" type="button" aria-expanded="true" aria-controls="fdpInputsContent">FDP limit</button></h3>
+                <h3><button class="ftl-section-toggle ftl-disclosure" id="fdpInputsToggle" type="button" aria-expanded="true" aria-controls="fdpInputsContent">FDP limit</button></h3>
                 <button class="text-button secondary compact-button" id="addCabinCrewButton" type="button" aria-expanded="false">Separate crew limits</button>
               </div>
 
@@ -333,7 +333,7 @@
             </section>
 
             <section class="duration-section" aria-label="Planned sector timings">
-              <h3><button class="ftl-section-toggle" id="sectorInputsToggle" type="button" aria-expanded="true" aria-controls="sectorInputsContent">Final sector timing</button></h3>
+              <h3><button class="ftl-section-toggle ftl-disclosure" id="sectorInputsToggle" type="button" aria-expanded="true" aria-controls="sectorInputsContent">Final sector timing</button></h3>
               <div class="ftl-input-content" id="sectorInputsContent">
               <div class="duration-grid sector-duration-grid">
                 <div class="duration-control required-duration">
@@ -385,10 +385,11 @@
           <p class="ftl-telegram-status hidden" id="ftlTelegramStatus" aria-live="polite"></p>
 
           <details class="guidance-panel fdp-reference-panel" id="fdpReferencePanel">
-            <summary>FDP Tables</summary>
+            <summary class="ftl-disclosure">FDP Tables</summary>
             <div class="guidance-content fdp-reference-content">
               <div class="fdp-target-banner" id="fdpTargetBanner">
-                <label for="fdpTargetSelect">Maximum FDP for</label>
+                <span>Maximum FDP for</span>
+                <strong class="fdp-target-value hidden">All crew</strong>
                 <select id="fdpTargetSelect" aria-label="Maximum FDP for"><option value="flight">All crew</option></select>
               </div>
               <section>
@@ -517,7 +518,6 @@
               <div class="fdp-reference-status hidden" id="fdpReferenceStatus" role="status" aria-live="polite">
                 <button class="fdp-reference-return" id="fdpReferenceReturnButton" type="button">
                   <span id="fdpReferenceMessage"></span>
-                  <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 7-7 7 7M12 5v14" /></svg>
                 </button>
               </div>
             </div>
@@ -553,7 +553,7 @@
           </div>
 
           <details class="guidance-panel" id="ftlClarifications">
-            <summary>FTL Clarifications</summary>
+            <summary class="ftl-disclosure">FTL Clarifications</summary>
             <div class="guidance-content">
               <section>
                 <h3 id="reportingTimeClarification" tabindex="-1">OMA 7.6.1 - Different reporting times</h3>
@@ -563,7 +563,7 @@
           </details>
 
           <details class="guidance-panel">
-            <summary>LTOT Guidance</summary>
+            <summary class="ftl-disclosure">LTOT Guidance</summary>
             <div class="guidance-content">
               <section>
                 <h3>OMA 7.11.1</h3>
@@ -599,7 +599,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.63</small>
+            <small class="app-version">v2.64</small>
           </section>
         </section>
 
@@ -653,7 +653,7 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.63</small>
+            <small class="app-version">v2.64</small>
           </section>
         </section>
 
@@ -794,7 +794,7 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.63</small>
+            <small class="app-version">v2.64</small>
           </section>
         </section>
 
@@ -890,7 +890,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.63</small>
+            <small class="app-version">v2.64</small>
           </section>
         </section>
 
@@ -997,7 +997,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.63</small>
+            <small class="app-version">v2.64</small>
           </section>
         </section>
       </main>
@@ -1101,17 +1101,17 @@
       </article>
     </template>
 
-    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-115"></script>
-    <script src="./supabase-config.js?v=cloud-sync-115"></script>
-    <script src="./ltot-core.js?v=cloud-sync-115"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-115"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-115"></script>
-    <script src="./notoc-policy-store.js?v=cloud-sync-115"></script>
-    <script src="./notoc-core.js?v=cloud-sync-115"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-115"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-115"></script>
-    <script src="./data-portability.js?v=cloud-sync-115"></script>
-    <script src="./request-retention.js?v=cloud-sync-115"></script>
-    <script src="./app.js?v=cloud-sync-115"></script>
+    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-116"></script>
+    <script src="./supabase-config.js?v=cloud-sync-116"></script>
+    <script src="./ltot-core.js?v=cloud-sync-116"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-116"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-116"></script>
+    <script src="./notoc-policy-store.js?v=cloud-sync-116"></script>
+    <script src="./notoc-core.js?v=cloud-sync-116"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-116"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-116"></script>
+    <script src="./data-portability.js?v=cloud-sync-116"></script>
+    <script src="./request-retention.js?v=cloud-sync-116"></script>
+    <script src="./app.js?v=cloud-sync-116"></script>
   </body>
 </html>
