@@ -3429,12 +3429,13 @@ html[data-theme="night"] input[type="time"] {
   }
 }
 
-/* Radio Altimeter and NOTOC tools */
+/* Companion tools */
 .tool-menu {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .checks-panel,
+.gps-panel,
 .ra-panel,
 .notoc-panel {
   border: 1px solid var(--line);
@@ -3452,6 +3453,259 @@ html[data-theme="night"] input[type="time"] {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+/* Private GPS checklist: one continuous, readable procedure column. */
+.gps-heading {
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.gps-heading .tool-title-row {
+  min-width: 0;
+}
+
+.gps-heading h2 {
+  margin-bottom: 6px;
+}
+
+.gps-new-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 44px;
+}
+
+.gps-revision,
+.gps-status,
+.gps-introduction,
+.gps-references {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.gps-revision {
+  color: var(--muted);
+  margin: 0 0 14px;
+}
+
+.gps-introduction {
+  margin-bottom: 16px;
+}
+
+.gps-introduction p {
+  margin: 7px 0;
+}
+
+.gps-status.status-warning {
+  color: var(--amber-ink);
+  border-left: 3px solid var(--gold);
+  padding-left: 10px;
+}
+
+.gps-session-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-block: 10px;
+  border-block: 1px solid var(--line);
+}
+
+.gps-session-bar p {
+  color: var(--accent);
+  font-size: 0.875rem;
+  font-weight: 650;
+  margin: 0;
+}
+
+.gps-session-bar button {
+  flex-shrink: 0;
+  min-height: 44px;
+}
+
+.gps-disclosure {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  list-style: none;
+  min-height: 48px;
+  padding: 12px;
+  color: var(--accent);
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.gps-disclosure::-webkit-details-marker { display: none; }
+
+.gps-disclosure::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  margin-right: 3px;
+}
+
+details[open] > .gps-disclosure::before { transform: rotate(45deg); }
+
+.gps-disclosure:focus-visible,
+.gps-check-row:has(input:focus-visible),
+.gps-section-choice:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.gps-section-options {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0;
+}
+
+.gps-section-options[open] { padding-bottom: 14px; }
+
+.gps-section-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 20px;
+  margin: 0 12px 12px;
+}
+
+.gps-section-choice {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: start;
+  gap: 4px 10px;
+  padding: 10px 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.gps-section-choice small {
+  grid-column: 2;
+  color: var(--muted);
+}
+
+.gps-checklist-content {
+  margin-top: 16px;
+}
+
+.gps-section {
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.gps-section > .gps-disclosure {
+  background: var(--blue-soft);
+  border-block: 1px solid var(--line);
+}
+
+.gps-disclosure h3 {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+
+.gps-section-count {
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  min-width: 32px;
+  text-align: right;
+}
+
+.gps-section.gps-is-hidden { margin-bottom: 8px; }
+.gps-section.gps-is-hidden > .gps-disclosure { background: var(--panel-soft); color: var(--muted); }
+.gps-section.gps-is-hidden .gps-section-count { color: var(--accent); }
+.gps-source-context { border-top: 1px solid var(--line); }
+.gps-section-body .gps-bullet { display: list-item; margin-left: 56px; }
+
+.gps-section-body { padding: 8px 12px 14px; }
+
+.gps-check-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  min-height: 48px;
+  padding: 12px 8px;
+  margin: 2px -8px;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 450;
+  line-height: 1.5;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.gps-check-copy { overflow-wrap: anywhere; }
+
+.gps-check-row.is-checked { background: var(--good-soft); }
+
+.gps-panel .gps-check-row input,
+.gps-panel .gps-section-choice input {
+  appearance: auto;
+  -webkit-appearance: auto;
+  accent-color: var(--accent);
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  padding: 0;
+  margin: 1px 0 0;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.gps-section-body p {
+  margin: 8px 0 8px 36px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.gps-section-body .gps-condition,
+.gps-section-body .gps-heading {
+  margin: 16px 0 6px;
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: var(--accent);
+}
+
+.gps-check-row.gps-indented { margin-left: 22px; }
+.gps-section-body p.gps-indented { margin-left: 66px; }
+.gps-system-label { text-decoration: underline; text-underline-offset: 3px; }
+.gps-personal-technique { border-left: 2px solid var(--gold); padding-left: 12px; }
+.gps-references { border-top: 1px solid var(--line); }
+.gps-references p { margin: 4px 12px 12px; color: var(--muted); }
+
+@media (min-width: 1050px) {
+  .checks-action-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  .gps-heading { align-items: flex-start; flex-wrap: wrap; }
+  .gps-heading h2 { font-size: 1.15rem; }
+  .gps-new-button { margin-left: 0; }
+  .gps-section-choices { grid-template-columns: 1fr; }
+  .gps-section-body { padding-inline: 8px; }
+  .gps-check-row { gap: 10px; }
+  .gps-check-row.gps-indented { margin-left: 12px; }
+  .gps-section-body p { margin-left: 34px; }
+  .gps-section-body p.gps-indented { margin-left: 48px; }
+  .gps-disclosure { padding-inline: 10px; }
+  .gps-disclosure h3 { font-size: 0.9375rem; }
 }
 
 .checks-action-card {
@@ -4978,6 +5232,7 @@ html[data-theme="night"] input[type="time"] {
   }
 
   .checks-panel,
+  .gps-panel,
   .ra-panel,
   .notoc-panel {
     padding: 14px;

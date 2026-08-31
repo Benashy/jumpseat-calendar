@@ -2,9 +2,10 @@
 
 ## Current Status
 
-- Current visible app version: v2.65.
+- Current visible app version: v2.66.
+- v2.66 adds the private GPS interference checklist under Tools, retaining the source draft's wording and Under test status. Ticks are manual, reversible and saved on the current device. Related sections stay linked; hidden sections retain a visible Show control and are not counted as checked. Reset is confirmed, and revised source wording cannot silently replace an active checklist. Source content is owner-only in Supabase and cached after sign-in, never bundled in public assets.
 - v2.65 shortens the joint-limit result note to `Discretion: crew comparison.` so it fits the narrower iPad portrait cards without reducing text size. Discretion calculations and the OMA 7.6.1 reminder are unchanged.
-- The top navigation contains `Jumpseat`, `FDP & LTOT` and `Tools`. Tools opens a dedicated landing view for the Radio Altimeter Position Check and NOTOC, while Jumpseat retains contextual `Add request` and `Back to requests` actions.
+- The top navigation contains `Jumpseat`, `FDP & LTOT` and `Tools`. Tools opens a dedicated landing view for the Radio Altimeter Position Check, NOTOC and GPS interference procedures, while Jumpseat retains contextual `Add request` and `Back to requests` actions.
 - Empty Jumpseat days use a compact message, with the persistent `Add request` action held in the day summary.
 - LTOT detailed missing-input/status banner was removed again in v2.13 to keep the calculator visually lighter; result cards use the simpler required-input wording.
 - LTOT calculation logic has been extracted into a shared helper with automated tests for rollover, standalone on-chocks, discretion, contingency, and missing FDP input.
@@ -67,6 +68,8 @@
 - The current day-to-day workflow is considered well optimised; further functional additions should be driven by operational use rather than added speculatively.
 
 ## Next Priorities
+
+- GPS checklist: review the new manual workflow on the physical iPad, including cached offline use, section choices and New checklist between flights. Progress is deliberately device-local, not synchronised between iPad and iPhone. Keep Under test until the wording and workflow have been reviewed in context; aircraft applicability and current Company NOTAMs are not inferred by the app.
 
 - Radio Altimeter release gate: independently verify the ten specified manual references, confirm the current OMA cold-weather trigger, compare the complete validation matrix with the BA Cold Weather Calculator, and obtain pilot/OMC review before removing the development label.
 - NOTOC release gate: verify the 47 documented code entries whose NOTOC expectation is not yet confirmed, complete Dangerous Goods/SME review, and repeat operational offline/device testing before removing the development label.
