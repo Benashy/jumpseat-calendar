@@ -2,7 +2,7 @@ const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
 const JUMPSEAT_DRAFT_KEY = "opsdeck-jumpseat-draft-v1";
 const JUMPSEAT_DRAFT_SCHEMA_VERSION = 1;
-const APP_VERSION = "2.70";
+const APP_VERSION = "2.71";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 5;
 const CREW_LIMIT_CAPS = { flight: 3, cabin: 6 };
@@ -38,6 +38,7 @@ const elements = {
   raSyncStatus: document.querySelector("#raSyncStatus"),
   notocSyncStatus: document.querySelector("#notocSyncStatus"),
   gpsSyncStatus: document.querySelector("#gpsSyncStatus"),
+  lvtoSyncStatus: document.querySelector("#lvtoSyncStatus"),
   notocPolicyStatus: document.querySelector("#notocPolicyStatus"),
   settingsSyncStatus: document.querySelector("#settingsSyncStatus"),
   offlineBanner: document.querySelector("#offlineBanner"),
@@ -47,6 +48,7 @@ const elements = {
   raAccountPanel: document.querySelector("#raAccountPanel"),
   notocAccountPanel: document.querySelector("#notocAccountPanel"),
   gpsAccountPanel: document.querySelector("#gpsAccountPanel"),
+  lvtoAccountPanel: document.querySelector("#lvtoAccountPanel"),
   settingsAccountPanel: document.querySelector("#settingsAccountPanel"),
   magicLinkButton: document.querySelector("#magicLinkButton"),
   refreshCloudButton: document.querySelector("#refreshCloudButton"),
@@ -61,12 +63,14 @@ const elements = {
   raSettingsButton: document.querySelector("#raSettingsButton"),
   notocSettingsButton: document.querySelector("#notocSettingsButton"),
   gpsSettingsButton: document.querySelector("#gpsSettingsButton"),
+  lvtoSettingsButton: document.querySelector("#lvtoSettingsButton"),
   homeSignOutButton: document.querySelector("#homeSignOutButton"),
   ftlSignOutButton: document.querySelector("#ftlSignOutButton"),
   checksSignOutButton: document.querySelector("#checksSignOutButton"),
   raSignOutButton: document.querySelector("#raSignOutButton"),
   notocSignOutButton: document.querySelector("#notocSignOutButton"),
   gpsSignOutButton: document.querySelector("#gpsSignOutButton"),
+  lvtoSignOutButton: document.querySelector("#lvtoSignOutButton"),
   settingsSignOutButton: document.querySelector("#settingsSignOutButton"),
   toolMenu: document.querySelector(".tool-menu"),
   layout: document.querySelector(".layout"),
@@ -80,11 +84,14 @@ const elements = {
   raView: document.querySelector("#raView"),
   notocView: document.querySelector("#notocView"),
   gpsView: document.querySelector("#gpsView"),
+  lvtoView: document.querySelector("#lvtoView"),
   settingsView: document.querySelector("#settingsView"),
   openRaCheckButton: document.querySelector("#openRaCheckButton"),
   openNotocButton: document.querySelector("#openNotocButton"),
   openGpsButton: document.querySelector("#openGpsButton"),
+  openLvtoButton: document.querySelector("#openLvtoButton"),
   gpsBackToChecks: document.querySelector("#gpsBackToChecks"),
+  lvtoBackToChecks: document.querySelector("#lvtoBackToChecks"),
   raBackToChecks: document.querySelector("#raBackToChecks"),
   notocBackToChecks: document.querySelector("#notocBackToChecks"),
   openAddRequestButton: document.querySelector("#openAddRequestButton"),
@@ -532,6 +539,7 @@ function setSyncStatus(message, isError = false, isWarning = false) {
     elements.raSyncStatus,
     elements.notocSyncStatus,
     elements.gpsSyncStatus,
+    elements.lvtoSyncStatus,
     elements.settingsSyncStatus,
   ].forEach((statusElement) => {
     statusElement.textContent = message;
@@ -701,6 +709,7 @@ function startOfflineMode(message = "Offline: viewing saved data") {
   elements.raAccountPanel.classList.add("hidden");
   elements.notocAccountPanel.classList.add("hidden");
   elements.gpsAccountPanel.classList.add("hidden");
+  elements.lvtoAccountPanel.classList.add("hidden");
   elements.settingsAccountPanel.classList.add("hidden");
   setAppVisible(true);
   setOfflineReadOnly(true);
@@ -721,6 +730,12 @@ function setSignedInState(user) {
     if (error || !data) throw new Error("Checklist unavailable");
     return data;
   });
+  window.OpsDeckLvtoUi?.setContext(user?.id || null, async () => {
+    const { data, error } = await supabaseClient.from("opsdeck_lvto_checklist")
+      .select("checklist,content_sha256,updated_at").eq("user_id", user.id).maybeSingle();
+    if (error || !data) throw new Error("Checklist unavailable");
+    return data;
+  });
   if (!user || (previousUserId && previousUserId !== user.id)) resetNotocPolicy();
   elements.authForm.classList.toggle("hidden", Boolean(user));
   elements.authPanel.classList.toggle("hidden", Boolean(user));
@@ -730,6 +745,7 @@ function setSignedInState(user) {
   elements.raAccountPanel.classList.toggle("hidden", !user);
   elements.notocAccountPanel.classList.toggle("hidden", !user);
   elements.gpsAccountPanel.classList.toggle("hidden", !user);
+  elements.lvtoAccountPanel.classList.toggle("hidden", !user);
   elements.settingsAccountPanel.classList.toggle("hidden", !user);
   setAppVisible(Boolean(user));
 
@@ -757,6 +773,8 @@ function setSignedInState(user) {
 function setActiveTab(tabName) {
   elements.gpsView.classList.add("hidden");
   elements.gpsView.setAttribute("aria-hidden", "true");
+  elements.lvtoView.classList.add("hidden");
+  elements.lvtoView.setAttribute("aria-hidden", "true");
   const isHome = tabName === "home";
   elements.homeView.classList.toggle("hidden", !isHome);
   elements.addView.classList.toggle("hidden", isHome);
@@ -789,9 +807,12 @@ function setActiveTool(toolName) {
   const isRa = toolName === "ra";
   const isNotoc = toolName === "notoc";
   const isGps = toolName === "gps";
-  const isChecksSection = isChecks || isRa || isNotoc || isGps;
+  const isLvto = toolName === "lvto";
+  const isChecksSection = isChecks || isRa || isNotoc || isGps || isLvto;
   elements.gpsView.classList.toggle("hidden", !isGps);
   elements.gpsView.setAttribute("aria-hidden", String(!isGps));
+  elements.lvtoView.classList.toggle("hidden", !isLvto);
+  elements.lvtoView.setAttribute("aria-hidden", String(!isLvto));
 
   elements.homeView.classList.toggle("hidden", !isJumpseat);
   elements.addView.classList.add("hidden");
@@ -817,11 +838,14 @@ function setActiveTool(toolName) {
   if (isJumpseat) setActiveTab("home");
   if (isNotoc) document.dispatchEvent(new CustomEvent("opsdeck:notoc-open"));
   if (isGps) void window.OpsDeckGpsUi?.load();
+  if (isLvto) void window.OpsDeckLvtoUi?.load();
 }
 
 function openSettings() {
   elements.gpsView.classList.add("hidden");
   elements.gpsView.setAttribute("aria-hidden", "true");
+  elements.lvtoView.classList.add("hidden");
+  elements.lvtoView.setAttribute("aria-hidden", "true");
   elements.homeView.classList.add("hidden");
   elements.addView.classList.add("hidden");
   elements.ftlView.classList.add("hidden");
@@ -3724,6 +3748,7 @@ async function sendMagicLink() {
 
 async function signOut(message = "Sign in to load and save your OpsDeck data.") {
   window.OpsDeckGpsUi?.forget();
+  window.OpsDeckLvtoUi?.forget();
   setSyncStatus("Signing out...");
   manualSignOutInProgress = true;
 
@@ -3753,6 +3778,7 @@ async function refreshCloudData() {
   await loadCloudCalculatorState({ forceCloud: true });
   await loadNotocPolicy({ forceCloud: true });
   await window.OpsDeckGpsUi?.load({ force: true });
+  await window.OpsDeckLvtoUi?.load({ force: true });
 }
 
 function setTelegramStatus(message, isError = false, isSuccess = false, isWarning = false) {
@@ -3989,6 +4015,11 @@ async function initCloud() {
       if (!response.ok) throw new Error("Local preview data unavailable");
       return response.json();
     });
+    if (LOCAL_PREVIEW_VIEW === "lvto") window.OpsDeckLvtoUi?.setContext("local-preview", async () => {
+      const response = await fetch("./__lvto-checklist-preview.json", { cache: "no-store" });
+      if (!response.ok) throw new Error("Local preview data unavailable");
+      return response.json();
+    });
     elements.authPanel.classList.add("hidden");
     setAppVisible(true);
     return;
@@ -4084,9 +4115,14 @@ elements.checksToolTab.addEventListener("click", () => setActiveTool("checks"));
 elements.openRaCheckButton.addEventListener("click", () => setActiveTool("ra"));
 elements.openNotocButton.addEventListener("click", () => setActiveTool("notoc"));
 elements.openGpsButton.addEventListener("click", () => setActiveTool("gps"));
+elements.openLvtoButton.addEventListener("click", () => setActiveTool("lvto"));
 elements.gpsBackToChecks.addEventListener("click", () => {
   setActiveTool("checks");
   elements.openGpsButton.focus();
+});
+elements.lvtoBackToChecks.addEventListener("click", () => {
+  setActiveTool("checks");
+  elements.openLvtoButton.focus();
 });
 elements.raBackToChecks.addEventListener("click", () => {
   setActiveTool("checks");
@@ -4176,12 +4212,14 @@ elements.checksSettingsButton.addEventListener("click", openSettings);
 elements.raSettingsButton.addEventListener("click", openSettings);
 elements.notocSettingsButton.addEventListener("click", openSettings);
 elements.gpsSettingsButton.addEventListener("click", openSettings);
+elements.lvtoSettingsButton.addEventListener("click", openSettings);
 elements.homeSignOutButton.addEventListener("click", () => signOut());
 elements.ftlSignOutButton.addEventListener("click", () => signOut());
 elements.checksSignOutButton.addEventListener("click", () => signOut());
 elements.raSignOutButton.addEventListener("click", () => signOut());
 elements.notocSignOutButton.addEventListener("click", () => signOut());
 elements.gpsSignOutButton.addEventListener("click", () => signOut());
+elements.lvtoSignOutButton.addEventListener("click", () => signOut());
 elements.settingsSignOutButton.addEventListener("click", () => signOut());
 elements.generatePairingButton.addEventListener("click", startTelegramPairing);
 elements.checkPairingButton.addEventListener("click", checkTelegramPairing);
@@ -4213,7 +4251,7 @@ strengthenCredentialPaste(elements.authEmail);
 strengthenCredentialPaste(elements.authPassword);
 initCloud();
 if (LOCAL_PREVIEW_VIEW === "settings") openSettings();
-else if (["ftl", "checks", "ra", "notoc", "gps"].includes(LOCAL_PREVIEW_VIEW)) setActiveTool(LOCAL_PREVIEW_VIEW);
+else if (["ftl", "checks", "ra", "notoc", "gps", "lvto"].includes(LOCAL_PREVIEW_VIEW)) setActiveTool(LOCAL_PREVIEW_VIEW);
 
 if ("serviceWorker" in navigator && !IS_LOCAL_PREVIEW) {
   window.addEventListener("load", () => {

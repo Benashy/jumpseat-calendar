@@ -8,6 +8,7 @@ const [html, ...scripts] = await Promise.all([
   readFile(new URL("radio-altimeter-ui.js", root), "utf8"),
   readFile(new URL("notoc-ui.js", root), "utf8"),
   readFile(new URL("gps-checklist-ui.js", root), "utf8"),
+  readFile(new URL("lvto-checklist-ui.js", root), "utf8"),
 ]);
 
 const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]);

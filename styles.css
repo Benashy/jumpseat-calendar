@@ -1624,6 +1624,7 @@ strong.fdp-state-x-label {
 }
 
 .gps-disclosure,
+.lvto-disclosure,
 .ftl-panel .ftl-disclosure {
   display: flex;
   align-items: center;
@@ -1636,16 +1637,19 @@ strong.fdp-state-x-label {
 }
 
 summary.gps-disclosure,
+summary.lvto-disclosure,
 .ftl-panel summary.ftl-disclosure {
   list-style: none;
 }
 
 summary.gps-disclosure::marker,
+summary.lvto-disclosure::marker,
 .ftl-panel summary.ftl-disclosure::marker {
   content: "";
 }
 
 summary.gps-disclosure::-webkit-details-marker,
+summary.lvto-disclosure::-webkit-details-marker,
 .ftl-panel summary.ftl-disclosure::-webkit-details-marker {
   display: none;
 }
@@ -1662,6 +1666,7 @@ summary.gps-disclosure::-webkit-details-marker,
 }
 
 .gps-disclosure::before,
+.lvto-disclosure::before,
 .ftl-disclosure::before {
   content: "";
   border-top: 4px solid transparent;
@@ -1672,7 +1677,8 @@ summary.gps-disclosure::-webkit-details-marker,
 
 .ftl-disclosure[aria-expanded="true"]::before,
 details[open] > .ftl-disclosure::before,
-details[open] > .gps-disclosure::before {
+details[open] > .gps-disclosure::before,
+details[open] > .lvto-disclosure::before {
   transform: rotate(90deg);
 }
 
@@ -3499,6 +3505,7 @@ html[data-theme="night"] input[type="time"] {
 
 .checks-panel,
 .gps-panel,
+.lvto-panel,
 .ra-panel,
 .notoc-panel {
   border: 1px solid var(--line);
@@ -3516,6 +3523,20 @@ html[data-theme="night"] input[type="time"] {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.checks-action-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.checks-action-title-row .under-test-badge {
+  min-height: 20px;
+  padding: 4px 6px;
+  font-size: 0.58rem;
 }
 
 /* Private GPS checklist: one continuous, readable procedure column. */
@@ -3728,6 +3749,281 @@ html[data-theme="night"] input[type="time"] {
 .gps-system-label { text-decoration: underline; text-underline-offset: 3px; }
 .gps-personal-technique { border-left: 2px solid var(--gold); padding-left: 12px; }
 
+/* Private low-visibility take-off checklist. */
+.lvto-heading {
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.lvto-heading .tool-title-row { min-width: 0; }
+.lvto-heading h2 { margin-bottom: 6px; }
+
+.lvto-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.lvto-actions button,
+.lvto-new-button {
+  min-height: 44px;
+}
+
+.lvto-new-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.lvto-revision,
+.lvto-status {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.lvto-revision {
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+
+.lvto-status.status-warning {
+  border-left: 3px solid var(--gold);
+  color: var(--amber-ink);
+  padding-left: 10px;
+}
+
+.lvto-checklist-content {
+  width: min(100%, 1060px);
+  margin: 16px auto 0;
+}
+
+.lvto-section {
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lvto-disclosure {
+  cursor: pointer;
+  background: var(--blue-soft);
+  border-block: 1px solid var(--line);
+  color: var(--accent);
+}
+
+.lvto-disclosure h3 {
+  min-width: 0;
+  margin: 0;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.lvto-disclosure:focus-visible,
+.lvto-check-row:has(input:focus-visible),
+.lvto-field:has(input:focus-visible),
+.lvto-decision-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.lvto-section-body {
+  padding: 10px 12px 16px;
+}
+
+.lvto-check-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  min-height: 50px;
+  margin: 2px -8px;
+  border-radius: 4px;
+  padding: 12px 8px;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 450;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.lvto-check-row.is-checked { background: var(--good-soft); }
+.lvto-check-copy { overflow-wrap: anywhere; }
+
+.lvto-panel .lvto-check-row input {
+  appearance: auto;
+  -webkit-appearance: auto;
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  margin: 1px 0 0;
+  padding: 0;
+  border-radius: 3px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.lvto-entry-grid {
+  display: grid;
+  gap: 10px;
+  margin: 8px 0 14px;
+}
+
+.lvto-entry-grid[data-layout-group="minimum-values"],
+.lvto-entry-grid[data-layout-group="rvr-values"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lvto-entry-grid[data-layout-group="alternate-values"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lvto-field,
+.lvto-reference-value {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+  min-height: 78px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel-soft);
+  padding: 11px 12px;
+}
+
+.lvto-field-label,
+.lvto-reference-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 720;
+  line-height: 1.35;
+}
+
+.lvto-reference-value strong {
+  color: var(--navy);
+  font-size: 1.35rem;
+  font-weight: 780;
+  line-height: 1.2;
+}
+
+.lvto-field-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.lvto-field input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--ink);
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 16px;
+}
+
+.lvto-field-unit {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 720;
+}
+
+.lvto-decision {
+  display: grid;
+  gap: 10px;
+  margin: 4px 0 14px;
+  border: 0;
+  padding: 8px 0 2px;
+}
+
+.lvto-decision-question {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.lvto-decision-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(100px, 160px));
+  gap: 6px;
+}
+
+.lvto-decision-button {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 720;
+}
+
+.lvto-decision-button.is-selected {
+  border-color: var(--accent);
+  background: var(--active-surface);
+  color: #fff;
+  box-shadow: inset 0 -2px 0 var(--nav-silver);
+}
+
+.lvto-item-heading,
+.lvto-note {
+  overflow-wrap: anywhere;
+}
+
+.lvto-section-body > .lvto-item-heading {
+  margin: 16px 0 7px;
+  color: var(--accent);
+  font-size: 0.93rem;
+  font-weight: 760;
+  line-height: 1.4;
+}
+
+.lvto-note {
+  margin: 8px 0;
+  color: var(--ink);
+  font-size: 0.94rem;
+  line-height: 1.5;
+}
+
+.lvto-note[data-tone="reference"] {
+  border-left: 3px solid var(--nav-silver);
+  background: var(--panel-soft);
+  padding: 10px 12px;
+}
+
+.lvto-note[data-tone="technique"] {
+  border-left: 3px solid var(--gold);
+  background: var(--amber-soft);
+  padding: 10px 12px;
+}
+
+.lvto-conditional {
+  margin-left: 14px;
+}
+
+.lvto-entry-grid > .lvto-conditional {
+  margin-left: 0;
+}
+
+.lvto-conditional:not(.hidden) {
+  border-left-color: var(--nav-silver);
+}
+
+.lvto-conditional.hidden {
+  display: none;
+}
+
 @media (min-width: 1050px) {
   .checks-action-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
@@ -3744,6 +4040,18 @@ html[data-theme="night"] input[type="time"] {
   .gps-section-body p.gps-indented { margin-left: 48px; }
   .gps-disclosure { padding-inline: 10px; }
   .gps-disclosure h3 { font-size: 0.9375rem; }
+  .lvto-heading { align-items: flex-start; flex-wrap: wrap; }
+  .lvto-heading h2 { font-size: 1.15rem; }
+  .lvto-section-body { padding-inline: 8px; }
+  .lvto-check-row { gap: 10px; }
+  .lvto-disclosure { padding-inline: 10px; }
+  .lvto-disclosure h3 { font-size: 0.9375rem; }
+  .lvto-entry-grid[data-layout-group="minimum-values"],
+  .lvto-entry-grid[data-layout-group="alternate-values"] { grid-template-columns: 1fr; }
+  .lvto-entry-grid[data-layout-group="rvr-values"] { gap: 6px; }
+  .lvto-entry-grid[data-layout-group="rvr-values"] .lvto-field { padding-inline: 8px; }
+  .lvto-decision-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lvto-conditional { margin-left: 8px; }
 }
 
 .checks-action-card {
