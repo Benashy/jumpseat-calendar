@@ -2,6 +2,7 @@
 
 ## Current Status
 
+- v2.68 adds a compact Revision 8 on-duty time variation reference under FTL Clarifications. It identifies the listed stations without storing or inferring reporting times, directs the user to the current station brief, and notes that temporary changes may precede a brief update.
 - Current visible app version: v2.67.
 - v2.67 simplifies the GPS checklist presentation: no completion counts or bottom reference/context drawers, and a single last-updated date/time in Zulu. Every phase may be hidden, retaining linked groups and a visible restore heading. Preliminary cockpit preparation, cockpit preparation and unexpected interference use amber hidden badges; all other phases use red, with red taking precedence in the combined count. Disclosure headings and badges match FDP/LTOT. Private source content, its hash and existing saved progress are unchanged.
 - v2.66 adds the private GPS interference checklist under Tools, retaining the source draft's wording and Under test status. Ticks are manual, reversible and saved on the current device. Related sections stay linked; hidden sections retain a visible Show control and are not counted as checked. Reset is confirmed, and revised source wording cannot silently replace an active checklist. Source content is owner-only in Supabase and cached after sign-in, never bundled in public assets.
@@ -70,6 +71,7 @@
 
 ## Next Priorities
 
+- Next discussion, agreed 31 August 2026: review offline access across OpsDeck, especially GPS interference procedures, FDP/LTOT and the other in-flight tools. Establish what currently works after losing connectivity or reopening the app, what must be downloaded/signed in beforehand, and which iPad/iPhone checks or improvements are needed. Discuss capabilities and options before further implementation. Work is parked for tonight; GPS remains Under test pending Ben's real-world use alongside the FCOM.
 - GPS checklist: review the new manual workflow on the physical iPad, including cached offline use, section choices and New checklist between flights. Progress is deliberately device-local, not synchronised between iPad and iPhone. Keep Under test until the wording and workflow have been reviewed in context; aircraft applicability and current Company NOTAMs are not inferred by the app.
 
 - Radio Altimeter release gate: independently verify the ten specified manual references, confirm the current OMA cold-weather trigger, compare the complete validation matrix with the BA Cold Weather Calculator, and obtain pilot/OMC review before removing the development label.

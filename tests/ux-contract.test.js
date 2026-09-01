@@ -117,6 +117,18 @@ test("the short-haul reporting-time clarification is available beside the FDP ta
   assert.match(index, /giving Cabin crew the same latest end time as Flight crew/);
 });
 
+test("Revision 8 on-duty variations are a station-brief prompt, not inferred times", () => {
+  assert.match(index, /<h3 id="onDutyVariationTitle">On-duty time variations<\/h3>/);
+  assert.match(index, /<span>Revision 8<\/span>/);
+  assert.match(index, /Check the current station brief for the applicable pick-up and on-duty times/);
+  assert.match(index, /Temporary variations may be advised before they appear in the station brief/);
+  const list = index.match(/<ul class="station-code-list"[^>]*>([^]*?)<\/ul>/)?.[1] || "";
+  assert.deepEqual([...list.matchAll(/<li>([A-Z]{3})<\/li>/g)].map((match) => match[1]),
+    ["AMM", "BCN", "BKK", "BOM", "DXB", "IST", "JED", "KUL", "LIS", "MAN", "MLE", "MXP", "NAP", "ZRH"]);
+  assert.doesNotMatch(list, /\d{1,2}:\d{2}/);
+  assert.match(styles, /\.station-code-list\s*\{[^}]*grid-template-columns: repeat\(7, minmax\(0, 1fr\)\)/);
+});
+
 test("FDP disclosures share one marker and the small OMA badge keeps a comfortable touch target", () => {
   assert.equal((index.match(/class="(?:ftl-section-toggle )?ftl-disclosure"/g) || []).length, 5);
   assert.match(styles, /summary\.ftl-disclosure::-webkit-details-marker\s*\{\s*display: none;/);

@@ -838,6 +838,48 @@ input[type="time"],
   padding-left: 20px;
 }
 
+.guidance-heading-row {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.guidance-heading-row span {
+  color: var(--muted);
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.on-duty-variation-reference {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.station-code-list {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  list-style: none;
+  margin: 2px 0;
+  padding: 0;
+}
+
+.station-code-list li {
+  border-bottom: 1px solid var(--line);
+  color: var(--accent);
+  font-size: 0.84rem;
+  font-weight: 760;
+  letter-spacing: 0;
+  padding: 8px 6px;
+  text-align: center;
+}
+
+.guidance-content .guidance-note {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
 .fdp-reference-content {
   border-top-color: var(--silver);
   grid-template-columns: minmax(0, 1fr);
@@ -5409,6 +5451,14 @@ html[data-theme="night"] .gps-panel {
 
   .ftl-panel.is-fdp-only .ftl-result-card.is-pending:not(.is-reference) > small:not(.limit-note) {
     display: none;
+  }
+
+  .station-code-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .station-code-list li:nth-last-child(-n + 2) {
+    grid-column: span 2;
   }
 
   .ftl-form .crew-limit-duration-grid .crew-report-control {
