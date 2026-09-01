@@ -117,18 +117,19 @@ test("the short-haul reporting-time clarification is available beside the FDP ta
   assert.match(index, /giving Cabin crew the same latest end time as Flight crew/);
 });
 
-test("Revision 8 on-duty variations retain only short-haul stations and distinguish supplied values", () => {
+test("Revision 8 on-duty variations show the confirmed short-haul timings alphabetically", () => {
   assert.match(index, /<h3 id="onDutyVariationTitle">On-duty time variations<\/h3>/);
   assert.match(index, /<span>Revision 8<\/span>/);
-  assert.match(index, /normal short-haul down-route report, when duty begins, is 60 minutes before scheduled departure/);
-  assert.match(index, /Pick-up time is separate/);
-  assert.match(index, /Confirm each variation against the current Trip description or station brief/);
+  assert.match(index, /standard short-haul report time down route is 60 minutes before scheduled departure/);
+  assert.match(index, /variation may apply only to particular flights/);
+  assert.match(index, /Pick-up times are published separately in the station brief and are not included here/);
   const list = index.match(/<ul class="station-code-list"[^>]*>([^]*?)<\/ul>/)?.[1] || "";
   assert.deepEqual([...list.matchAll(/<li><strong>([A-Z]{3})<\/strong>/g)].map((match) => match[1]),
-    ["IST", "LIS", "BCN", "ZRH", "MAN", "AMM", "MXP", "NAP"]);
-  assert.equal((list.match(/>D-70<\/span>/g) || []).length, 3);
-  assert.equal((list.match(/>D-75<\/span>/g) || []).length, 1);
-  assert.equal((list.match(/<span>Check brief<\/span>/g) || []).length, 4);
+    ["AMM", "BCN", "IST", "LIS", "MAN", "MXP", "NAP", "ZRH"]);
+  assert.equal((list.match(/>D-65<\/span>/g) || []).length, 1);
+  assert.equal((list.match(/>D-70<\/span>/g) || []).length, 5);
+  assert.equal((list.match(/>D-75<\/span>/g) || []).length, 2);
+  assert.doesNotMatch(list, /Check brief/);
   for (const code of ["BKK", "BOM", "DXB", "JED", "KUL", "MLE"]) assert.doesNotMatch(list, new RegExp(`>${code}<`));
   assert.match(styles, /\.station-code-list\s*\{[^}]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
 });
