@@ -13,6 +13,7 @@ function fixture() {
         items: [
           { id: "minimum", type: "reference", label: "Reference", value: "100" },
           { id: "entered", type: "field", label: "Manual value", inputMode: "numeric", maxLength: 4, layoutGroup: "values" },
+          { id: "higher", type: "computed", label: "Higher value", unit: "m", calculation: "maximum", inputIds: ["minimum", "entered"], layoutGroup: "values" },
           { id: "action", type: "check", text: "First deliberate action" },
           {
             id: "return-decision",

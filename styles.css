@@ -3779,6 +3779,7 @@ html[data-theme="night"] input[type="time"] {
 }
 
 .lvto-revision,
+.lvto-progress,
 .lvto-status {
   font-size: 0.875rem;
   line-height: 1.5;
@@ -3786,8 +3787,28 @@ html[data-theme="night"] input[type="time"] {
 }
 
 .lvto-revision {
-  margin: 0 0 14px;
+  margin: 0;
   color: var(--muted);
+}
+
+.lvto-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-bottom: 14px;
+}
+
+.lvto-progress {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-soft);
+  color: var(--accent);
+  padding: 5px 9px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .lvto-status.status-warning {
@@ -3799,6 +3820,35 @@ html[data-theme="night"] input[type="time"] {
 .lvto-checklist-content {
   width: min(100%, 1060px);
   margin: 16px auto 0;
+}
+
+.lvto-disclosure-title { flex: 1; }
+
+.lvto-section-options {
+  border-block: 1px solid var(--line);
+  padding-bottom: 0;
+}
+
+.lvto-section-options[open] { padding-bottom: 14px; }
+
+.lvto-section-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 20px;
+  margin: 0 12px 12px;
+}
+
+.lvto-section-choice {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: start;
+  gap: 4px 10px;
+  min-height: 44px;
+  padding: 10px 0;
+  color: var(--ink);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  cursor: pointer;
 }
 
 .lvto-section {
@@ -3814,6 +3864,7 @@ html[data-theme="night"] input[type="time"] {
 }
 
 .lvto-disclosure h3 {
+  flex: 1;
   min-width: 0;
   margin: 0;
   color: inherit;
@@ -3825,6 +3876,7 @@ html[data-theme="night"] input[type="time"] {
 
 .lvto-disclosure:focus-visible,
 .lvto-check-row:has(input:focus-visible),
+.lvto-section-choice:has(input:focus-visible),
 .lvto-field:has(input:focus-visible),
 .lvto-decision-button:focus-visible {
   outline: 2px solid var(--accent);
@@ -3904,6 +3956,29 @@ html[data-theme="night"] input[type="time"] {
 }
 
 .lvto-reference-value strong {
+  color: var(--navy);
+  font-size: 1.35rem;
+  font-weight: 780;
+  line-height: 1.2;
+}
+
+.lvto-computed-value {
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.lvto-computed-value.has-value {
+  border-color: var(--accent);
+  background: var(--blue-soft);
+}
+
+.lvto-reference-control,
+.lvto-computed-control {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.lvto-computed-control output {
   color: var(--navy);
   font-size: 1.35rem;
   font-weight: 780;
@@ -4024,6 +4099,37 @@ html[data-theme="night"] input[type="time"] {
   display: none;
 }
 
+.lvto-hidden-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: rgba(196, 143, 43, 0.18);
+  color: var(--amber-ink);
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  font-weight: 650;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.lvto-hidden-badge.hidden { display: none; }
+.lvto-section.lvto-is-hidden { margin-bottom: 8px; }
+.lvto-section.lvto-is-hidden > .lvto-disclosure { background: var(--panel-soft); color: var(--muted); }
+
+.lvto-panel .lvto-section-choice input {
+  appearance: auto;
+  -webkit-appearance: auto;
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  margin: 1px 0 0;
+  padding: 0;
+  border-radius: 3px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 @media (min-width: 1050px) {
   .checks-action-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
@@ -4043,6 +4149,7 @@ html[data-theme="night"] input[type="time"] {
   .lvto-heading { align-items: flex-start; flex-wrap: wrap; }
   .lvto-heading h2 { font-size: 1.15rem; }
   .lvto-section-body { padding-inline: 8px; }
+  .lvto-section-choices { grid-template-columns: 1fr; }
   .lvto-check-row { gap: 10px; }
   .lvto-disclosure { padding-inline: 10px; }
   .lvto-disclosure h3 { font-size: 0.9375rem; }

@@ -34,17 +34,17 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-123" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-124" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-123" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-124" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-123" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-124" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -151,7 +151,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.71</small>
+            <small class="app-version">v2.72</small>
           </section>
 
         </section>
@@ -617,7 +617,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.71</small>
+            <small class="app-version">v2.72</small>
           </section>
         </section>
 
@@ -661,7 +661,10 @@
               <span class="checks-action-icon" aria-hidden="true">
                 <svg class="ui-icon" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="m9 14 2 2 4-4"/></svg>
               </span>
-              <span class="checks-action-copy"><strong>GPS interference procedures</strong></span>
+              <span class="checks-action-copy">
+                <span class="checks-action-title-row"><strong>GPS interference procedures</strong><span class="under-test-badge">Under test</span></span>
+                <small>Phase-based actions for jamming and spoofing</small>
+              </span>
               <svg class="ui-icon checks-action-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
             </button>
             <button class="checks-action-card" id="openLvtoButton" type="button">
@@ -688,7 +691,7 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.71</small>
+            <small class="app-version">v2.72</small>
           </section>
         </section>
 
@@ -726,7 +729,7 @@
               <button class="text-button secondary" id="gpsSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="gpsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.71</small>
+            <small class="app-version">v2.72</small>
           </section>
         </section>
 
@@ -746,8 +749,16 @@
               </button>
             </div>
           </div>
-          <p id="lvtoRevision" class="lvto-revision"></p>
+          <div class="lvto-meta-row">
+            <p id="lvtoRevision" class="lvto-revision"></p>
+            <p id="lvtoProgress" class="lvto-progress hidden" role="status" aria-atomic="true"></p>
+          </div>
           <p id="lvtoStatus" class="lvto-status" role="status">Sign in to load the checklist.</p>
+          <details class="lvto-section-options hidden" id="lvtoSectionsControl">
+            <summary class="lvto-disclosure"><span class="lvto-disclosure-title">Sections</span><span id="lvtoHiddenStatus" class="lvto-hidden-badge hidden" role="status" aria-atomic="true"></span></summary>
+            <div id="lvtoSectionChoices" class="lvto-section-choices"></div>
+            <button class="text-button secondary" id="lvtoRestoreSectionsButton" type="button" disabled>Show all sections</button>
+          </details>
           <div id="lvtoChecklistContent" class="lvto-checklist-content"></div>
           <section class="account-panel hidden" id="lvtoAccountPanel" aria-label="Account">
             <span id="lvtoSyncStatus" aria-live="polite">Cloud ready</span>
@@ -758,7 +769,7 @@
               <button class="text-button secondary" id="lvtoSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="lvtoSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.71</small>
+            <small class="app-version">v2.72</small>
           </section>
         </section>
 
@@ -899,7 +910,7 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.71</small>
+            <small class="app-version">v2.72</small>
           </section>
         </section>
 
@@ -995,7 +1006,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.71</small>
+            <small class="app-version">v2.72</small>
           </section>
         </section>
 
@@ -1102,7 +1113,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.71</small>
+            <small class="app-version">v2.72</small>
           </section>
         </section>
       </main>
@@ -1206,21 +1217,21 @@
       </article>
     </template>
 
-    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-123"></script>
-    <script src="./supabase-config.js?v=cloud-sync-123"></script>
-    <script src="./ltot-core.js?v=cloud-sync-123"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-123"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-123"></script>
-    <script src="./notoc-policy-store.js?v=cloud-sync-123"></script>
-    <script src="./notoc-core.js?v=cloud-sync-123"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-123"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-123"></script>
-    <script src="./gps-checklist-core.js?v=cloud-sync-123"></script>
-    <script src="./gps-checklist-ui.js?v=cloud-sync-123"></script>
-    <script src="./lvto-checklist-core.js?v=cloud-sync-123"></script>
-    <script src="./lvto-checklist-ui.js?v=cloud-sync-123"></script>
-    <script src="./data-portability.js?v=cloud-sync-123"></script>
-    <script src="./request-retention.js?v=cloud-sync-123"></script>
-    <script src="./app.js?v=cloud-sync-123"></script>
+    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-124"></script>
+    <script src="./supabase-config.js?v=cloud-sync-124"></script>
+    <script src="./ltot-core.js?v=cloud-sync-124"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-124"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-124"></script>
+    <script src="./notoc-policy-store.js?v=cloud-sync-124"></script>
+    <script src="./notoc-core.js?v=cloud-sync-124"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-124"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-124"></script>
+    <script src="./gps-checklist-core.js?v=cloud-sync-124"></script>
+    <script src="./gps-checklist-ui.js?v=cloud-sync-124"></script>
+    <script src="./lvto-checklist-core.js?v=cloud-sync-124"></script>
+    <script src="./lvto-checklist-ui.js?v=cloud-sync-124"></script>
+    <script src="./data-portability.js?v=cloud-sync-124"></script>
+    <script src="./request-retention.js?v=cloud-sync-124"></script>
+    <script src="./app.js?v=cloud-sync-124"></script>
   </body>
 </html>

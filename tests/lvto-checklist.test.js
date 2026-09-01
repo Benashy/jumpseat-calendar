@@ -9,8 +9,9 @@ test("LVTO policy validates the private structure and rejects unsafe schema chan
   for (const change of [
     (p) => { p.sections[0].items[1].type = "calculation"; },
     (p) => { p.sections[0].items[1].id = "minimum"; },
-    (p) => { p.sections[0].items[4].condition.equals = "maybe"; },
-    (p) => { p.sections[0].items[3].options = [{ id: "yes", label: "Yes" }]; },
+    (p) => { p.sections[0].items[2].inputIds = ["minimum", "missing"]; },
+    (p) => { p.sections[0].items[5].condition.equals = "maybe"; },
+    (p) => { p.sections[0].items[4].options = [{ id: "yes", label: "Yes" }]; },
     (p) => { p.sections[0].items = []; },
   ]) {
     const policy = fixture();
@@ -23,7 +24,7 @@ test("LVTO source hash is deterministic and detects changed wording", async () =
   const policy = fixture();
   const hash = await core.policyHash(policy, webcrypto);
   assert.equal(hash, await core.policyHash(Object.fromEntries(Object.entries(policy).reverse()), webcrypto));
-  policy.sections[0].items[2].text += " changed";
+  policy.sections[0].items[3].text += " changed";
   assert.notEqual(hash, await core.policyHash(policy, webcrypto));
 });
 
@@ -45,7 +46,7 @@ test("LVTO begins blank and only deliberate interactions change state", () => {
 test("LVTO conditional branch cannot be marked before it is selected", () => {
   const policy = fixture();
   let state = core.newState("owner", "hash");
-  assert.equal(core.isVisible(policy.sections[0].items[5], state), false);
+  assert.equal(core.isVisible(policy.sections[0].items[6], state), false);
   assert.equal(core.setChecked(policy, state, "alternate-action", true), state);
   state = core.setDecision(policy, state, "return-decision", "no");
   state = core.setChecked(policy, state, "alternate-action", true);
@@ -53,9 +54,34 @@ test("LVTO conditional branch cannot be marked before it is selected", () => {
   assert.deepEqual(state.completedIds, ["alternate-action"]);
   assert.equal(state.values.alternate, "TEST");
   state = core.setDecision(policy, state, "return-decision", "yes");
-  assert.equal(core.isVisible(policy.sections[0].items[5], state), false);
+  assert.equal(core.isVisible(policy.sections[0].items[6], state), false);
   assert.deepEqual(state.completedIds, ["alternate-action"]);
   assert.equal(state.values.alternate, "TEST");
+});
+
+test("LVTO calculates the higher planning minimum only after a valid manual entry", () => {
+  const policy = fixture();
+  let state = core.newState("owner", "hash");
+  assert.equal(core.computedValue(policy, state, "higher"), null);
+  state = core.setValue(policy, state, "entered", "75");
+  assert.equal(core.computedValue(policy, state, "higher"), 100);
+  state = core.setValue(policy, state, "entered", "125");
+  assert.equal(core.computedValue(policy, state, "higher"), 125);
+  state = core.setValue(policy, state, "entered", "not-a-number");
+  assert.equal(core.computedValue(policy, state, "higher"), null);
+});
+
+test("LVTO section choices preserve ticks and do not reduce the applicable count", () => {
+  const policy = fixture();
+  let state = core.newState("owner", "hash");
+  assert.deepEqual(core.progress(policy, state), { checked: 0, total: 1, hiddenSections: 0 });
+  state = core.setChecked(policy, state, "action", true);
+  state = core.setSectionVisible(policy, state, "planning", false);
+  assert.deepEqual(core.progress(policy, state), { checked: 1, total: 1, hiddenSections: 1 });
+  assert.equal(core.setChecked(policy, state, "action", false), state);
+  state = core.setSectionVisible(policy, state, "planning", true);
+  state = core.setDecision(policy, state, "return-decision", "no");
+  assert.deepEqual(core.progress(policy, state), { checked: 1, total: 2, hiddenSections: 0 });
 });
 
 test("LVTO restore rejects other owners and revisions while preserving valid private progress", () => {
@@ -66,10 +92,21 @@ test("LVTO restore rejects other owners and revisions while preserving valid pri
   state = core.setDecision(policy, state, "return-decision", "no");
   const restored = core.restoreState(policy, "owner", "hash", state);
   assert.deepEqual(restored.completedIds, ["action"]);
+  assert.deepEqual(restored.hiddenSectionIds, []);
   assert.equal(restored.values.entered, "1234");
   assert.equal(restored.decisions["return-decision"], "no");
   assert.deepEqual(core.restoreState(policy, "other", "hash", state).completedIds, []);
   assert.deepEqual(core.restoreState(policy, "owner", "new-hash", state).values, {});
+});
+
+test("LVTO restores older saved progress that predates section choices", () => {
+  const policy = fixture();
+  const stored = core.newState("owner", "hash");
+  delete stored.hiddenSectionIds;
+  stored.completedIds = ["action"];
+  const restored = core.restoreState(policy, "owner", "hash", stored);
+  assert.deepEqual(restored.completedIds, ["action"]);
+  assert.deepEqual(restored.hiddenSectionIds, []);
 });
 
 test("LVTO clear ticks keeps manual planning values and decision", () => {

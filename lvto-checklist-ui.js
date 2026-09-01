@@ -6,10 +6,15 @@
   if (!core || !root) return;
 
   const content = document.querySelector("#lvtoChecklistContent");
+  const sectionsPicker = document.querySelector("#lvtoSectionChoices");
+  const sectionsDetails = document.querySelector("#lvtoSectionsControl");
+  const hiddenStatus = document.querySelector("#lvtoHiddenStatus");
   const status = document.querySelector("#lvtoStatus");
   const revision = document.querySelector("#lvtoRevision");
+  const progressLabel = document.querySelector("#lvtoProgress");
   const resetButton = document.querySelector("#lvtoResetButton");
   const clearButton = document.querySelector("#lvtoClearTicksButton");
+  const restoreButton = document.querySelector("#lvtoRestoreSectionsButton");
   const refreshButton = document.querySelector("#lvtoRefreshButton");
   let userId = null;
   let fetchRecord = null;
@@ -138,7 +143,26 @@
   function renderReference(item) {
     const element = node("div", "lvto-reference-value");
     conditionAttributes(element, item);
-    element.append(node("span", "lvto-reference-label", item.label), node("strong", "", item.value));
+    element.append(node("span", "lvto-reference-label", item.label));
+    const control = node("span", "lvto-reference-control");
+    control.append(node("strong", "", item.value));
+    if (item.unit) control.append(node("span", "lvto-field-unit", item.unit));
+    element.append(control);
+    return element;
+  }
+
+  function renderComputed(item) {
+    const element = node("div", "lvto-reference-value lvto-computed-value");
+    conditionAttributes(element, item);
+    element.dataset.lvtoComputed = item.id;
+    element.append(node("span", "lvto-reference-label", item.label));
+    const control = node("span", "lvto-computed-control");
+    const output = node("output", "", "--");
+    output.setAttribute("aria-label", item.label);
+    output.setAttribute("aria-live", "polite");
+    control.append(output);
+    if (item.unit) control.append(node("span", "lvto-field-unit", item.unit));
+    element.append(control);
     return element;
   }
 
@@ -152,6 +176,7 @@
 
   function renderItem(item) {
     if (item.type === "check") return renderCheck(item);
+    if (item.type === "computed") return renderComputed(item);
     if (item.type === "decision") return renderDecision(item);
     if (item.type === "field") return renderField(item);
     if (item.type === "reference") return renderReference(item);
@@ -163,7 +188,16 @@
     panel.open = section.openByDefault !== false;
     panel.dataset.lvtoSection = section.id;
     const summary = node("summary", "lvto-disclosure");
-    summary.append(node("h3", "", section.title));
+    summary.addEventListener("click", (event) => {
+      if (!state.hiddenSectionIds.includes(section.id)) return;
+      event.preventDefault();
+      readLatestState();
+      state = core.setSectionVisible(policy, state, section.id, true);
+      persist();
+    });
+    const sectionStatus = node("span", "lvto-hidden-badge hidden");
+    sectionStatus.dataset.lvtoSectionStatus = section.id;
+    summary.append(node("h3", "", section.title), sectionStatus);
     const body = node("div", "lvto-section-body");
     for (let index = 0; index < section.items.length;) {
       const item = section.items[index];
@@ -187,6 +221,12 @@
   function updateState() {
     if (!policy || !state) return;
     revision.textContent = core.updatedLabel(state.updatedAt);
+    const checklistProgress = core.progress(policy, state);
+    progressLabel.textContent = `${checklistProgress.checked} of ${checklistProgress.total} actions checked`;
+    progressLabel.classList.remove("hidden");
+    hiddenStatus.textContent = checklistProgress.hiddenSections ?
+      `${checklistProgress.hiddenSections} ${checklistProgress.hiddenSections === 1 ? "section" : "sections"} hidden` : "";
+    hiddenStatus.classList.toggle("hidden", !checklistProgress.hiddenSections);
     root.querySelectorAll("[data-lvto-check]").forEach((input) => {
       input.checked = state.completedIds.includes(input.dataset.lvtoCheck);
       input.closest(".lvto-check-row").classList.toggle("is-checked", input.checked);
@@ -194,6 +234,12 @@
     root.querySelectorAll("[data-lvto-field]").forEach((input) => {
       const value = state.values[input.dataset.lvtoField] || "";
       if (input.value !== value) input.value = value;
+    });
+    root.querySelectorAll("[data-lvto-computed]").forEach((element) => {
+      const value = core.computedValue(policy, state, element.dataset.lvtoComputed);
+      const output = element.querySelector("output");
+      output.textContent = value === null ? "--" : String(value);
+      element.classList.toggle("has-value", value !== null);
     });
     root.querySelectorAll("[data-lvto-decision]").forEach((button) => {
       const selected = state.decisions[button.dataset.lvtoDecision] === button.dataset.lvtoOption;
@@ -205,17 +251,54 @@
       element.classList.toggle("hidden", !visible);
       element.querySelectorAll?.("input, button").forEach((control) => { control.disabled = !visible; });
     });
+    root.querySelectorAll("[data-lvto-section]").forEach((section) => {
+      const hidden = state.hiddenSectionIds.includes(section.dataset.lvtoSection);
+      const wasHidden = section.classList.contains("lvto-is-hidden");
+      section.classList.toggle("lvto-is-hidden", hidden);
+      if (hidden) section.open = false;
+      else if (wasHidden) section.open = true;
+    });
+    root.querySelectorAll("[data-lvto-visibility]").forEach((input) => {
+      input.checked = !state.hiddenSectionIds.includes(input.dataset.lvtoVisibility);
+    });
+    root.querySelectorAll("[data-lvto-section-status]").forEach((label) => {
+      const hidden = state.hiddenSectionIds.includes(label.dataset.lvtoSectionStatus);
+      label.textContent = hidden ? "Hidden · Show" : "";
+      label.classList.toggle("hidden", !hidden);
+    });
     resetButton.disabled = false;
     clearButton.disabled = !state.completedIds.length;
+    restoreButton.disabled = !state.hiddenSectionIds.length;
+    sectionsDetails.classList.remove("hidden");
   }
 
   function render() {
     content.replaceChildren();
+    sectionsPicker.replaceChildren();
+    hiddenStatus.textContent = "";
+    hiddenStatus.classList.add("hidden");
     revision.textContent = "";
+    progressLabel.textContent = "";
+    progressLabel.classList.add("hidden");
     resetButton.disabled = true;
     clearButton.disabled = true;
+    restoreButton.disabled = true;
+    sectionsDetails.classList.add("hidden");
     if (!policy) return;
-    policy.sections.forEach((section) => content.append(renderSection(section)));
+    policy.sections.forEach((section) => {
+      const choice = node("label", "lvto-section-choice");
+      const input = node("input");
+      input.type = "checkbox";
+      input.dataset.lvtoVisibility = section.id;
+      input.addEventListener("change", () => {
+        readLatestState();
+        state = core.setSectionVisible(policy, state, section.id, input.checked);
+        persist();
+      });
+      choice.append(input, node("span", "", section.title));
+      sectionsPicker.append(choice);
+      content.append(renderSection(section));
+    });
     updateState();
   }
 
@@ -231,7 +314,7 @@
     if (previous && previous.policyHash !== hash) {
       persist();
       policyRevised = true;
-      message("Checklist revised. Previous entries and ticks have been cleared.", true);
+      message("Checklist revised. Previous entries, ticks and section choices have been cleared.", true);
     }
     return true;
   }
@@ -268,7 +351,7 @@
             throw new Error("Invalid checklist");
           }
           if (generation !== token) return;
-          if (!globalScope.confirm("An updated checklist is available. Open it now? This clears the current entries and ticks because the wording has changed.")) {
+          if (!globalScope.confirm("An updated checklist is available. Open it now? This clears the current entries, ticks and section choices because the wording has changed.")) {
             cloudLoaded = true;
             message("Checklist update postponed. Your saved version and entries are unchanged.", true);
             return;
@@ -333,7 +416,7 @@
   resetButton.addEventListener("click", () => {
     if (!policy) return;
     readLatestState();
-    if (core.hasProgress(state) && !globalScope.confirm("Start a new checklist? All entries and ticks will be cleared.")) return;
+    if (core.hasProgress(state) && !globalScope.confirm("Start a new checklist? All entries and ticks will be cleared and every section shown.")) return;
     state = core.newState(userId, hash);
     persist();
     void load({ force: true });
@@ -343,6 +426,12 @@
     readLatestState();
     if (!globalScope.confirm("Clear all ticks? Entered values and the return decision will be kept.")) return;
     state = core.clearChecks(state);
+    persist();
+  });
+  restoreButton.addEventListener("click", () => {
+    if (!policy) return;
+    readLatestState();
+    state = { ...state, hiddenSectionIds: [], updatedAt: new Date().toISOString() };
     persist();
   });
   refreshButton.addEventListener("click", () => void load({ force: true }));

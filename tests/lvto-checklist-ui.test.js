@@ -51,11 +51,13 @@ function harness(storage = new Map()) {
       const descendants = (element) => element.children.flatMap((child) => [child, ...descendants(child)]);
       const entries = descendants(this);
       if (selector === "input, button") return entries.filter((element) => ["INPUT", "BUTTON"].includes(element.tagName));
+      if (/^[a-z]+$/.test(selector)) return entries.filter((element) => element.tagName === selector.toUpperCase());
       const match = selector.match(/^\[data-([a-z-]+)\]$/);
       if (!match) throw new Error(`Unsupported fixture selector: ${selector}`);
       const key = match[1].replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
       return entries.filter((element) => element.dataset && key in element.dataset);
     }
+    querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
   }
   const elements = new Map();
   const document = {
@@ -109,6 +111,11 @@ function harness(storage = new Map()) {
       const button = created.filter((element) => element.dataset.lvtoDecision === id && element.dataset.lvtoOption === option).at(-1);
       button.listeners.click();
     },
+    visibility(id, visible) {
+      const input = created.filter((element) => element.dataset.lvtoVisibility === id).at(-1);
+      input.checked = visible;
+      input.listeners.change();
+    },
     item(id, key) { return created.filter((element) => element.dataset[key] === id).at(-1); },
   };
 }
@@ -125,7 +132,25 @@ test("LVTO UI loads authenticated content and restores entries after reopening",
   await reopened.load("owner", async () => data);
   assert.equal(reopened.item("action", "lvtoCheck").checked, true);
   assert.equal(reopened.item("entered", "lvtoField").value, "125");
+  assert.equal(reopened.item("higher", "lvtoComputed").querySelector("output").textContent, "125");
   assert.equal(reopened.created.find((element) => element.dataset.lvtoDecision === "return-decision" && element.dataset.lvtoOption === "yes")["aria-pressed"], "true");
+});
+
+test("LVTO UI shows an applicable-action count and section choices without shrinking the denominator", async () => {
+  const page = harness();
+  await page.load("owner", async () => await record());
+  assert.equal(page.elements.get("#lvtoProgress").textContent, "0 of 1 actions checked");
+  page.check("action");
+  assert.equal(page.elements.get("#lvtoProgress").textContent, "1 of 1 actions checked");
+  page.visibility("planning", false);
+  assert.equal(page.elements.get("#lvtoProgress").textContent, "1 of 1 actions checked");
+  assert.equal(page.elements.get("#lvtoHiddenStatus").textContent, "1 section hidden");
+  assert.equal(page.created.find((element) => element.dataset.lvtoSection === "planning").classList.contains("lvto-is-hidden"), true);
+  page.choose("return-decision", "no");
+  assert.equal(page.progress().decisions["return-decision"], undefined);
+  page.visibility("planning", true);
+  page.choose("return-decision", "no");
+  assert.equal(page.elements.get("#lvtoProgress").textContent, "1 of 2 actions checked");
 });
 
 test("LVTO UI starts with no answer selected and reveals the alternate branch only after No", async () => {
@@ -176,6 +201,7 @@ test("LVTO UI reset clears the whole working state while Clear ticks keeps entri
   page.elements.get("#lvtoResetButton").listeners.click();
   assert.deepEqual(page.progress().values, {});
   assert.deepEqual(page.progress().decisions, {});
+  assert.deepEqual(page.progress().hiddenSectionIds, []);
 });
 
 test("LVTO UI can postpone changed private wording without losing in-progress work", async () => {
@@ -200,6 +226,8 @@ test("LVTO public shell contains the interface but none of the private operation
   const serviceWorker = fs.readFileSync(new URL("../service-worker.js", `file://${__filename}`), "utf8");
   assert.match(app, /from\("opsdeck_lvto_checklist"\)/);
   assert.match(html, /id="openLvtoButton"/);
+  assert.match(html, /id="openGpsButton"[\s\S]*?GPS interference procedures[\s\S]*?Under test[\s\S]*?Phase-based actions for jamming and spoofing/);
+  assert.match(html, /id="lvtoProgress"[\s\S]*?id="lvtoSectionsControl"/);
   assert.match(serviceWorker, /lvto-checklist-core\.js/);
   assert.match(serviceWorker, /lvto-checklist-ui\.js/);
   const publicAssets = `${html}\n${uiSource}\n${app}\n${serviceWorker}`;
