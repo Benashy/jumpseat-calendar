@@ -859,20 +859,35 @@ input[type="time"],
 
 .station-code-list {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0 18px;
   list-style: none;
   margin: 2px 0;
   padding: 0;
 }
 
 .station-code-list li {
+  align-items: center;
   border-bottom: 1px solid var(--line);
-  color: var(--accent);
+  display: grid;
   font-size: 0.84rem;
-  font-weight: 760;
+  gap: 8px;
+  grid-template-columns: 3ch minmax(0, 1fr);
   letter-spacing: 0;
-  padding: 8px 6px;
-  text-align: center;
+  padding: 9px 2px;
+}
+
+.station-code-list strong {
+  color: var(--accent);
+  font-weight: 760;
+}
+
+.station-code-list span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 650;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .guidance-content .guidance-note {
@@ -5454,11 +5469,8 @@ html[data-theme="night"] .gps-panel {
   }
 
   .station-code-list {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .station-code-list li:nth-last-child(-n + 2) {
-    grid-column: span 2;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap-inline: 14px;
   }
 
   .ftl-form .crew-limit-duration-grid .crew-report-control {

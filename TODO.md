@@ -2,8 +2,9 @@
 
 ## Current Status
 
+- v2.69 narrows the Revision 8 on-duty reference to eight short-haul stations. It states the documented normal D-60 down-route report, separates report from pick-up time, records Ben's operational D-70 values for MAN, AMM and MXP and D-75 for NAP, and leaves IST, LIS, BCN and ZRH as `Check brief` because their exact variations were not found in the available manuals.
 - v2.68 adds a compact Revision 8 on-duty time variation reference under FTL Clarifications. It identifies the listed stations without storing or inferring reporting times, directs the user to the current station brief, and notes that temporary changes may precede a brief update.
-- Current visible app version: v2.67.
+- Current visible app version: v2.69.
 - v2.67 simplifies the GPS checklist presentation: no completion counts or bottom reference/context drawers, and a single last-updated date/time in Zulu. Every phase may be hidden, retaining linked groups and a visible restore heading. Preliminary cockpit preparation, cockpit preparation and unexpected interference use amber hidden badges; all other phases use red, with red taking precedence in the combined count. Disclosure headings and badges match FDP/LTOT. Private source content, its hash and existing saved progress are unchanged.
 - v2.66 adds the private GPS interference checklist under Tools, retaining the source draft's wording and Under test status. Ticks are manual, reversible and saved on the current device. Related sections stay linked; hidden sections retain a visible Show control and are not counted as checked. Reset is confirmed, and revised source wording cannot silently replace an active checklist. Source content is owner-only in Supabase and cached after sign-in, never bundled in public assets.
 - v2.65 shortens the joint-limit result note to `Discretion: crew comparison.` so it fits the narrower iPad portrait cards without reducing text size. Discretion calculations and the OMA 7.6.1 reminder are unchanged.

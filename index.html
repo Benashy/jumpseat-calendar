@@ -34,17 +34,17 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-120" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-121" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-120" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-121" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-120" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-121" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -151,7 +151,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.68</small>
+            <small class="app-version">v2.69</small>
           </section>
 
         </section>
@@ -564,24 +564,18 @@
                   <h3 id="onDutyVariationTitle">On-duty time variations</h3>
                   <span>Revision 8</span>
                 </div>
-                <p>Agreed variations apply at the stations below, sometimes for specific flights. Check the current station brief for the applicable pick-up and on-duty times.</p>
+                <p>The normal short-haul down-route report, when duty begins, is 60 minutes before scheduled departure. Pick-up time is separate. Agreed variations apply below, sometimes for specific flights.</p>
                 <ul class="station-code-list" aria-label="Stations with on-duty time variations">
-                  <li>AMM</li>
-                  <li>BCN</li>
-                  <li>BKK</li>
-                  <li>BOM</li>
-                  <li>DXB</li>
-                  <li>IST</li>
-                  <li>JED</li>
-                  <li>KUL</li>
-                  <li>LIS</li>
-                  <li>MAN</li>
-                  <li>MLE</li>
-                  <li>MXP</li>
-                  <li>NAP</li>
-                  <li>ZRH</li>
+                  <li><strong>IST</strong><span>Check brief</span></li>
+                  <li><strong>LIS</strong><span>Check brief</span></li>
+                  <li><strong>BCN</strong><span>Check brief</span></li>
+                  <li><strong>ZRH</strong><span>Check brief</span></li>
+                  <li><strong>MAN</strong><span aria-label="70 minutes before scheduled departure">D-70</span></li>
+                  <li><strong>AMM</strong><span aria-label="70 minutes before scheduled departure">D-70</span></li>
+                  <li><strong>MXP</strong><span aria-label="70 minutes before scheduled departure">D-70</span></li>
+                  <li><strong>NAP</strong><span aria-label="75 minutes before scheduled departure">D-75</span></li>
                 </ul>
-                <p class="guidance-note">Temporary variations may be advised before they appear in the station brief.</p>
+                <p class="guidance-note">Confirm each variation against the current Trip description or station brief. A temporary agreed change may be advised before the document is updated.</p>
               </section>
             </div>
           </details>
@@ -623,7 +617,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.68</small>
+            <small class="app-version">v2.69</small>
           </section>
         </section>
 
@@ -684,7 +678,7 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.68</small>
+            <small class="app-version">v2.69</small>
           </section>
         </section>
 
@@ -722,7 +716,7 @@
               <button class="text-button secondary" id="gpsSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="gpsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.68</small>
+            <small class="app-version">v2.69</small>
           </section>
         </section>
 
@@ -863,7 +857,7 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.68</small>
+            <small class="app-version">v2.69</small>
           </section>
         </section>
 
@@ -959,7 +953,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.68</small>
+            <small class="app-version">v2.69</small>
           </section>
         </section>
 
@@ -1066,7 +1060,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.68</small>
+            <small class="app-version">v2.69</small>
           </section>
         </section>
       </main>
@@ -1170,19 +1164,19 @@
       </article>
     </template>
 
-    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-120"></script>
-    <script src="./supabase-config.js?v=cloud-sync-120"></script>
-    <script src="./ltot-core.js?v=cloud-sync-120"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-120"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-120"></script>
-    <script src="./notoc-policy-store.js?v=cloud-sync-120"></script>
-    <script src="./notoc-core.js?v=cloud-sync-120"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-120"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-120"></script>
-    <script src="./gps-checklist-core.js?v=cloud-sync-120"></script>
-    <script src="./gps-checklist-ui.js?v=cloud-sync-120"></script>
-    <script src="./data-portability.js?v=cloud-sync-120"></script>
-    <script src="./request-retention.js?v=cloud-sync-120"></script>
-    <script src="./app.js?v=cloud-sync-120"></script>
+    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-121"></script>
+    <script src="./supabase-config.js?v=cloud-sync-121"></script>
+    <script src="./ltot-core.js?v=cloud-sync-121"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-121"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-121"></script>
+    <script src="./notoc-policy-store.js?v=cloud-sync-121"></script>
+    <script src="./notoc-core.js?v=cloud-sync-121"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-121"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-121"></script>
+    <script src="./gps-checklist-core.js?v=cloud-sync-121"></script>
+    <script src="./gps-checklist-ui.js?v=cloud-sync-121"></script>
+    <script src="./data-portability.js?v=cloud-sync-121"></script>
+    <script src="./request-retention.js?v=cloud-sync-121"></script>
+    <script src="./app.js?v=cloud-sync-121"></script>
   </body>
 </html>
