@@ -12,6 +12,7 @@
   const status = document.querySelector("#lvtoStatus");
   const revision = document.querySelector("#lvtoRevision");
   const progressLabel = document.querySelector("#lvtoProgress");
+  const completionStatus = document.querySelector("#lvtoCompletionStatus");
   const resetButton = document.querySelector("#lvtoResetButton");
   const clearButton = document.querySelector("#lvtoClearTicksButton");
   const restoreButton = document.querySelector("#lvtoRestoreSectionsButton");
@@ -224,6 +225,14 @@
     const checklistProgress = core.progress(policy, state);
     progressLabel.textContent = `${checklistProgress.checked} of ${checklistProgress.total} actions checked`;
     progressLabel.classList.remove("hidden");
+    const checklistStarted = checklistProgress.checked > 0;
+    const checklistComplete = checklistStarted && checklistProgress.total > 0 &&
+      checklistProgress.checked === checklistProgress.total;
+    completionStatus.textContent = checklistStarted ?
+      (checklistComplete ? "CHECKLIST COMPLETE" : "CHECKLIST INCOMPLETE") : "";
+    completionStatus.classList.toggle("hidden", !checklistStarted);
+    completionStatus.classList.toggle("is-complete", checklistComplete);
+    completionStatus.classList.toggle("is-incomplete", checklistStarted && !checklistComplete);
     hiddenStatus.textContent = checklistProgress.hiddenSections ?
       `${checklistProgress.hiddenSections} ${checklistProgress.hiddenSections === 1 ? "section" : "sections"} hidden` : "";
     hiddenStatus.classList.toggle("hidden", !checklistProgress.hiddenSections);
@@ -280,6 +289,9 @@
     revision.textContent = "";
     progressLabel.textContent = "";
     progressLabel.classList.add("hidden");
+    completionStatus.textContent = "";
+    completionStatus.classList.add("hidden");
+    completionStatus.classList.remove("is-complete", "is-incomplete");
     resetButton.disabled = true;
     clearButton.disabled = true;
     restoreButton.disabled = true;

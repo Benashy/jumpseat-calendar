@@ -153,6 +153,30 @@ test("LVTO UI shows an applicable-action count and section choices without shrin
   assert.equal(page.elements.get("#lvtoProgress").textContent, "1 of 2 actions checked");
 });
 
+test("LVTO UI shows incomplete after the first tick and complete only when every applicable action is checked", async () => {
+  const page = harness();
+  await page.load("owner", async () => await record());
+  const completion = page.elements.get("#lvtoCompletionStatus");
+  assert.equal(completion.classList.contains("hidden"), true);
+
+  page.choose("return-decision", "no");
+  page.check("action");
+  assert.equal(completion.textContent, "CHECKLIST INCOMPLETE");
+  assert.equal(completion.classList.contains("is-incomplete"), true);
+  assert.equal(completion.classList.contains("is-complete"), false);
+
+  page.check("alternate-action");
+  assert.equal(completion.textContent, "CHECKLIST COMPLETE");
+  assert.equal(completion.classList.contains("is-complete"), true);
+  assert.equal(completion.classList.contains("is-incomplete"), false);
+
+  page.check("action", false);
+  assert.equal(completion.textContent, "CHECKLIST INCOMPLETE");
+  page.elements.get("#lvtoClearTicksButton").listeners.click();
+  assert.equal(completion.textContent, "");
+  assert.equal(completion.classList.contains("hidden"), true);
+});
+
 test("LVTO UI starts with no answer selected and reveals the alternate branch only after No", async () => {
   const data = await record();
   const page = harness();
