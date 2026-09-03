@@ -1,6 +1,6 @@
 {
   "name": "bens-opsdeck",
-  "version": "2.73.0",
+  "version": "2.74.0",
   "private": true,
   "scripts": {
     "check": "node --check app.js && node --check ltot-core.js && node --check radio-altimeter-core.js && node --check radio-altimeter-ui.js && node --check notoc-policy.js && node --check notoc-policy-store.js && node --check notoc-core.js && node --check notoc-ui.js && node --check gps-checklist-core.js && node --check gps-checklist-ui.js && node --check lvto-checklist-core.js && node --check lvto-checklist-ui.js && node --check data-portability.js && node --check request-retention.js && node scripts/check-dom-contract.mjs && node scripts/check-release.mjs && node --test tests/*.test.js",

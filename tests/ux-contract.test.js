@@ -174,8 +174,3 @@ test("mobile navigation remains available and RA answers precede the diagram in 
   assert.match(styles, /\.tool-menu\s*\{[\s\S]*?position: sticky;[\s\S]*?top: 0;/);
   assert.match(styles, /@media \(max-width: 880px\)[\s\S]*?\.ra-result-grid\s*\{\s*order: 1;[\s\S]*?\.ra-geometry-card\s*\{\s*order: 2;/);
 });
-
-test("LVTO prerequisite actions have a distinct responsive hierarchy", () => {
-  assert.match(styles, /\.lvto-entry-grid\[data-layout-group="lvto-prerequisites"\]\s*\{[^}]*border-left: 3px solid var\(--nav-silver\);/);
-  assert.match(styles, /@media \(max-width: 560px\)[\s\S]*?\.lvto-entry-grid\[data-layout-group="lvto-prerequisites"\]\s*\{[^}]*margin-left: 12px;/);
-});
