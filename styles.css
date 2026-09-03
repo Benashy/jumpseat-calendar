@@ -3934,6 +3934,30 @@ html[data-theme="night"] input[type="time"] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.lvto-entry-grid[data-layout-group="lvto-prerequisites"] {
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: 2px 0 16px 36px;
+  border-left: 3px solid var(--nav-silver);
+  border-radius: 0 7px 7px 0;
+  background: var(--blue-soft);
+  padding: 5px 10px 7px 14px;
+}
+
+.lvto-entry-grid[data-layout-group="lvto-prerequisites"] .lvto-item-heading {
+  margin: 7px 8px 1px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 760;
+  line-height: 1.4;
+}
+
+.lvto-entry-grid[data-layout-group="lvto-prerequisites"] .lvto-check-row {
+  min-height: 46px;
+  margin: 0;
+  padding-block: 10px;
+}
+
 .lvto-field,
 .lvto-reference-value {
   display: grid;
@@ -4157,6 +4181,10 @@ html[data-theme="night"] input[type="time"] {
   .lvto-entry-grid[data-layout-group="alternate-values"] { grid-template-columns: 1fr; }
   .lvto-entry-grid[data-layout-group="rvr-values"] { gap: 6px; }
   .lvto-entry-grid[data-layout-group="rvr-values"] .lvto-field { padding-inline: 8px; }
+  .lvto-entry-grid[data-layout-group="lvto-prerequisites"] {
+    margin-left: 12px;
+    padding-inline: 8px;
+  }
   .lvto-decision-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lvto-conditional { margin-left: 8px; }
 }
