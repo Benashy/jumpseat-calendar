@@ -157,6 +157,9 @@ test("LVTO UI shows incomplete after the first tick and complete only when every
   const page = harness();
   await page.load("owner", async () => await record());
   const completion = page.elements.get("#lvtoCompletionStatus");
+  const content = page.elements.get("#lvtoChecklistContent");
+  const references = page.created.find((element) => element.dataset.lvtoSection === "references");
+  assert.ok(content.children.indexOf(completion) < content.children.indexOf(references));
   assert.equal(completion.classList.contains("hidden"), true);
 
   page.choose("return-decision", "no");

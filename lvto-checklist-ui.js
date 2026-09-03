@@ -297,6 +297,7 @@
     restoreButton.disabled = true;
     sectionsDetails.classList.add("hidden");
     if (!policy) return;
+    let completionPlaced = false;
     policy.sections.forEach((section) => {
       const choice = node("label", "lvto-section-choice");
       const input = node("input");
@@ -309,8 +310,13 @@
       });
       choice.append(input, node("span", "", section.title));
       sectionsPicker.append(choice);
+      if (!completionPlaced && (section.id === "references" || section.title.trim().toLowerCase() === "references")) {
+        content.append(completionStatus);
+        completionPlaced = true;
+      }
       content.append(renderSection(section));
     });
+    if (!completionPlaced) content.append(completionStatus);
     updateState();
   }
 
