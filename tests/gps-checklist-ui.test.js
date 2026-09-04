@@ -12,6 +12,7 @@ async function record() {
     introduction: [{ id: "intro", type: "note", text: "Synthetic introduction" }],
     sections: [{ id: "phase", title: "Test phase", canHide: true, blocks: [
       { id: "first", type: "action", text: "First test action" },
+      { id: "first-note", type: "note", text: "Supporting note", forBlockId: "first" },
       { id: "second", type: "action", text: "Second test action" },
     ] }],
     sources: [{ document: "Test document", section: "Test section", revision: "Test revision", pages: "1" }],
@@ -79,7 +80,10 @@ function harness(storage = new Map()) {
     status: () => elements.get("#gpsStatus").textContent,
     progress: () => JSON.parse(storage.get(core.storageKey("progress", "one")) || "null"),
     tick(id) { const input = created.filter((e) => e.dataset.gpsItem === id).at(-1); input.checked = true; input.listeners.change(); },
+    markNotApplicable(id) { created.filter((e) => e.dataset.gpsMarkNotApplicable === id).at(-1).listeners.click(); },
+    restoreItem(id) { created.filter((e) => e.dataset.gpsRestoreItem === id).at(-1).listeners.click(); },
     item(id) { return created.filter(e => e.dataset.gpsItem === id).at(-1); },
+    itemRow(id) { return created.filter(e => e.dataset.gpsRow === id).at(-1); },
     visible(id, value) {
       const input = created.filter(e => e.dataset.gpsVisibility === id).at(-1);
       assert.notEqual(input.disabled, true);
@@ -108,6 +112,27 @@ test("GPS UI uses a validated saved source offline without a network request", a
   assert.match(offline.status(), /saved checklist offline/);
   offline.tick("second");
   assert.deepEqual(offline.progress().completedIds, ["second"]);
+});
+
+test("GPS UI persists not-applicable items, hides their supporting note and restores them", async () => {
+  const data = await record(); const h = harness();
+  await h.load("one", async () => data);
+  h.tick("first");
+  h.markNotApplicable("first");
+  assert.deepEqual(h.progress().completedIds, []);
+  assert.deepEqual(h.progress().notApplicableIds, ["first"]);
+  assert.equal(h.itemRow("first").classList.contains("gps-is-not-applicable"), true);
+  const supporting = h.created.filter((element) => element.dataset.gpsParentItem === "first").at(-1);
+  assert.equal(supporting.classList.contains("hidden"), true);
+  const summary = h.created.filter((element) => element.classList.contains("gps-na-summary")).at(-1);
+  assert.equal(summary.classList.contains("hidden"), false);
+
+  const reopened = harness(h.storage);
+  await reopened.load("one", async () => data);
+  assert.deepEqual(reopened.progress().notApplicableIds, ["first"]);
+  reopened.restoreItem("first");
+  assert.deepEqual(reopened.progress().notApplicableIds, []);
+  assert.equal(reopened.itemRow("first").classList.contains("gps-is-not-applicable"), false);
 });
 
 test("GPS UI rejects a tampered offline source and a same-hash tampered refresh", async () => {
@@ -180,7 +205,8 @@ test("GPS UI can postpone a source update without replacing the saved source or 
 
 test("GPS UI asks before replacing an alternative outcome and keeps other marks", async () => {
   const data = await record();
-  data.checklist.sections[0].blocks.forEach(b => { b.exclusiveGroup = "outcome"; });
+  data.checklist.sections[0].blocks.filter((block) => core.CHECKABLE_TYPES.has(block.type))
+    .forEach((block) => { block.exclusiveGroup = "outcome"; });
   data.content_sha256 = await core.policyHash(data.checklist, webcrypto);
   const h = harness(); await h.load("one", async () => data);
   h.tick("first"); h.setConfirm(false); h.tick("second");
@@ -192,14 +218,29 @@ test("GPS UI asks before replacing an alternative outcome and keeps other marks"
 test("GPS UI clears ticks separately from section visibility and restores both on New checklist", async () => {
   const h = harness(); await h.load("one", async () => await record());
   h.tick("first");
+  h.markNotApplicable("second");
   const visibility = h.created.find(e => e.dataset.gpsVisibility === "phase");
   visibility.checked = false; visibility.listeners.change();
   assert.deepEqual(h.progress().hiddenSectionIds, ["phase"]);
   h.elements.get("#gpsClearTicksButton").listeners.click();
   assert.deepEqual(h.progress().completedIds, []);
+  assert.deepEqual(h.progress().notApplicableIds, ["second"]);
   assert.deepEqual(h.progress().hiddenSectionIds, ["phase"]);
   h.elements.get("#gpsResetButton").listeners.click();
+  assert.deepEqual(h.progress().notApplicableIds, []);
   assert.deepEqual(h.progress().hiddenSectionIds, []);
+});
+
+test("GPS UI treats not-applicable choices as progress before replacing revised wording", async () => {
+  const h = harness(); const data = await record();
+  await h.load("one", async () => data);
+  h.markNotApplicable("first");
+  data.checklist.revision = "Test 2";
+  data.content_sha256 = await core.policyHash(data.checklist, webcrypto);
+  h.setConfirm(false);
+  await h.ui.load({ force: true });
+  assert.match(h.status(), /update postponed/);
+  assert.deepEqual(h.progress().notApplicableIds, ["first"]);
 });
 
 test("GPS public shell includes no private source payload and preview is localhost-only", () => {

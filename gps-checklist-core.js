@@ -4,6 +4,7 @@
   const SCHEMA_VERSION = 1;
   const BLOCK_TYPES = new Set(["action", "acknowledgement", "note", "condition", "heading", "bullet"]);
   const CHECKABLE_TYPES = new Set(["action", "acknowledgement"]);
+  const NOTE_PRESENTATIONS = new Set(["ongoing"]);
   const AMBER_SECTIONS = new Set(["preliminary-cockpit", "cockpit-preparation", "unexpected-interference"]);
   const validId = (value) => typeof value === "string" && /^[a-z][a-z0-9-]{0,79}$/.test(value);
   const validText = (value) => typeof value === "string" && value.trim().length > 0 && value.length <= 6000;
@@ -17,23 +18,31 @@
       (policy.context !== undefined && (!Array.isArray(policy.context) || !policy.context.every((entry) =>
         isObject(entry) && validText(entry.title) && validText(entry.text))))) return false;
     const ids = new Set();
+    const blockIds = new Set();
+    const noteLinks = [];
     function blockIsValid(block) {
       if (!isObject(block) || !validId(block.id) || ids.has(block.id) ||
         !BLOCK_TYPES.has(block.type) || !validText(block.text)) return false;
       ids.add(block.id);
+      blockIds.add(block.id);
+      if (block.forBlockId !== undefined) noteLinks.push(block.forBlockId);
       return (block.indent === undefined || [0, 1, 2].includes(block.indent)) &&
         (block.exclusiveGroup === undefined || (CHECKABLE_TYPES.has(block.type) && validId(block.exclusiveGroup))) &&
+        (block.forBlockId === undefined || (block.type === "note" && validId(block.forBlockId))) &&
+        (block.presentation === undefined || (block.type === "note" && NOTE_PRESENTATIONS.has(block.presentation))) &&
         (block.personalTechnique === undefined || typeof block.personalTechnique === "boolean");
     }
     if (!policy.introduction.every((block) => !CHECKABLE_TYPES.has(block.type) && blockIsValid(block))) return false;
-    return policy.sections.every((section) => {
+    const sectionsValid = policy.sections.every((section) => {
       if (!isObject(section) || !validId(section.id) || ids.has(section.id) || !validText(section.title) ||
         typeof section.canHide !== "boolean" || !Array.isArray(section.blocks) || !section.blocks.length || section.blocks.length > 100) return false;
       ids.add(section.id);
       return (section.visibilityGroup === undefined || validId(section.visibilityGroup)) &&
         section.blocks.every(blockIsValid);
-    }) && policy.sources.every((source) => isObject(source) && validText(source.document) &&
-      validText(source.section) && validText(source.revision) && validText(source.pages));
+    });
+    return sectionsValid && noteLinks.every((id) => blockIds.has(id)) &&
+      policy.sources.every((source) => isObject(source) && validText(source.document) &&
+        validText(source.section) && validText(source.revision) && validText(source.pages));
   }
 
   function canonicalJson(value) {
@@ -54,15 +63,19 @@
 
   function newState(userId, hash, now = new Date().toISOString()) {
     return { schemaVersion: SCHEMA_VERSION, userId, policyHash: hash, startedAt: now, updatedAt: now,
-      completedIds: [], hiddenSectionIds: [] };
+      completedIds: [], notApplicableIds: [], hiddenSectionIds: [] };
   }
 
   function restoreState(policy, userId, hash, stored, now) {
     const fresh = newState(userId, hash, now);
     if (!isObject(stored) || stored.schemaVersion !== SCHEMA_VERSION || stored.userId !== userId ||
-      stored.policyHash !== hash || !Array.isArray(stored.completedIds) || !Array.isArray(stored.hiddenSectionIds)) return fresh;
+      stored.policyHash !== hash || !Array.isArray(stored.completedIds) || !Array.isArray(stored.hiddenSectionIds) ||
+      (stored.notApplicableIds !== undefined && !Array.isArray(stored.notApplicableIds))) return fresh;
     const available = items(policy);
-    const completed = new Set(stored.completedIds.filter((id) => available.some((item) => item.id === id)));
+    const notApplicable = new Set((stored.notApplicableIds || [])
+      .filter((id) => available.some((item) => item.id === id)));
+    const completed = new Set(stored.completedIds
+      .filter((id) => available.some((item) => item.id === id) && !notApplicable.has(id)));
     const groups = new Set(available.map((item) => item.exclusiveGroup).filter(Boolean));
     for (const group of groups) {
       const members = available.filter((item) => item.exclusiveGroup === group && completed.has(item.id));
@@ -76,7 +89,7 @@
     }
     return { ...fresh, startedAt: Number.isFinite(Date.parse(stored.startedAt)) ? stored.startedAt : fresh.startedAt,
       updatedAt: Number.isFinite(Date.parse(stored.updatedAt)) ? stored.updatedAt : fresh.updatedAt,
-      completedIds: [...completed], hiddenSectionIds: [...hidden] };
+      completedIds: [...completed], notApplicableIds: [...notApplicable], hiddenSectionIds: [...hidden] };
   }
 
   function setChecked(policy, state, itemId, checked, now = new Date().toISOString()) {
@@ -84,12 +97,26 @@
     const item = available.find((entry) => entry.id === itemId);
     if (!item || state.hiddenSectionIds.includes(item.sectionId)) return state;
     const completed = new Set(state.completedIds);
+    const notApplicable = new Set(state.notApplicableIds || []);
     if (checked) {
       if (item.exclusiveGroup) available.filter((entry) => entry.exclusiveGroup === item.exclusiveGroup)
         .forEach((entry) => completed.delete(entry.id));
+      notApplicable.delete(itemId);
       completed.add(itemId);
     } else completed.delete(itemId);
-    return { ...state, completedIds: [...completed], updatedAt: now };
+    return { ...state, completedIds: [...completed], notApplicableIds: [...notApplicable], updatedAt: now };
+  }
+
+  function setNotApplicable(policy, state, itemId, value, now = new Date().toISOString()) {
+    const item = items(policy).find((entry) => entry.id === itemId);
+    if (!item || state.hiddenSectionIds.includes(item.sectionId)) return state;
+    const completed = new Set(state.completedIds);
+    const notApplicable = new Set(state.notApplicableIds || []);
+    if (value) {
+      completed.delete(itemId);
+      notApplicable.add(itemId);
+    } else notApplicable.delete(itemId);
+    return { ...state, completedIds: [...completed], notApplicableIds: [...notApplicable], updatedAt: now };
   }
 
   function setSectionVisible(policy, state, sectionId, visible, now = new Date().toISOString()) {
@@ -103,7 +130,7 @@
 
   function progress(policy, state, sectionId) {
     const visible = items(policy).filter((item) => !state.hiddenSectionIds.includes(item.sectionId) &&
-      (!sectionId || item.sectionId === sectionId));
+      !(state.notApplicableIds || []).includes(item.id) && (!sectionId || item.sectionId === sectionId));
     return { checked: visible.filter((item) => state.completedIds.includes(item.id)).length,
       total: visible.length, hiddenSections: state.hiddenSectionIds.length };
   }
@@ -139,7 +166,8 @@
   }
 
   const api = { SCHEMA_VERSION, CHECKABLE_TYPES, validatePolicy, canonicalJson, policyHash, items,
-    newState, restoreState, setChecked, setSectionVisible, progress, hiddenSeverity, hiddenStatus, updatedLabel, storageKey, readSaved };
+    newState, restoreState, setChecked, setNotApplicable, setSectionVisible, progress, hiddenSeverity, hiddenStatus,
+    updatedLabel, storageKey, readSaved };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else globalScope.OpsDeckGpsChecklist = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);

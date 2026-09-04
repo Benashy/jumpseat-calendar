@@ -13,7 +13,7 @@ function fixture() {
         { id: "step-a", type: "action", text: "Step A" },
         { id: "branch-a", type: "action", text: "Choice A", exclusiveGroup: "choice" },
         { id: "branch-b", type: "action", text: "Choice B", exclusiveGroup: "choice" },
-        { id: "note-a", type: "note", text: "Context, not an action" },
+        { id: "note-a", type: "note", text: "Context, not an action", forBlockId: "step-a" },
       ] },
       { id: "optional-a", title: "Optional A", canHide: true, visibilityGroup: "linked", blocks: [
         { id: "step-b", type: "action", text: "Step B" },
@@ -34,6 +34,8 @@ test("GPS policy validates structure and rejects duplicate IDs, missing sources 
     (p) => { p.sections[0].blocks[0].type = "html"; },
     (p) => { p.sections[0].canHide = "yes"; },
     (p) => { p.sections[0].blocks = []; },
+    (p) => { p.sections[0].blocks[3].forBlockId = "missing-step"; },
+    (p) => { p.sections[0].blocks[3].presentation = "alert"; },
   ]) {
     const p = fixture(); change(p); assert.equal(core.validatePolicy(p), false);
   }
@@ -49,6 +51,7 @@ test("GPS source hash is key-order independent and detects a wording change", as
 
 test("GPS starts with every section visible and no completed actions", () => {
   const state = core.newState("one", "hash");
+  assert.deepEqual(state.notApplicableIds, []);
   assert.deepEqual(core.progress(fixture(), state), { checked: 0, total: 5, hiddenSections: 0 });
 });
 
@@ -59,6 +62,31 @@ test("GPS ticks are deliberate and reversible, context cannot be ticked", () => 
   assert.deepEqual(original.completedIds, []);
   assert.deepEqual(core.setChecked(p, checked, "step-a", false).completedIds, []);
   assert.equal(core.setChecked(p, original, "note-a", true), original);
+});
+
+test("GPS not-applicable items are distinct from completed and can be restored", () => {
+  const p = fixture();
+  let state = core.setChecked(p, core.newState("one", "hash"), "step-a", true);
+  state = core.setNotApplicable(p, state, "step-a", true, "2026-09-04T09:00:00Z");
+  assert.deepEqual(state.completedIds, []);
+  assert.deepEqual(state.notApplicableIds, ["step-a"]);
+  assert.equal(state.updatedAt, "2026-09-04T09:00:00Z");
+  assert.deepEqual(core.progress(p, state), { checked: 0, total: 4, hiddenSections: 0 });
+  state = core.setNotApplicable(p, state, "step-a", false);
+  assert.deepEqual(state.notApplicableIds, []);
+  state = core.setChecked(p, state, "step-a", true);
+  assert.deepEqual(state.completedIds, ["step-a"]);
+});
+
+test("GPS restore accepts legacy progress and resolves completed versus not-applicable overlap", () => {
+  const p = fixture();
+  const legacy = { ...core.newState("one", "hash"), completedIds: ["step-a"] };
+  delete legacy.notApplicableIds;
+  assert.deepEqual(core.restoreState(p, "one", "hash", legacy).notApplicableIds, []);
+  const overlap = { ...legacy, completedIds: ["step-a", "step-b"], notApplicableIds: ["step-a", "unknown"] };
+  const restored = core.restoreState(p, "one", "hash", overlap);
+  assert.deepEqual(restored.completedIds, ["step-b"]);
+  assert.deepEqual(restored.notApplicableIds, ["step-a"]);
 });
 
 test("GPS incompatible branch acknowledgements cannot both remain ticked", () => {

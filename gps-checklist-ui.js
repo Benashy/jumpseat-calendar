@@ -24,6 +24,7 @@
   let cloudLoaded = false;
   let progressSaved = true;
   let policyRevised = false;
+  const notApplicableViews = new Map();
 
   function saved(kind) {
     try { return core.readSaved(globalScope.localStorage, kind, userId); }
@@ -52,6 +53,10 @@
     });
   }
 
+  function plainText(text) {
+    return String(text).replaceAll("**", "");
+  }
+
   function readLatestState() {
     if (!progressSaved) return;
     const latest = saved("progress");
@@ -73,13 +78,37 @@
 
   function renderBlock(block, parent) {
     if (core.CHECKABLE_TYPES.has(block.type)) {
-      const row = node("label", `gps-check-row${block.indent ? " gps-indented" : ""}`);
+      const item = node("div", `gps-check-item${block.indent ? " gps-indented" : ""}`);
+      item.dataset.gpsRow = block.id;
+      const row = node("label", "gps-check-row");
       const input = node("input");
       input.type = "checkbox";
       input.dataset.gpsItem = block.id;
       const copy = node("span", "gps-check-copy");
       appendText(copy, block.text);
       row.append(input, copy);
+
+      const options = node("details", "gps-item-options");
+      const trigger = node("summary", "gps-item-options-trigger");
+      trigger.title = "More options";
+      trigger["aria-label"] = `More options for ${plainText(block.text)}`;
+      const dots = node("span", "gps-more-icon");
+      dots["aria-hidden"] = "true";
+      dots.append(node("span"), node("span"), node("span"));
+      trigger.append(dots);
+      const menu = node("div", "gps-item-options-menu");
+      const markNotApplicable = node("button", "gps-mark-not-applicable", "Mark not applicable");
+      markNotApplicable.type = "button";
+      markNotApplicable.dataset.gpsMarkNotApplicable = block.id;
+      markNotApplicable.addEventListener("click", () => {
+        readLatestState();
+        state = core.setNotApplicable(policy, state, block.id, true);
+        options.open = false;
+        persist();
+      });
+      menu.append(markNotApplicable);
+      options.append(trigger, menu);
+      item.append(row, options);
       input.addEventListener("change", () => {
         readLatestState();
         const other = block.exclusiveGroup && core.items(policy).find((item) =>
@@ -91,13 +120,42 @@
         state = core.setChecked(policy, state, block.id, input.checked);
         persist();
       });
-      parent.append(row);
+      parent.append(item);
       return;
     }
     const tag = block.type === "heading" ? "h4" : "p";
-    const element = node(tag, `gps-${block.type}${block.personalTechnique ? " gps-personal-technique" : ""}${block.indent ? " gps-indented" : ""}`);
+    const element = node(tag, `gps-${block.type}${block.presentation ? ` gps-${block.presentation}` : ""}${block.personalTechnique ? " gps-personal-technique" : ""}${block.indent ? " gps-indented" : ""}`);
+    if (block.forBlockId) element.dataset.gpsParentItem = block.forBlockId;
     appendText(element, block.text);
     parent.append(element);
+  }
+
+  function updateNotApplicableLists() {
+    const allItems = core.items(policy);
+    const notApplicable = new Set(state.notApplicableIds || []);
+    for (const [sectionId, view] of notApplicableViews) {
+      const sectionItems = allItems.filter((item) => item.sectionId === sectionId && notApplicable.has(item.id));
+      view.list.replaceChildren();
+      view.label.textContent = sectionItems.length === 1 ? "Not applicable · 1 item" : `Not applicable · ${sectionItems.length} items`;
+      for (const item of sectionItems) {
+        const row = node("div", "gps-na-row");
+        const copy = node("span", "gps-na-copy");
+        appendText(copy, item.text);
+        const restore = node("button", "gps-na-restore", "Restore");
+        restore.type = "button";
+        restore.dataset.gpsRestoreItem = item.id;
+        restore["aria-label"] = `Restore ${plainText(item.text)}`;
+        restore.addEventListener("click", () => {
+          readLatestState();
+          state = core.setNotApplicable(policy, state, item.id, false);
+          persist();
+        });
+        row.append(copy, restore);
+        view.list.append(row);
+      }
+      view.panel.classList.toggle("hidden", !sectionItems.length);
+      if (!sectionItems.length) view.panel.open = false;
+    }
   }
 
   function updateProgress() {
@@ -107,10 +165,18 @@
     hiddenStatus.dataset.severity = hidden.severity || "";
     hiddenStatus.classList.toggle("hidden", !hidden.count);
     revision.textContent = core.updatedLabel(state.updatedAt);
+    const notApplicable = new Set(state.notApplicableIds || []);
     root.querySelectorAll("[data-gps-item]").forEach((input) => {
       input.checked = state.completedIds.includes(input.dataset.gpsItem);
-      input.closest(".gps-check-row").classList.toggle("is-checked", input.checked);
     });
+    root.querySelectorAll("[data-gps-row]").forEach((row) => {
+      row.classList.toggle("is-checked", state.completedIds.includes(row.dataset.gpsRow));
+      row.classList.toggle("gps-is-not-applicable", notApplicable.has(row.dataset.gpsRow));
+    });
+    root.querySelectorAll("[data-gps-parent-item]").forEach((element) => {
+      element.classList.toggle("hidden", notApplicable.has(element.dataset.gpsParentItem));
+    });
+    updateNotApplicableLists();
     root.querySelectorAll("[data-gps-section]").forEach((section) => {
       const hidden = state.hiddenSectionIds.includes(section.dataset.gpsSection);
       const wasHidden = section.classList.contains("gps-is-hidden");
@@ -136,6 +202,7 @@
     introduction.replaceChildren();
     content.replaceChildren();
     sectionsPicker.replaceChildren();
+    notApplicableViews.clear();
     hiddenStatus.textContent = "";
     hiddenStatus.classList.add("hidden");
     revision.textContent = "";
@@ -181,6 +248,16 @@
       summary.append(title, sectionStatus);
       const body = node("div", "gps-section-body");
       section.blocks.forEach((block) => renderBlock(block, body));
+      const notApplicablePanel = node("details", "gps-na-summary hidden");
+      const notApplicableLabel = node("summary", "gps-na-summary-label");
+      const notApplicableList = node("div", "gps-na-list");
+      notApplicablePanel.append(notApplicableLabel, notApplicableList);
+      body.append(notApplicablePanel);
+      notApplicableViews.set(section.id, {
+        panel: notApplicablePanel,
+        label: notApplicableLabel,
+        list: notApplicableList,
+      });
       panel.append(summary, body);
       content.append(panel);
     }
@@ -199,7 +276,7 @@
     if (previous && previous.policyHash !== hash) {
       persist();
       policyRevised = true;
-      message("Checklist revised. Previous ticks and section choices have been cleared.", true);
+      message("Checklist revised. Previous checklist progress and section choices have been cleared.", true);
     }
     return true;
   }
@@ -229,12 +306,13 @@
         const record = await loader();
         if (generation !== token) return;
         const oldHash = hash;
-        if (policy && record?.content_sha256 !== hash && (state.completedIds.length || state.hiddenSectionIds.length)) {
+        if (policy && record?.content_sha256 !== hash &&
+          (state.completedIds.length || (state.notApplicableIds || []).length || state.hiddenSectionIds.length)) {
           if (!core.validatePolicy(record?.checklist) || await core.policyHash(record.checklist, globalScope.crypto) !== record.content_sha256) {
             throw new Error("Invalid checklist");
           }
           if (generation !== token) return;
-          if (!globalScope.confirm("An updated checklist is available. Open it now? This clears ticks and shows every section because the wording has changed.")) {
+          if (!globalScope.confirm("An updated checklist is available. Open it now? This clears checklist progress and shows every section because the wording has changed.")) {
             cloudLoaded = true;
             message("Checklist update postponed. Your saved version and ticks are unchanged.", true);
             return;
@@ -292,8 +370,8 @@
   resetButton.addEventListener("click", () => {
     if (!policy) return;
     readLatestState();
-    if ((state.completedIds.length || state.hiddenSectionIds.length) &&
-      !globalScope.confirm("Start a new checklist? All ticks will be cleared and every section shown again.")) return;
+    if ((state.completedIds.length || (state.notApplicableIds || []).length || state.hiddenSectionIds.length) &&
+      !globalScope.confirm("Start a new checklist? All ticks and not-applicable choices will be cleared, and every section shown again.")) return;
     state = core.newState(userId, hash);
     persist();
     void load({ force: true });
@@ -301,7 +379,7 @@
   clearButton.addEventListener("click", () => {
     if (!policy) return;
     readLatestState();
-    if (!globalScope.confirm("Clear all ticks? Your section choices will be kept.")) return;
+    if (!globalScope.confirm("Clear all ticks? Not-applicable items and section choices will be kept.")) return;
     state = { ...state, completedIds: [], updatedAt: new Date().toISOString() };
     persist();
   });
