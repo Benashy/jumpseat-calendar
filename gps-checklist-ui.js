@@ -137,6 +137,14 @@
       const sectionItems = allItems.filter((item) => item.sectionId === sectionId && notApplicable.has(item.id));
       view.list.replaceChildren();
       view.label.textContent = sectionItems.length === 1 ? "Not applicable · 1 item" : `Not applicable · ${sectionItems.length} items`;
+      view.status.textContent = sectionItems.length ? `${sectionItems.length} N/A` : "";
+      view.status.title = !sectionItems.length
+        ? ""
+        : sectionItems.length === 1
+          ? "1 item marked not applicable"
+          : `${sectionItems.length} items marked not applicable`;
+      view.status["aria-label"] = view.status.title;
+      view.status.classList.toggle("hidden", !sectionItems.length);
       for (const item of sectionItems) {
         const row = node("div", "gps-na-row");
         const copy = node("span", "gps-na-copy");
@@ -242,10 +250,12 @@
         persist();
       });
       const title = node("h3", "", section.title);
+      const notApplicableStatus = node("span", "gps-na-badge hidden");
+      notApplicableStatus.dataset.gpsNaStatus = section.id;
       const sectionStatus = node("span", "gps-hidden-badge hidden");
       sectionStatus.dataset.gpsSectionStatus = section.id;
       sectionStatus.dataset.severity = core.hiddenSeverity(section.id);
-      summary.append(title, sectionStatus);
+      summary.append(title, notApplicableStatus, sectionStatus);
       const body = node("div", "gps-section-body");
       section.blocks.forEach((block) => renderBlock(block, body));
       const notApplicablePanel = node("details", "gps-na-summary hidden");
@@ -257,6 +267,7 @@
         panel: notApplicablePanel,
         label: notApplicableLabel,
         list: notApplicableList,
+        status: notApplicableStatus,
       });
       panel.append(summary, body);
       content.append(panel);

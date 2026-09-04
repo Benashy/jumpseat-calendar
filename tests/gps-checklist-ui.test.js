@@ -135,6 +135,28 @@ test("GPS UI persists not-applicable items, hides their supporting note and rest
   assert.equal(reopened.itemRow("first").classList.contains("gps-is-not-applicable"), false);
 });
 
+test("GPS UI shows each section's not-applicable count until every item is restored", async () => {
+  const data = await record(); const h = harness();
+  await h.load("one", async () => data);
+  const panel = h.created.find((element) => element.dataset.gpsSection === "phase");
+  const badge = h.created.find((element) => element.dataset.gpsNaStatus === "phase");
+  assert.equal(badge.classList.contains("hidden"), true);
+
+  h.markNotApplicable("first");
+  assert.equal(badge.textContent, "1 N/A");
+  assert.equal(badge.classList.contains("hidden"), false);
+  panel.open = false;
+  assert.equal(badge.textContent, "1 N/A");
+
+  h.markNotApplicable("second");
+  assert.equal(badge.textContent, "2 N/A");
+  h.restoreItem("first");
+  assert.equal(badge.textContent, "1 N/A");
+  h.restoreItem("second");
+  assert.equal(badge.textContent, "");
+  assert.equal(badge.classList.contains("hidden"), true);
+});
+
 test("GPS UI rejects a tampered offline source and a same-hash tampered refresh", async () => {
   const h = harness(); const data = await record();
   await h.load("one", async () => data);
@@ -254,6 +276,7 @@ test("GPS public shell includes no private source payload and preview is localho
   assert.doesNotMatch(uiSource, /visible items checked|section-count|Device-only progress|Started /);
   const styles = fs.readFileSync(new URL("../styles.css", `file://${__filename}`), "utf8");
   assert.match(styles, /\.gps-hidden-badge\.hidden\s*\{\s*display: none;/);
+  assert.match(styles, /\.gps-na-badge\.hidden\s*\{\s*display: none;/);
 });
 
 test("GPS UI permits hiding legacy fixed sections and updates the red/amber badge", async () => {
