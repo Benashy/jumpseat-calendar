@@ -9,6 +9,8 @@ const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
 const notocUi = fs.readFileSync(path.join(root, "notoc-ui.js"), "utf8");
 const styles = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 const serviceWorker = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
+const gpsUi = fs.readFileSync(path.join(root, "gps-checklist-ui.js"), "utf8");
+const lvtoUi = fs.readFileSync(path.join(root, "lvto-checklist-ui.js"), "utf8");
 
 test("unfinished Jumpseat work has a device draft and explicit discard protection", () => {
   assert.match(app, /JUMPSEAT_DRAFT_KEY/);
@@ -168,6 +170,27 @@ test("the pinned Supabase browser client is available in the offline shell", () 
   assert.match(index, /\.\/vendor\/supabase-2\.112\.3\.min\.js/);
   assert.match(serviceWorker, /\.\/vendor\/supabase-2\.112\.3\.min\.js/);
   assert.doesNotMatch(index, /cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js/);
+});
+
+test("trusted devices can reopen validated private checklists without a cloud session", () => {
+  assert.match(index, /offline-device\.js/);
+  assert.match(index, /checklist-backup\.js/);
+  assert.match(serviceWorker, /offline-device\.js/);
+  assert.match(serviceWorker, /checklist-backup\.js/);
+  assert.match(app, /function restoreTrustedOfflineDevice\(\)/);
+  assert.match(app, /setPrivateChecklistContext\(profile\.userId\)/);
+  assert.match(app, /Offline on this device\. Cloud sync is paused; saved checklists and guidance remain available\./);
+  assert.match(app, /offlineDeviceApi\?\.forget\(localStorage\)/);
+});
+
+test("GPS and LVTO PDF backups remain private, version-matched online downloads", () => {
+  assert.match(index, /id="gpsDownloadButton"[^>]+aria-label="Download GPS checklist PDF backup"/);
+  assert.match(index, /id="lvtoDownloadButton"[^>]+aria-label="Download low visibility take-off checklist PDF backup"/);
+  assert.match(gpsUi, /expectedKey: "gps", expectedContentHash: hash/);
+  assert.match(lvtoUi, /expectedKey: "lvto", expectedContentHash: hash/);
+  assert.match(app, /\.eq\("content_sha256", contentHash\)/);
+  assert.doesNotMatch(serviceWorker, /\.pdf/);
+  assert.doesNotMatch(index, /pdf_base64|OpsDeck-A320-GPS-Interference-Backup\.pdf/);
 });
 
 test("mobile navigation remains available and RA answers precede the diagram in a single column", () => {

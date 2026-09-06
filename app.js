@@ -2,7 +2,7 @@ const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
 const JUMPSEAT_DRAFT_KEY = "opsdeck-jumpseat-draft-v1";
 const JUMPSEAT_DRAFT_SCHEMA_VERSION = 1;
-const APP_VERSION = "2.78";
+const APP_VERSION = "2.79";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 5;
 const CREW_LIMIT_CAPS = { flight: 3, cabin: 6 };
@@ -10,6 +10,7 @@ const DEFAULT_FLIGHT_CREW_NAME = "Ben Ashurst";
 const MAGIC_LINK_SENT_KEY = "jumpseat-calendar-magic-link-sent-at";
 const APPEARANCE_STORAGE_KEY = "opsdeck-appearance-v1";
 const NOTOC_POLICY_TABLE = "opsdeck_notoc_policy";
+const CHECKLIST_BACKUP_TABLE = "opsdeck_checklist_backups";
 const MAX_REQUESTS_PER_FLIGHT = 10;
 const MAGIC_LINK_COOLDOWN_SECONDS = 75;
 const MAGIC_LINK_RATE_LIMIT_SECONDS = 60 * 60;
@@ -336,6 +337,7 @@ const supabaseClient = hasCloudConfig && window.supabase
   : null;
 const notocPolicyApi = window.OpsDeckNotocPolicy || null;
 const notocPolicyStore = window.OpsDeckNotocPolicyStore || null;
+const offlineDeviceApi = window.OpsDeckOfflineDevice || null;
 
 function setNotocPolicyStatus(message, state = "") {
   if (!elements.notocPolicyStatus) return;
@@ -694,7 +696,7 @@ function setOfflineReadOnly(isReadOnly) {
   render();
 }
 
-function startOfflineMode(message = "Offline: viewing saved data") {
+function startOfflineMode(message = "Offline: viewing saved data", privateChecklistsAvailable = false) {
   const local = loadRequestEnvelope();
   requests = local.requests;
   requestLocalDirty = local.dirty;
@@ -711,6 +713,9 @@ function startOfflineMode(message = "Offline: viewing saved data") {
   elements.gpsAccountPanel.classList.add("hidden");
   elements.lvtoAccountPanel.classList.add("hidden");
   elements.settingsAccountPanel.classList.add("hidden");
+  elements.offlineBanner.textContent = privateChecklistsAvailable
+    ? "Offline on this device. Cloud sync is paused; saved checklists and guidance remain available."
+    : "Offline. Jumpseat is view only; FDP, LTOT and RA position check remain available. Connect once to prepare private checklists for offline use.";
   setAppVisible(true);
   setOfflineReadOnly(true);
   setSyncStatus(message, false, true);
@@ -721,21 +726,74 @@ function setAppVisible(isVisible) {
   elements.layout.classList.toggle("hidden", !isVisible);
 }
 
+function checklistRecordLoader(table, userId) {
+  return async () => {
+    if (!supabaseClient) throw new Error("Checklist unavailable");
+    const { data, error } = await supabaseClient.from(table)
+      .select("checklist,content_sha256,updated_at").eq("user_id", userId).maybeSingle();
+    if (error || !data) throw new Error("Checklist unavailable");
+    return data;
+  };
+}
+
+function checklistBackupLoader(checklistKey, userId) {
+  return async (contentHash) => {
+    if (!supabaseClient || !navigator.onLine) throw new Error("PDF backup unavailable");
+    const { data, error } = await supabaseClient.from(CHECKLIST_BACKUP_TABLE)
+      .select("checklist_key,content_sha256,filename,pdf_sha256,pdf_base64")
+      .eq("user_id", userId).eq("checklist_key", checklistKey)
+      .eq("content_sha256", contentHash).maybeSingle();
+    if (error || !data) throw new Error("PDF backup unavailable");
+    return data;
+  };
+}
+
+function setPrivateChecklistContext(userId) {
+  const owner = userId || null;
+  window.OpsDeckGpsUi?.setContext(
+    owner,
+    owner ? checklistRecordLoader("opsdeck_gps_checklist", owner) : null,
+    owner ? checklistBackupLoader("gps", owner) : null
+  );
+  window.OpsDeckLvtoUi?.setContext(
+    owner,
+    owner ? checklistRecordLoader("opsdeck_lvto_checklist", owner) : null,
+    owner ? checklistBackupLoader("lvto", owner) : null
+  );
+}
+
+async function requestPersistentDeviceStorage() {
+  if (!navigator.storage?.persist) return;
+  try {
+    if (!navigator.storage.persisted || !(await navigator.storage.persisted())) {
+      await navigator.storage.persist();
+    }
+  } catch (_) {
+    // Offline access still works while the browser retains ordinary site storage.
+  }
+}
+
+function rememberTrustedOfflineDevice(userId) {
+  try {
+    offlineDeviceApi?.remember(localStorage, userId);
+  } catch (_) {
+    // Cloud use continues even if this browser cannot prepare offline access.
+  }
+  void requestPersistentDeviceStorage();
+}
+
+function restoreTrustedOfflineDevice() {
+  const profile = offlineDeviceApi?.read(localStorage);
+  if (!profile) return false;
+  setPrivateChecklistContext(profile.userId);
+  loadCachedNotocPolicy({ id: profile.userId });
+  return true;
+}
+
 function setSignedInState(user) {
   const previousUserId = currentUser?.id || null;
   currentUser = user;
-  window.OpsDeckGpsUi?.setContext(user?.id || null, async () => {
-    const { data, error } = await supabaseClient.from("opsdeck_gps_checklist")
-      .select("checklist,content_sha256,updated_at").eq("user_id", user.id).maybeSingle();
-    if (error || !data) throw new Error("Checklist unavailable");
-    return data;
-  });
-  window.OpsDeckLvtoUi?.setContext(user?.id || null, async () => {
-    const { data, error } = await supabaseClient.from("opsdeck_lvto_checklist")
-      .select("checklist,content_sha256,updated_at").eq("user_id", user.id).maybeSingle();
-    if (error || !data) throw new Error("Checklist unavailable");
-    return data;
-  });
+  setPrivateChecklistContext(user?.id || null);
   if (!user || (previousUserId && previousUserId !== user.id)) resetNotocPolicy();
   elements.authForm.classList.toggle("hidden", Boolean(user));
   elements.authPanel.classList.toggle("hidden", Boolean(user));
@@ -750,6 +808,7 @@ function setSignedInState(user) {
   setAppVisible(Boolean(user));
 
   if (user) {
+    rememberTrustedOfflineDevice(user.id);
     setAuthStatus(`Signed in as ${user.email}`);
     setOfflineReadOnly(false);
   } else {
@@ -2974,7 +3033,7 @@ async function loadCloudRequests(options = {}) {
   if (!supabaseClient || !currentUser) return;
 
   if (!navigator.onLine) {
-    startOfflineMode();
+    startOfflineMode("Offline: viewing saved data", true);
     return;
   }
 
@@ -2992,7 +3051,10 @@ async function loadCloudRequests(options = {}) {
   if (error) {
     requestLocalDirty = local.dirty;
     requestLocalBaseUpdatedAt = local.baseUpdatedAt;
-    startOfflineMode(navigator.onLine ? "Cloud unavailable: viewing saved data" : "Offline: viewing saved data");
+    startOfflineMode(
+      navigator.onLine ? "Cloud unavailable: viewing saved data" : "Offline: viewing saved data",
+      true
+    );
     return;
   }
 
@@ -3747,6 +3809,7 @@ async function sendMagicLink() {
 }
 
 async function signOut(message = "Sign in to load and save your OpsDeck data.") {
+  offlineDeviceApi?.forget(localStorage);
   window.OpsDeckGpsUi?.forget();
   window.OpsDeckLvtoUi?.forget();
   setSyncStatus("Signing out...");
@@ -3998,14 +4061,23 @@ async function returnOnline() {
     return;
   }
 
-  const { data, error } = await supabaseClient.auth.getSession();
+  const { data, error } = await supabaseClient.auth.getSession().catch((sessionError) => ({
+    data: null,
+    error: sessionError,
+  }));
 
   if (error) {
-    setAuthStatus("Could not check sign-in status.", true);
+    const privateAccess = restoreTrustedOfflineDevice();
+    if (privateAccess) startOfflineMode("Cloud unavailable: viewing saved data", true);
+    else setAuthStatus("Could not check sign-in status.", true);
     return;
   }
 
   await handleSession(data.session);
+  await Promise.all([
+    window.OpsDeckGpsUi?.load(),
+    window.OpsDeckLvtoUi?.load(),
+  ]);
 }
 
 async function initCloud() {
@@ -4026,14 +4098,8 @@ async function initCloud() {
   }
 
   if (!navigator.onLine) {
-    if (supabaseClient) {
-      const { data } = await supabaseClient.auth.getSession().catch(() => ({ data: null }));
-      if (data?.session?.user) {
-        setSignedInState(data.session.user);
-        loadCachedNotocPolicy(data.session.user);
-      }
-    }
-    startOfflineMode();
+    const privateAccess = restoreTrustedOfflineDevice();
+    startOfflineMode("Offline: viewing saved data", privateAccess);
     return;
   }
 
@@ -4053,16 +4119,26 @@ async function initCloud() {
   }
 
   cloudReady = true;
-  const { data, error } = await supabaseClient.auth.getSession();
+  const { data, error } = await supabaseClient.auth.getSession().catch((sessionError) => ({
+    data: null,
+    error: sessionError,
+  }));
 
   if (error) {
-    setAuthStatus("Could not check sign-in status.", true);
+    const privateAccess = restoreTrustedOfflineDevice();
+    if (privateAccess) startOfflineMode("Cloud unavailable: viewing saved data", true);
+    else setAuthStatus("Could not check sign-in status.", true);
     return;
   }
 
   await handleSession(data.session);
 
   supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (event === "SIGNED_OUT" && !manualSignOutInProgress && !navigator.onLine) {
+      const privateAccess = Boolean(currentUser?.id) || restoreTrustedOfflineDevice();
+      startOfflineMode("Offline: viewing saved data", privateAccess);
+      return;
+    }
     const sessionEndedUnexpectedly = event === "SIGNED_OUT" && Boolean(currentUser) && !manualSignOutInProgress;
     handleSession(session).then(() => {
       if (sessionEndedUnexpectedly) setAuthStatus("Session expired. Sign in again.", true);
@@ -4232,7 +4308,10 @@ elements.exportJsonButton.addEventListener("click", exportJsonBackup);
 elements.exportCsvButton.addEventListener("click", exportCsvBackup);
 elements.restoreBackupButton.addEventListener("click", () => elements.restoreBackupInput.click());
 elements.restoreBackupInput.addEventListener("change", restoreJsonBackup);
-window.addEventListener("offline", () => startOfflineMode());
+window.addEventListener("offline", () => {
+  const privateAccess = Boolean(currentUser?.id) || restoreTrustedOfflineDevice();
+  startOfflineMode("Offline: viewing saved data", privateAccess);
+});
 window.addEventListener("online", returnOnline);
 document.addEventListener("pointerdown", releaseFtlPickerFocus, true);
 window.addEventListener("keydown", (event) => {

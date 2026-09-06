@@ -2,6 +2,7 @@
   "use strict";
 
   const core = globalScope.OpsDeckLvtoChecklist;
+  const backupApi = globalScope.OpsDeckChecklistBackup;
   const root = document.querySelector("#lvtoView");
   if (!core || !root) return;
 
@@ -17,8 +18,10 @@
   const clearButton = document.querySelector("#lvtoClearTicksButton");
   const restoreButton = document.querySelector("#lvtoRestoreSectionsButton");
   const refreshButton = document.querySelector("#lvtoRefreshButton");
+  const downloadButton = document.querySelector("#lvtoDownloadButton");
   let userId = null;
   let fetchRecord = null;
+  let fetchBackup = null;
   let generation = 0;
   let pending = null;
   let policy = null;
@@ -40,6 +43,12 @@
     status.textContent = text;
     status.classList.toggle("status-warning", warning);
     status.classList.toggle("hidden", !text);
+  }
+
+  function updateDownloadControl() {
+    const ready = Boolean(policy && hash && fetchBackup && backupApi && navigator.onLine);
+    downloadButton.disabled = !ready;
+    downloadButton.title = navigator.onLine ? "Download PDF backup" : "Connect to download PDF backup";
   }
 
   function node(tag, className, text) {
@@ -279,6 +288,7 @@
     clearButton.disabled = !state.completedIds.length;
     restoreButton.disabled = !state.hiddenSectionIds.length;
     sectionsDetails.classList.remove("hidden");
+    updateDownloadControl();
   }
 
   function render() {
@@ -295,6 +305,7 @@
     resetButton.disabled = true;
     clearButton.disabled = true;
     restoreButton.disabled = true;
+    downloadButton.disabled = true;
     sectionsDetails.classList.add("hidden");
     if (!policy) return;
     let completionPlaced = false;
@@ -396,17 +407,25 @@
     operation.finally(() => {
       if (generation === token) {
         pending = null;
-        refreshButton.disabled = false;
+        refreshButton.disabled = !navigator.onLine;
+        updateDownloadControl();
       }
     });
     return operation;
   }
 
-  function setContext(owner, loader) {
-    if (owner === userId) return;
+  function setContext(owner, loader, backupLoader) {
+    if (owner === userId) {
+      fetchRecord = loader || fetchRecord;
+      fetchBackup = backupLoader || fetchBackup;
+      updateDownloadControl();
+      if (owner) void load();
+      return;
+    }
     generation += 1;
     userId = owner || null;
     fetchRecord = loader || null;
+    fetchBackup = backupLoader || null;
     pending = null;
     policy = null;
     state = null;
@@ -452,7 +471,23 @@
     state = { ...state, hiddenSectionIds: [], updatedAt: new Date().toISOString() };
     persist();
   });
+  downloadButton.addEventListener("click", async () => {
+    if (!policy || !hash || !fetchBackup || !backupApi || !navigator.onLine) return;
+    downloadButton.disabled = true;
+    message("Preparing PDF backup...");
+    try {
+      const record = await fetchBackup(hash);
+      await backupApi.download(record, { expectedKey: "lvto", expectedContentHash: hash });
+      message("PDF backup downloaded.");
+    } catch (_) {
+      message("PDF backup unavailable. Refresh when connected.", true);
+    } finally {
+      updateDownloadControl();
+    }
+  });
   refreshButton.addEventListener("click", () => void load({ force: true }));
+  globalScope.addEventListener("online", updateDownloadControl);
+  globalScope.addEventListener("offline", updateDownloadControl);
   globalScope.addEventListener("storage", (event) => {
     if (policy && event.key === core.storageKey("progress", userId)) {
       readLatestState();

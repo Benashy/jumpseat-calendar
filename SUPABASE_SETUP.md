@@ -83,7 +83,9 @@ If magic links become frustrating, prefer password sign-in day to day, or review
 
 The NOTOC code mapping and mobility-aid battery policy are deliberately not stored in this public repository. Supabase holds one read-only policy row for each authorised user in `opsdeck_notoc_policy`; browser clients may select their own row but cannot create, alter or delete it.
 
-After an authenticated load, OpsDeck keeps a user-specific copy on that device for offline use. It does not load that copy into the app without a saved signed-in session, and removes the policy from the running page on sign-out.
+After an authenticated load, OpsDeck prepares that browser as a trusted offline device and keeps validated, user-specific copies of the private guidance and checklists locally. When the device has no connection, that local identity can open only its own saved copies; it does not authorise cloud access or cloud syncing. Signing out removes the trusted-device identity and private checklist copies.
+
+Private checklist PDF backups are stored in `opsdeck_checklist_backups`. The browser may only select its own row, and a PDF is offered only when its checklist content hash matches the version currently open. Earlier PDF revisions remain available if an in-progress checklist update is postponed. The PDF is verified again in the browser before download. PDF data must never be added to the public application assets.
 
 Future policy updates must be applied through an authorised Supabase administration route. Never add the source JSON, a service-role key or a database password to the repository or browser code.
 

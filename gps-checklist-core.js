@@ -38,6 +38,7 @@
         typeof section.canHide !== "boolean" || !Array.isArray(section.blocks) || !section.blocks.length || section.blocks.length > 100) return false;
       ids.add(section.id);
       return (section.visibilityGroup === undefined || validId(section.visibilityGroup)) &&
+        (section.phaseLabel === undefined || validText(section.phaseLabel)) &&
         section.blocks.every(blockIsValid);
     });
     return sectionsValid && noteLinks.every((id) => blockIds.has(id)) &&

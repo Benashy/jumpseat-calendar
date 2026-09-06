@@ -10,17 +10,17 @@ async function record() {
   const checklist = {
     schemaVersion: 1, id: "fixture", title: "Fixture", revision: "Test 1",
     introduction: [{ id: "intro", type: "note", text: "Synthetic introduction" }],
-    sections: [{ id: "phase", title: "Test phase", canHide: true, blocks: [
+    sections: [{ id: "phase", title: "Test phase", phaseLabel: "Next phase", canHide: true, blocks: [
       { id: "first", type: "action", text: "First test action" },
       { id: "first-note", type: "note", text: "Supporting note", forBlockId: "first" },
-      { id: "second", type: "action", text: "Second test action" },
+      { id: "second", type: "action", text: "Second test action", personalTechnique: true },
     ] }],
     sources: [{ document: "Test document", section: "Test section", revision: "Test revision", pages: "1" }],
   };
   return { checklist, content_sha256: await core.policyHash(checklist, webcrypto) };
 }
 
-function harness(storage = new Map()) {
+function harness(storage = new Map(), backupApi = null) {
   const created = [];
   class Element {
     constructor(tag = "div") {
@@ -67,7 +67,7 @@ function harness(storage = new Map()) {
   };
   let confirmResult = true;
   const window = {
-    OpsDeckGpsChecklist: core, crypto: webcrypto,
+    OpsDeckGpsChecklist: core, OpsDeckChecklistBackup: backupApi, crypto: webcrypto,
     localStorage: { getItem: (key) => storage.get(key) || null,
       setItem: (key, value) => storage.set(key, value), removeItem: (key) => storage.delete(key) },
     confirm: () => confirmResult, addEventListener() {},
@@ -76,7 +76,7 @@ function harness(storage = new Map()) {
   vm.runInNewContext(uiSource, { window, document, navigator });
   return { window, navigator, storage, elements, created, ui: window.OpsDeckGpsUi,
     setConfirm: (value) => { confirmResult = value; },
-    async load(owner, loader) { window.OpsDeckGpsUi.setContext(owner, loader); await window.OpsDeckGpsUi.load(); },
+    async load(owner, loader, backupLoader) { window.OpsDeckGpsUi.setContext(owner, loader, backupLoader); await window.OpsDeckGpsUi.load(); },
     status: () => elements.get("#gpsStatus").textContent,
     progress: () => JSON.parse(storage.get(core.storageKey("progress", "one")) || "null"),
     tick(id) { const input = created.filter((e) => e.dataset.gpsItem === id).at(-1); input.checked = true; input.listeners.change(); },
@@ -91,6 +91,41 @@ function harness(storage = new Map()) {
     },
   };
 }
+
+test("GPS UI renders a restrained divider between operational phases", async () => {
+  const page = harness();
+  await page.load("one", async () => await record());
+  const divider = page.created.find((element) => element.classList.contains("gps-phase-divider"));
+  assert.equal(divider.textContent, "Next phase");
+});
+
+test("GPS UI visibly distinguishes a checkable personal technique from sourced actions", async () => {
+  const page = harness();
+  await page.load("one", async () => await record());
+  const row = page.itemRow("second");
+  assert.equal(row.classList.contains("gps-personal-action"), true);
+  const label = page.created.find((element) => element.classList.contains("gps-action-classification"));
+  assert.equal(label.textContent, "Personal technique");
+});
+
+test("GPS UI downloads only the PDF supplied for the checklist version currently open", async () => {
+  let requestHash = null;
+  let downloadOptions = null;
+  const backupApi = {
+    download: async (_record, options) => { downloadOptions = options; },
+  };
+  const data = await record();
+  const page = harness(new Map(), backupApi);
+  await page.load("one", async () => data, async (hash) => {
+    requestHash = hash;
+    return { checklist_key: "gps" };
+  });
+  await page.elements.get("#gpsDownloadButton").listeners.click();
+  assert.equal(requestHash, data.content_sha256);
+  assert.equal(downloadOptions.expectedKey, "gps");
+  assert.equal(downloadOptions.expectedContentHash, data.content_sha256);
+  assert.equal(page.status(), "PDF backup downloaded.");
+});
 
 test("GPS UI loads authenticated content and restores device-local ticks after reopening", async () => {
   const data = await record(); const h = harness();
@@ -269,7 +304,7 @@ test("GPS public shell includes no private source payload and preview is localho
   const app = fs.readFileSync(require.resolve("../app"), "utf8");
   const html = fs.readFileSync(new URL("../index.html", `file://${__filename}`), "utf8");
   assert.match(app, /\["127\.0\.0\.1", "localhost"\]\.includes\(window.location.hostname\)/);
-  assert.match(app, /from\("opsdeck_gps_checklist"\)/);
+  assert.match(app, /checklistRecordLoader\("opsdeck_gps_checklist"/);
   assert.doesNotMatch(html, /content_sha256|checklist-exact\.md/);
   assert.doesNotMatch(uiSource, /innerHTML/);
   assert.doesNotMatch(html, /gpsProgress|gpsSources|gps-references/);

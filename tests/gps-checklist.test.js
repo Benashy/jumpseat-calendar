@@ -15,7 +15,7 @@ function fixture() {
         { id: "branch-b", type: "action", text: "Choice B", exclusiveGroup: "choice" },
         { id: "note-a", type: "note", text: "Context, not an action", forBlockId: "step-a" },
       ] },
-      { id: "optional-a", title: "Optional A", canHide: true, visibilityGroup: "linked", blocks: [
+      { id: "optional-a", title: "Optional A", phaseLabel: "Next phase", canHide: true, visibilityGroup: "linked", blocks: [
         { id: "step-b", type: "action", text: "Step B" },
       ] },
       { id: "optional-b", title: "Optional B", canHide: true, visibilityGroup: "linked", blocks: [
@@ -36,6 +36,7 @@ test("GPS policy validates structure and rejects duplicate IDs, missing sources 
     (p) => { p.sections[0].blocks = []; },
     (p) => { p.sections[0].blocks[3].forBlockId = "missing-step"; },
     (p) => { p.sections[0].blocks[3].presentation = "alert"; },
+    (p) => { p.sections[1].phaseLabel = ""; },
   ]) {
     const p = fixture(); change(p); assert.equal(core.validatePolicy(p), false);
   }

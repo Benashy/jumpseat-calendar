@@ -11,7 +11,7 @@ async function record(policy = fixture()) {
   return { checklist: policy, content_sha256: await core.policyHash(policy, webcrypto) };
 }
 
-function harness(storage = new Map()) {
+function harness(storage = new Map(), backupApi = null) {
   const created = [];
   class Element {
     constructor(tag = "div") {
@@ -75,6 +75,7 @@ function harness(storage = new Map()) {
   let confirmResult = true;
   const window = {
     OpsDeckLvtoChecklist: core,
+    OpsDeckChecklistBackup: backupApi,
     crypto: webcrypto,
     localStorage: {
       getItem: (key) => storage.get(key) || null,
@@ -94,7 +95,7 @@ function harness(storage = new Map()) {
     created,
     ui: window.OpsDeckLvtoUi,
     setConfirm: (value) => { confirmResult = value; },
-    async load(owner, loader) { window.OpsDeckLvtoUi.setContext(owner, loader); await window.OpsDeckLvtoUi.load(); },
+    async load(owner, loader, backupLoader) { window.OpsDeckLvtoUi.setContext(owner, loader, backupLoader); await window.OpsDeckLvtoUi.load(); },
     status: () => elements.get("#lvtoStatus").textContent,
     progress: () => JSON.parse(storage.get(core.storageKey("progress", "owner")) || "null"),
     check(id, checked = true) {
@@ -251,7 +252,7 @@ test("LVTO public shell contains the interface but none of the private operation
   const app = fs.readFileSync(require.resolve("../app"), "utf8");
   const html = fs.readFileSync(new URL("../index.html", `file://${__filename}`), "utf8");
   const serviceWorker = fs.readFileSync(new URL("../service-worker.js", `file://${__filename}`), "utf8");
-  assert.match(app, /from\("opsdeck_lvto_checklist"\)/);
+  assert.match(app, /checklistRecordLoader\("opsdeck_lvto_checklist"/);
   assert.match(html, /id="openLvtoButton"/);
   assert.match(html, /id="openGpsButton"[\s\S]*?GPS interference procedures[\s\S]*?Under test[\s\S]*?Phase-based actions for jamming and spoofing/);
   assert.match(html, /id="lvtoProgress"[\s\S]*?id="lvtoSectionsControl"/);

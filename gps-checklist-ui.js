@@ -1,6 +1,7 @@
 (function initialiseGpsChecklistUi(globalScope) {
   "use strict";
   const core = globalScope.OpsDeckGpsChecklist;
+  const backupApi = globalScope.OpsDeckChecklistBackup;
   const root = document.querySelector("#gpsView");
   if (!core || !root) return;
   const content = document.querySelector("#gpsChecklistContent");
@@ -14,8 +15,10 @@
   const clearButton = document.querySelector("#gpsClearTicksButton");
   const restoreButton = document.querySelector("#gpsRestoreSectionsButton");
   const refreshButton = document.querySelector("#gpsRefreshButton");
+  const downloadButton = document.querySelector("#gpsDownloadButton");
   let userId = null;
   let fetchRecord = null;
+  let fetchBackup = null;
   let generation = 0;
   let pending = null;
   let policy = null;
@@ -35,6 +38,12 @@
     status.textContent = text;
     status.classList.toggle("status-warning", warning);
     status.classList.toggle("hidden", !text);
+  }
+
+  function updateDownloadControl() {
+    const ready = Boolean(policy && hash && fetchBackup && backupApi && navigator.onLine);
+    downloadButton.disabled = !ready;
+    downloadButton.title = navigator.onLine ? "Download PDF backup" : "Connect to download PDF backup";
   }
 
   function node(tag, className, text) {
@@ -78,7 +87,7 @@
 
   function renderBlock(block, parent) {
     if (core.CHECKABLE_TYPES.has(block.type)) {
-      const item = node("div", `gps-check-item${block.indent ? " gps-indented" : ""}`);
+      const item = node("div", `gps-check-item${block.indent ? " gps-indented" : ""}${block.personalTechnique ? " gps-personal-action" : ""}`);
       item.dataset.gpsRow = block.id;
       const row = node("label", "gps-check-row");
       const input = node("input");
@@ -86,6 +95,7 @@
       input.dataset.gpsItem = block.id;
       const copy = node("span", "gps-check-copy");
       appendText(copy, block.text);
+      if (block.personalTechnique) copy.append(node("small", "gps-action-classification", "Personal technique"));
       row.append(input, copy);
 
       const options = node("details", "gps-item-options");
@@ -204,6 +214,7 @@
     clearButton.disabled = !state.completedIds.length;
     restoreButton.disabled = !state.hiddenSectionIds.length;
     sectionsDetails.classList.remove("hidden");
+    updateDownloadControl();
   }
 
   function render() {
@@ -217,6 +228,7 @@
     resetButton.disabled = true;
     clearButton.disabled = true;
     restoreButton.disabled = true;
+    downloadButton.disabled = true;
     sectionsDetails.classList.add("hidden");
     if (!policy) return;
     policy.introduction.forEach((block) => renderBlock(block, introduction));
@@ -269,6 +281,7 @@
         list: notApplicableList,
         status: notApplicableStatus,
       });
+      if (section.phaseLabel) content.append(node("div", "gps-phase-divider", section.phaseLabel));
       panel.append(summary, body);
       content.append(panel);
     }
@@ -347,16 +360,27 @@
     })();
     pending = operation;
     operation.finally(() => {
-      if (generation === token) { pending = null; refreshButton.disabled = false; }
+      if (generation === token) {
+        pending = null;
+        refreshButton.disabled = !navigator.onLine;
+        updateDownloadControl();
+      }
     });
     return operation;
   }
 
-  function setContext(owner, loader) {
-    if (owner === userId) return;
+  function setContext(owner, loader, backupLoader) {
+    if (owner === userId) {
+      fetchRecord = loader || fetchRecord;
+      fetchBackup = backupLoader || fetchBackup;
+      updateDownloadControl();
+      if (owner) void load();
+      return;
+    }
     generation += 1;
     userId = owner || null;
     fetchRecord = loader || null;
+    fetchBackup = backupLoader || null;
     pending = null;
     policy = null;
     state = null;
@@ -400,7 +424,23 @@
     state = { ...state, hiddenSectionIds: [], updatedAt: new Date().toISOString() };
     persist();
   });
+  downloadButton.addEventListener("click", async () => {
+    if (!policy || !hash || !fetchBackup || !backupApi || !navigator.onLine) return;
+    downloadButton.disabled = true;
+    message("Preparing PDF backup...");
+    try {
+      const record = await fetchBackup(hash);
+      await backupApi.download(record, { expectedKey: "gps", expectedContentHash: hash });
+      message("PDF backup downloaded.");
+    } catch (_) {
+      message("PDF backup unavailable. Refresh when connected.", true);
+    } finally {
+      updateDownloadControl();
+    }
+  });
   refreshButton.addEventListener("click", () => void load({ force: true }));
+  globalScope.addEventListener("online", updateDownloadControl);
+  globalScope.addEventListener("offline", updateDownloadControl);
   globalScope.addEventListener("storage", (event) => {
     if (policy && event.key === core.storageKey("progress", userId)) {
       readLatestState();

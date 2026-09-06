@@ -3556,11 +3556,20 @@ html[data-theme="night"] input[type="time"] {
 .gps-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 8px;
   flex-shrink: 0;
 }
 
 .gps-actions button { min-height: 44px; }
+
+.checklist-download-button {
+  flex: 0 0 44px;
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+}
 
 .gps-new-button {
   display: inline-flex;
@@ -3646,10 +3655,41 @@ html[data-theme="night"] input[type="time"] {
   margin-top: 16px;
 }
 
+.gps-action-classification {
+  display: block;
+  margin-top: 3px;
+  color: var(--amber);
+  font-size: 0.7rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
 .gps-section {
   margin-bottom: 18px;
   border-bottom: 1px solid var(--line);
 }
+
+.gps-phase-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 28px 0 12px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.gps-phase-divider::before,
+.gps-phase-divider::after {
+  content: "";
+  height: 1px;
+  background: var(--line);
+}
+
+.gps-phase-divider::before { flex: 0 0 22px; }
+.gps-phase-divider::after { flex: 1; }
 
 .gps-section > .gps-disclosure {
   background: var(--blue-soft);
@@ -3927,6 +3967,8 @@ html[data-theme="night"] input[type="time"] {
 .lvto-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 8px;
   flex-shrink: 0;
 }
@@ -4330,6 +4372,8 @@ html[data-theme="night"] input[type="time"] {
 @media (max-width: 560px) {
   .gps-heading { align-items: flex-start; flex-wrap: wrap; }
   .gps-heading h2 { font-size: 1.15rem; }
+  .gps-actions,
+  .lvto-actions { width: 100%; }
   .gps-new-button { margin-left: 0; }
   .gps-section-choices { grid-template-columns: 1fr; }
   .gps-section-body { padding-inline: 8px; }
