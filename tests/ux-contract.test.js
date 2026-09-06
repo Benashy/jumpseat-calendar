@@ -193,6 +193,16 @@ test("GPS and LVTO PDF backups remain private, version-matched online downloads"
   assert.doesNotMatch(index, /pdf_base64|OpsDeck-A320-GPS-Interference-Backup\.pdf/);
 });
 
+test("GPS and LVTO use one complete New checklist reset", () => {
+  assert.match(index, /id="gpsResetButton"[^>]*>[\s\S]*?New checklist/);
+  assert.match(index, /id="lvtoResetButton"[^>]*>[\s\S]*?New checklist/);
+  assert.doesNotMatch(index, /gpsClearTicksButton|lvtoClearTicksButton|>Clear ticks</);
+  assert.doesNotMatch(gpsUi, /Clear all ticks|gpsClearTicksButton/);
+  assert.doesNotMatch(lvtoUi, /Clear all ticks|lvtoClearTicksButton/);
+  assert.match(gpsUi, /All ticks and not-applicable choices will be cleared, and every section shown again/);
+  assert.match(lvtoUi, /All entries and ticks will be cleared and every section shown/);
+});
+
 test("mobile navigation remains available and RA answers precede the diagram in a single column", () => {
   assert.match(styles, /\.tool-menu\s*\{[\s\S]*?position: sticky;[\s\S]*?top: 0;/);
   assert.match(styles, /@media \(max-width: 880px\)[\s\S]*?\.ra-result-grid\s*\{\s*order: 1;[\s\S]*?\.ra-geometry-card\s*\{\s*order: 2;/);

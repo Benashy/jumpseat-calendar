@@ -272,18 +272,15 @@ test("GPS UI asks before replacing an alternative outcome and keeps other marks"
   assert.deepEqual(h.progress().completedIds, ["second"]);
 });
 
-test("GPS UI clears ticks separately from section visibility and restores both on New checklist", async () => {
+test("GPS UI New checklist clears ticks, not-applicable choices and hidden sections", async () => {
   const h = harness(); await h.load("one", async () => await record());
   h.tick("first");
   h.markNotApplicable("second");
   const visibility = h.created.find(e => e.dataset.gpsVisibility === "phase");
   visibility.checked = false; visibility.listeners.change();
   assert.deepEqual(h.progress().hiddenSectionIds, ["phase"]);
-  h.elements.get("#gpsClearTicksButton").listeners.click();
-  assert.deepEqual(h.progress().completedIds, []);
-  assert.deepEqual(h.progress().notApplicableIds, ["second"]);
-  assert.deepEqual(h.progress().hiddenSectionIds, ["phase"]);
   h.elements.get("#gpsResetButton").listeners.click();
+  assert.deepEqual(h.progress().completedIds, []);
   assert.deepEqual(h.progress().notApplicableIds, []);
   assert.deepEqual(h.progress().hiddenSectionIds, []);
 });

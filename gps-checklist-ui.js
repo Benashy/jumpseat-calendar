@@ -12,7 +12,6 @@
   const status = document.querySelector("#gpsStatus");
   const revision = document.querySelector("#gpsRevision");
   const resetButton = document.querySelector("#gpsResetButton");
-  const clearButton = document.querySelector("#gpsClearTicksButton");
   const restoreButton = document.querySelector("#gpsRestoreSectionsButton");
   const refreshButton = document.querySelector("#gpsRefreshButton");
   const downloadButton = document.querySelector("#gpsDownloadButton");
@@ -210,7 +209,6 @@
       label.classList.toggle("hidden", !isHidden);
     });
     resetButton.disabled = false;
-    clearButton.disabled = !state.completedIds.length;
     restoreButton.disabled = !state.hiddenSectionIds.length;
     sectionsDetails.classList.remove("hidden");
     updateDownloadControl();
@@ -225,7 +223,6 @@
     hiddenStatus.classList.add("hidden");
     revision.textContent = "";
     resetButton.disabled = true;
-    clearButton.disabled = true;
     restoreButton.disabled = true;
     downloadButton.disabled = true;
     sectionsDetails.classList.add("hidden");
@@ -409,13 +406,6 @@
     state = core.newState(userId, hash);
     persist();
     void load({ force: true });
-  });
-  clearButton.addEventListener("click", () => {
-    if (!policy) return;
-    readLatestState();
-    if (!globalScope.confirm("Clear all ticks? Not-applicable items and section choices will be kept.")) return;
-    state = { ...state, completedIds: [], updatedAt: new Date().toISOString() };
-    persist();
   });
   restoreButton.addEventListener("click", () => {
     if (!policy) return;

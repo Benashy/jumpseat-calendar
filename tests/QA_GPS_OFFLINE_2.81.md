@@ -1,4 +1,4 @@
-# OpsDeck v2.80 GPS and offline QA
+# OpsDeck v2.81 GPS and offline QA
 
 ## Automated checks
 
@@ -8,6 +8,7 @@
 - PDF downloads require an online connection, the signed-in owner's row and the content hash of the checklist currently open.
 - PDF bytes must have a valid PDF signature and matching SHA-256 digest before download.
 - Anonymous PDF access, other-account reads and authenticated browser writes are denied.
+- GPS and LVTO expose only `New checklist`; the confirmed action clears each checklist's complete working state.
 
 ## GPS content checks
 
@@ -22,6 +23,11 @@
 
 Checked in browser emulation at 1024 x 1366, 1194 x 834 and 390 x 844. No horizontal page overflow or clipped headings, controls or action text was found.
 
-## Remaining physical-device check
+## Physical iPad result
 
-On the intended iPad, sign in online and open both private checklists once. Close OpsDeck, enable Flight Mode with Wi-Fi disabled, reopen the installed site and confirm both checklists load and retain new ticks. This is the final device-specific confirmation because browser storage retention and installed-site behaviour cannot be proved by desktop emulation.
+Passed on 6 September 2026 using the installed Home Screen app in Flight Mode with Wi-Fi disabled. GPS and LVTO loaded from their validated private caches, retained existing ticks and saved new ticks across repeated app closures and launches. NOTOC guidance and code lookup, FDP/LTOT and the RA position check remained available. Jumpseat remained readable with online writes disabled, and PDF downloads were disabled offline as designed.
+
+## Remaining physical-device checks
+
+- Repeat the trusted-device launch on the restricted BA Wi-Fi with mobile data disabled, where the iPad may report a connection although GitHub Pages or Supabase cannot be reached.
+- Capture the enlarged top-left Home Screen launch in a screenshot, with iPad model, iPadOS version and orientation.

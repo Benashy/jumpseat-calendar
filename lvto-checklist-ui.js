@@ -15,7 +15,6 @@
   const progressLabel = document.querySelector("#lvtoProgress");
   const completionStatus = document.querySelector("#lvtoCompletionStatus");
   const resetButton = document.querySelector("#lvtoResetButton");
-  const clearButton = document.querySelector("#lvtoClearTicksButton");
   const restoreButton = document.querySelector("#lvtoRestoreSectionsButton");
   const refreshButton = document.querySelector("#lvtoRefreshButton");
   const downloadButton = document.querySelector("#lvtoDownloadButton");
@@ -285,7 +284,6 @@
       label.classList.toggle("hidden", !hidden);
     });
     resetButton.disabled = false;
-    clearButton.disabled = !state.completedIds.length;
     restoreButton.disabled = !state.hiddenSectionIds.length;
     sectionsDetails.classList.remove("hidden");
     updateDownloadControl();
@@ -303,7 +301,6 @@
     completionStatus.classList.add("hidden");
     completionStatus.classList.remove("is-complete", "is-incomplete");
     resetButton.disabled = true;
-    clearButton.disabled = true;
     restoreButton.disabled = true;
     downloadButton.disabled = true;
     sectionsDetails.classList.add("hidden");
@@ -457,13 +454,6 @@
     state = core.newState(userId, hash);
     persist();
     void load({ force: true });
-  });
-  clearButton.addEventListener("click", () => {
-    if (!policy) return;
-    readLatestState();
-    if (!globalScope.confirm("Clear all ticks? Entered values and the return decision will be kept.")) return;
-    state = core.clearChecks(state);
-    persist();
   });
   restoreButton.addEventListener("click", () => {
     if (!policy) return;

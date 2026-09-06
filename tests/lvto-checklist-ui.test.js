@@ -176,7 +176,7 @@ test("LVTO UI shows incomplete after the first tick and complete only when every
 
   page.check("action", false);
   assert.equal(completion.textContent, "CHECKLIST INCOMPLETE");
-  page.elements.get("#lvtoClearTicksButton").listeners.click();
+  page.elements.get("#lvtoResetButton").listeners.click();
   assert.equal(completion.textContent, "");
   assert.equal(completion.classList.contains("hidden"), true);
 });
@@ -216,17 +216,15 @@ test("LVTO UI uses the validated private cache offline and permits offline progr
   assert.deepEqual(offline.progress().completedIds, ["action"]);
 });
 
-test("LVTO UI reset clears the whole working state while Clear ticks keeps entries", async () => {
+test("LVTO UI New checklist clears the whole working state", async () => {
   const page = harness();
   await page.load("owner", async () => await record());
   page.check("action");
   page.field("entered", "150");
   page.choose("return-decision", "no");
-  page.elements.get("#lvtoClearTicksButton").listeners.click();
-  assert.deepEqual(page.progress().completedIds, []);
-  assert.equal(page.progress().values.entered, "150");
-  assert.equal(page.progress().decisions["return-decision"], "no");
+  page.visibility("planning", false);
   page.elements.get("#lvtoResetButton").listeners.click();
+  assert.deepEqual(page.progress().completedIds, []);
   assert.deepEqual(page.progress().values, {});
   assert.deepEqual(page.progress().decisions, {});
   assert.deepEqual(page.progress().hiddenSectionIds, []);
