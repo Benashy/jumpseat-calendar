@@ -1,4 +1,4 @@
-# OpsDeck v2.79 GPS and offline QA
+# OpsDeck v2.80 GPS and offline QA
 
 ## Automated checks
 
@@ -13,7 +13,7 @@
 
 - The GPS deselection route is shown beneath each relevant action as `DATA > POSITION MONITOR > SEL NAVAIDS > GPS DESELECT`.
 - After landing shows separate GPS selection verification, GPWS TERR reinstatement, IRS, e-log and ASR actions.
-- The two Ben-authorised handover checks are visibly labelled `Personal technique`; they are not presented as BA or Airbus procedure items.
+- The two Ben-authorised handover checks use the established vertical gold rule; they are not presented as BA or Airbus procedure items.
 - GPWS SYS and CLOCK are not added to the after-landing sequence.
 - Next-departure ground preparation is separated from the preceding flight by a visible phase divider.
 - GPS remains marked `Under test`.

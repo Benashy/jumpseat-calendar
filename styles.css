@@ -3655,15 +3655,6 @@ html[data-theme="night"] input[type="time"] {
   margin-top: 16px;
 }
 
-.gps-action-classification {
-  display: block;
-  margin-top: 3px;
-  color: var(--amber);
-  font-size: 0.7rem;
-  font-weight: 750;
-  line-height: 1.35;
-}
-
 .gps-section {
   margin-bottom: 18px;
   border-bottom: 1px solid var(--line);
@@ -3783,6 +3774,10 @@ html[data-theme="night"] input[type="time"] {
 
 .gps-check-item.is-checked { background: var(--good-soft); }
 .gps-check-item.gps-is-not-applicable { display: none; }
+.gps-check-item.gps-personal-action {
+  border-left: 2px solid var(--gold);
+  padding-left: 10px;
+}
 
 .gps-item-options {
   position: relative;

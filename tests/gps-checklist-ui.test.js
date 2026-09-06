@@ -99,13 +99,13 @@ test("GPS UI renders a restrained divider between operational phases", async () 
   assert.equal(divider.textContent, "Next phase");
 });
 
-test("GPS UI visibly distinguishes a checkable personal technique from sourced actions", async () => {
+test("GPS UI uses the established gold-rule treatment for checkable personal techniques", async () => {
   const page = harness();
   await page.load("one", async () => await record());
   const row = page.itemRow("second");
   assert.equal(row.classList.contains("gps-personal-action"), true);
   const label = page.created.find((element) => element.classList.contains("gps-action-classification"));
-  assert.equal(label.textContent, "Personal technique");
+  assert.equal(label, undefined);
 });
 
 test("GPS UI downloads only the PDF supplied for the checklist version currently open", async () => {

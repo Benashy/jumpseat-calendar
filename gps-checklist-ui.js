@@ -95,7 +95,6 @@
       input.dataset.gpsItem = block.id;
       const copy = node("span", "gps-check-copy");
       appendText(copy, block.text);
-      if (block.personalTechnique) copy.append(node("small", "gps-action-classification", "Personal technique"));
       row.append(input, copy);
 
       const options = node("details", "gps-item-options");
