@@ -2,7 +2,7 @@ const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
 const JUMPSEAT_DRAFT_KEY = "opsdeck-jumpseat-draft-v1";
 const JUMPSEAT_DRAFT_SCHEMA_VERSION = 1;
-const APP_VERSION = "2.86";
+const APP_VERSION = "2.87";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 5;
 const CREW_LIMIT_CAPS = { flight: 3, cabin: 6 };
@@ -483,7 +483,7 @@ function applyAppearance(preference, persist = false) {
   document.documentElement.dataset.theme = resolvedTheme;
   document.querySelector('meta[name="theme-color"]')?.setAttribute(
     "content",
-    resolvedTheme === "night" ? "#10171c" : "#102f47"
+    resolvedTheme === "night" ? "#101417" : "#eef1f2"
   );
 
   elements.appearanceInputs.forEach((input) => {

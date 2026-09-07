@@ -204,7 +204,13 @@ test("the primary iPad has deterministic portrait and landscape launch screens",
   assert.match(index, /revealLaunchLogo\(450\)/);
   assert.match(index, /revealLaunchLogo\(260\)/);
   assert.match(index, /hideAfter\(560\)/);
-  assert.match(fs.readFileSync(path.join(root, "manifest.webmanifest"), "utf8"), /"background_color": "#102f47"/);
+  assert.match(index, /apple-mobile-web-app-status-bar-style" content="default"/);
+  assert.match(index, /meta name="theme-color" content="#eef1f2"/);
+  assert.match(index, /resolvedTheme === "night" \? "#101417" : "#eef1f2"/);
+  assert.match(app, /resolvedTheme === "night" \? "#101417" : "#eef1f2"/);
+  const manifest = fs.readFileSync(path.join(root, "manifest.webmanifest"), "utf8");
+  assert.match(manifest, /"background_color": "#102f47"/);
+  assert.match(manifest, /"theme_color": "#eef1f2"/);
   assert.match(index, /minimumDisplayTime = 1100/);
   assert.match(index, /addEventListener\("pagehide", prepareLaunchScreen\)/);
   assert.match(index, /addEventListener\("visibilitychange"/);
