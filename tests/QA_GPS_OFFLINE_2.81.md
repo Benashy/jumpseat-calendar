@@ -31,3 +31,9 @@ Passed on 6 September 2026 using the installed Home Screen app in Flight Mode wi
 
 - Repeat the trusted-device launch on the restricted BA Wi-Fi with mobile data disabled, where the iPad may report a connection although GitHub Pages or Supabase cannot be reached.
 - Capture the enlarged top-left Home Screen launch in a screenshot, with iPad model, iPadOS version and orientation.
+
+## 7 September follow-up
+
+- Restricted BA Wi-Fi was reproduced on an iPad Pro 11-inch (M4), iPadOS 26.5.2. The cached app opens after Wi-Fi is disconnected and remains usable when that restricted connection is restored.
+- The enlarged launch view was confirmed as a transient Home Screen launch image rather than persistent page layout: the correctly scaled live page appeared when iPadOS presented its network alert.
+- Dedicated 2420 x 1668 landscape and 1668 x 2420 portrait launch screens were prepared for physical-device verification in v2.82.

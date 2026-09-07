@@ -12,6 +12,15 @@ const serviceWorker = fs.readFileSync(path.join(root, "service-worker.js"), "utf
 const gpsUi = fs.readFileSync(path.join(root, "gps-checklist-ui.js"), "utf8");
 const lvtoUi = fs.readFileSync(path.join(root, "lvto-checklist-ui.js"), "utf8");
 
+function readPngDimensions(filePath) {
+  const image = fs.readFileSync(filePath);
+  assert.deepEqual([...image.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  return {
+    width: image.readUInt32BE(16),
+    height: image.readUInt32BE(20),
+  };
+}
+
 test("unfinished Jumpseat work has a device draft and explicit discard protection", () => {
   assert.match(app, /JUMPSEAT_DRAFT_KEY/);
   assert.match(app, /function persistJumpseatDraft/);
@@ -170,6 +179,18 @@ test("the pinned Supabase browser client is available in the offline shell", () 
   assert.match(index, /\.\/vendor\/supabase-2\.112\.3\.min\.js/);
   assert.match(serviceWorker, /\.\/vendor\/supabase-2\.112\.3\.min\.js/);
   assert.doesNotMatch(index, /cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js/);
+});
+
+test("the primary iPad has deterministic portrait and landscape launch screens", () => {
+  const portrait = "launch-ipad-pro-11-m4-portrait.png";
+  const landscape = "launch-ipad-pro-11-m4-landscape.png";
+  assert.deepEqual(readPngDimensions(path.join(root, "icons", portrait)), { width: 1668, height: 2420 });
+  assert.deepEqual(readPngDimensions(path.join(root, "icons", landscape)), { width: 2420, height: 1668 });
+  assert.match(index, new RegExp(`apple-touch-startup-image[\\s\\S]+${portrait}`));
+  assert.match(index, new RegExp(`apple-touch-startup-image[\\s\\S]+${landscape}`));
+  assert.match(index, /device-width: 834px[\s\S]+device-height: 1210px/);
+  assert.match(serviceWorker, new RegExp(portrait.replace(".", "\\.")));
+  assert.match(serviceWorker, new RegExp(landscape.replace(".", "\\.")));
 });
 
 test("trusted devices can reopen validated private checklists without a cloud session", () => {
