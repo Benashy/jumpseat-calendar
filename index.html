@@ -28,7 +28,10 @@
         opacity: 0;
         pointer-events: none;
         visibility: hidden;
-        transition: opacity 180ms ease, visibility 0s linear 180ms;
+        transition:
+          opacity 320ms cubic-bezier(0.22, 1, 0.36, 1),
+          visibility 0s linear 320ms;
+        will-change: opacity;
       }
 
       html.opsdeck-home-screen #opsdeckLaunchScreen img {
@@ -49,6 +52,17 @@
         transition: none;
       }
 
+      html.opsdeck-home-screen .app-shell {
+        opacity: 1;
+        transition: opacity 240ms ease-out 60ms;
+        will-change: opacity;
+      }
+
+      html.opsdeck-home-screen.opsdeck-launching .app-shell {
+        opacity: 0;
+        transition: none;
+      }
+
       @media (orientation: portrait) {
         html.opsdeck-home-screen #opsdeckLaunchScreen img {
           width: min(46vw, 380px);
@@ -56,7 +70,8 @@
       }
 
       @media (prefers-reduced-motion: reduce) {
-        html.opsdeck-home-screen #opsdeckLaunchScreen {
+        html.opsdeck-home-screen #opsdeckLaunchScreen,
+        html.opsdeck-home-screen .app-shell {
           transition: none;
         }
       }
@@ -94,25 +109,25 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-135" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-136" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link
       rel="apple-touch-startup-image"
-      href="./icons/launch-ipad-pro-11-m4-portrait.png?v=cloud-sync-135"
+      href="./icons/launch-ipad-pro-11-m4-portrait.png?v=cloud-sync-136"
       media="screen and (device-width: 834px) and (device-height: 1210px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
     />
     <link
       rel="apple-touch-startup-image"
-      href="./icons/launch-ipad-pro-11-m4-landscape.png?v=cloud-sync-135"
+      href="./icons/launch-ipad-pro-11-m4-landscape.png?v=cloud-sync-136"
       media="screen and (device-width: 834px) and (device-height: 1210px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
     />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-135" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-136" />
   </head>
   <body>
     <div id="opsdeckLaunchScreen" aria-hidden="true">
-      <img src="./icons/opsdeck-wordmark.svg?v=cloud-sync-135" alt="" width="1024" height="320" />
+      <img src="./icons/opsdeck-wordmark.svg?v=cloud-sync-136" alt="" width="1024" height="320" />
     </div>
     <script>
       (() => {
@@ -162,7 +177,7 @@
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-135" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-136" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -269,7 +284,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.83</small>
+            <small class="app-version">v2.84</small>
           </section>
 
         </section>
@@ -735,7 +750,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.83</small>
+            <small class="app-version">v2.84</small>
           </section>
         </section>
 
@@ -809,7 +824,7 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.83</small>
+            <small class="app-version">v2.84</small>
           </section>
         </section>
 
@@ -849,7 +864,7 @@
               <button class="text-button secondary" id="gpsSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="gpsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.83</small>
+            <small class="app-version">v2.84</small>
           </section>
         </section>
 
@@ -892,7 +907,7 @@
               <button class="text-button secondary" id="lvtoSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="lvtoSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.83</small>
+            <small class="app-version">v2.84</small>
           </section>
         </section>
 
@@ -1033,7 +1048,7 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.83</small>
+            <small class="app-version">v2.84</small>
           </section>
         </section>
 
@@ -1129,7 +1144,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.83</small>
+            <small class="app-version">v2.84</small>
           </section>
         </section>
 
@@ -1236,7 +1251,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.83</small>
+            <small class="app-version">v2.84</small>
           </section>
         </section>
       </main>
@@ -1340,23 +1355,23 @@
       </article>
     </template>
 
-    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-135"></script>
-    <script src="./supabase-config.js?v=cloud-sync-135"></script>
-    <script src="./ltot-core.js?v=cloud-sync-135"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-135"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-135"></script>
-    <script src="./notoc-policy-store.js?v=cloud-sync-135"></script>
-    <script src="./notoc-core.js?v=cloud-sync-135"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-135"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-135"></script>
-    <script src="./offline-device.js?v=cloud-sync-135"></script>
-    <script src="./checklist-backup.js?v=cloud-sync-135"></script>
-    <script src="./gps-checklist-core.js?v=cloud-sync-135"></script>
-    <script src="./gps-checklist-ui.js?v=cloud-sync-135"></script>
-    <script src="./lvto-checklist-core.js?v=cloud-sync-135"></script>
-    <script src="./lvto-checklist-ui.js?v=cloud-sync-135"></script>
-    <script src="./data-portability.js?v=cloud-sync-135"></script>
-    <script src="./request-retention.js?v=cloud-sync-135"></script>
-    <script src="./app.js?v=cloud-sync-135"></script>
+    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-136"></script>
+    <script src="./supabase-config.js?v=cloud-sync-136"></script>
+    <script src="./ltot-core.js?v=cloud-sync-136"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-136"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-136"></script>
+    <script src="./notoc-policy-store.js?v=cloud-sync-136"></script>
+    <script src="./notoc-core.js?v=cloud-sync-136"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-136"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-136"></script>
+    <script src="./offline-device.js?v=cloud-sync-136"></script>
+    <script src="./checklist-backup.js?v=cloud-sync-136"></script>
+    <script src="./gps-checklist-core.js?v=cloud-sync-136"></script>
+    <script src="./gps-checklist-ui.js?v=cloud-sync-136"></script>
+    <script src="./lvto-checklist-core.js?v=cloud-sync-136"></script>
+    <script src="./lvto-checklist-ui.js?v=cloud-sync-136"></script>
+    <script src="./data-portability.js?v=cloud-sync-136"></script>
+    <script src="./request-retention.js?v=cloud-sync-136"></script>
+    <script src="./app.js?v=cloud-sync-136"></script>
   </body>
 </html>
