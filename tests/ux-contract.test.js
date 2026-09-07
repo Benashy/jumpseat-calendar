@@ -201,7 +201,9 @@ test("the primary iPad has deterministic portrait and landscape launch screens",
   assert.match(index, /html\.opsdeck-home-screen \.app-shell\s*\{[\s\S]*?transition: opacity 240ms ease-out 60ms;/);
   assert.match(index, /html\.opsdeck-home-screen\.opsdeck-launching \.app-shell\s*\{[\s\S]*?opacity: 0;/);
   assert.match(index, /root\.classList\.add\("opsdeck-launching", "opsdeck-launch-snapshot"\)/);
-  assert.match(index, /revealLaunchLogo\(\)/);
+  assert.match(index, /revealLaunchLogo\(450\)/);
+  assert.match(index, /revealLaunchLogo\(260\)/);
+  assert.match(index, /hideAfter\(560\)/);
   assert.match(fs.readFileSync(path.join(root, "manifest.webmanifest"), "utf8"), /"background_color": "#102f47"/);
   assert.match(index, /minimumDisplayTime = 1100/);
   assert.match(index, /addEventListener\("pagehide", prepareLaunchScreen\)/);
