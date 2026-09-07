@@ -39,3 +39,4 @@ Passed on 6 September 2026 using the installed Home Screen app in Flight Mode wi
 - Dedicated 2420 x 1668 landscape and 1668 x 2420 portrait launch screens were prepared for physical-device verification in v2.82.
 - Physical testing of v2.82 on the existing Home Screen installation showed that iPadOS continued to present the enlarged saved page image and did not display either dedicated launch asset.
 - v2.83 adds a Home Screen-only launch cover inside the app itself. It is present before the main interface renders, remains until the initial viewport has settled, and is prepared again when the app is backgrounded. Physical-device confirmation remains required.
+- Physical v2.84 video review showed that iPadOS briefly transformed the prepared logo snapshot before the live centred cover appeared. The next launch revision therefore uses a plain navy native/saved frame and reveals the centred logo only after the live viewport is available.

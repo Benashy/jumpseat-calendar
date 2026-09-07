@@ -195,9 +195,14 @@ test("the primary iPad has deterministic portrait and landscape launch screens",
   assert.match(index, /id="opsdeckLaunchScreen"[\s\S]+class="app-shell"/);
   assert.match(index, /html\.opsdeck-home-screen #opsdeckLaunchScreen\s*\{[\s\S]*?background: #102f47;/);
   assert.match(index, /html\.opsdeck-home-screen\.opsdeck-launching #opsdeckLaunchScreen/);
+  assert.match(index, /html\.opsdeck-home-screen\.opsdeck-launch-logo-ready #opsdeckLaunchScreen img/);
+  assert.match(index, /html\.opsdeck-home-screen\.opsdeck-launch-snapshot #opsdeckLaunchScreen img/);
   assert.match(index, /opacity 320ms cubic-bezier\(0\.22, 1, 0\.36, 1\)/);
   assert.match(index, /html\.opsdeck-home-screen \.app-shell\s*\{[\s\S]*?transition: opacity 240ms ease-out 60ms;/);
   assert.match(index, /html\.opsdeck-home-screen\.opsdeck-launching \.app-shell\s*\{[\s\S]*?opacity: 0;/);
+  assert.match(index, /root\.classList\.add\("opsdeck-launching", "opsdeck-launch-snapshot"\)/);
+  assert.match(index, /revealLaunchLogo\(\)/);
+  assert.match(fs.readFileSync(path.join(root, "manifest.webmanifest"), "utf8"), /"background_color": "#102f47"/);
   assert.match(index, /minimumDisplayTime = 1100/);
   assert.match(index, /addEventListener\("pagehide", prepareLaunchScreen\)/);
   assert.match(index, /addEventListener\("visibilitychange"/);
