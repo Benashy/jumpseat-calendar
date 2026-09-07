@@ -191,6 +191,13 @@ test("the primary iPad has deterministic portrait and landscape launch screens",
   assert.match(index, /device-width: 834px[\s\S]+device-height: 1210px/);
   assert.match(serviceWorker, new RegExp(portrait.replace(".", "\\.")));
   assert.match(serviceWorker, new RegExp(landscape.replace(".", "\\.")));
+  assert.match(index, /navigator\.standalone === true/);
+  assert.match(index, /id="opsdeckLaunchScreen"[\s\S]+class="app-shell"/);
+  assert.match(index, /html\.opsdeck-home-screen #opsdeckLaunchScreen\s*\{[\s\S]*?background: #102f47;/);
+  assert.match(index, /html\.opsdeck-home-screen\.opsdeck-launching #opsdeckLaunchScreen/);
+  assert.match(index, /minimumDisplayTime = 1100/);
+  assert.match(index, /addEventListener\("pagehide", prepareLaunchScreen\)/);
+  assert.match(index, /addEventListener\("visibilitychange"/);
 });
 
 test("trusted devices can reopen validated private checklists without a cloud session", () => {
