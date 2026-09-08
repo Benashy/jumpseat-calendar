@@ -44,3 +44,11 @@ Passed on 6 September 2026 using the installed Home Screen app in Flight Mode wi
 - The next launch revision keeps the live logo hidden for 450 ms, leaving a plain navy frame while the native animation settles, before fading in the centred logo. Resume timing is coordinated separately so the logo and app transition cannot race.
 - Physical v2.86 testing confirmed that the delayed logo remains centred. The remaining visible discontinuity is the iPadOS status area changing from grey, to white, to navy while control passes to the web app; restarting the iPad separately restored normal app-switcher background taps.
 - The next launch revision uses the light OpsDeck surface for the standalone status area in light appearance and the app background in night appearance. This accepts the native iPadOS frame rather than adding another colour transition, while retaining the navy launch field and centred logo.
+
+## 8 September launch reliability follow-up (v2.88)
+
+- Ben accepted the physical iPad launch appearance in v2.87. The colours, logo sizing and normal initial/resume timings are retained.
+- The app shell is inert while covered and throughout the fade, and the cover intercepts pointer input. Browser checks confirmed that hidden inputs cannot receive a click or keyboard focus, while visible inputs become usable after the fade.
+- Every foreground return reinstates the four-second fallback, including a return while a dependent image is still loading. A simulated delayed image no longer leaves the cover stuck after backgrounding and returning.
+- Eight launch-controller tests cover normal release, ordinary browser tabs, reduced motion, interrupted loading, completion while hidden, stale animation frames, repeated app switching and history restoration.
+- Browser screenshots and measurements at 1210 x 834 and 834 x 1210 show the same centred logo and light/night status metadata. These are browser checks with simulated lifecycle events, not native iPadOS launch verification.

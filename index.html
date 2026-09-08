@@ -40,6 +40,10 @@
         will-change: opacity;
       }
 
+      html.opsdeck-home-screen.opsdeck-launch-blocked #opsdeckLaunchScreen {
+        pointer-events: auto;
+      }
+
       html.opsdeck-home-screen.opsdeck-launch-logo-ready #opsdeckLaunchScreen img {
         opacity: 1;
       }
@@ -119,98 +123,135 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-139" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-140" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link
       rel="apple-touch-startup-image"
-      href="./icons/launch-ipad-pro-11-m4-portrait.png?v=cloud-sync-139"
+      href="./icons/launch-ipad-pro-11-m4-portrait.png?v=cloud-sync-140"
       media="screen and (device-width: 834px) and (device-height: 1210px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
     />
     <link
       rel="apple-touch-startup-image"
-      href="./icons/launch-ipad-pro-11-m4-landscape.png?v=cloud-sync-139"
+      href="./icons/launch-ipad-pro-11-m4-landscape.png?v=cloud-sync-140"
       media="screen and (device-width: 834px) and (device-height: 1210px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
     />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-139" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-140" />
   </head>
   <body>
     <div id="opsdeckLaunchScreen" aria-hidden="true">
-      <img src="./icons/opsdeck-wordmark.svg?v=cloud-sync-139" alt="" width="1024" height="320" />
+      <img src="./icons/opsdeck-wordmark.svg?v=cloud-sync-140" alt="" width="1024" height="320" />
     </div>
-    <script>
-      (() => {
-        const root = document.documentElement;
-        if (!root.classList.contains("opsdeck-home-screen")) return;
-
-        const openedAt = performance.now();
-        let hideTimer = 0;
-        let fallbackTimer = 0;
-        let logoTimer = 0;
-
-        const revealLaunchLogo = (delay = 0) => {
-          window.clearTimeout(logoTimer);
-          root.classList.remove("opsdeck-launch-snapshot");
-          logoTimer = window.setTimeout(() => {
-            requestAnimationFrame(() => {
-              requestAnimationFrame(() => root.classList.add("opsdeck-launch-logo-ready"));
-            });
-          }, delay);
-        };
-
-        const hideLaunchScreen = () => {
-          window.clearTimeout(hideTimer);
-          window.clearTimeout(fallbackTimer);
-          window.clearTimeout(logoTimer);
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => root.classList.remove("opsdeck-launching"));
-          });
-        };
-
-        const hideAfter = (delay) => {
-          window.clearTimeout(hideTimer);
-          hideTimer = window.setTimeout(hideLaunchScreen, delay);
-        };
-
-        const prepareLaunchScreen = () => {
-          window.clearTimeout(hideTimer);
-          window.clearTimeout(fallbackTimer);
-          window.clearTimeout(logoTimer);
-          root.classList.remove("opsdeck-launch-logo-ready");
-          root.classList.add("opsdeck-launching", "opsdeck-launch-snapshot");
-        };
-
-        // Keep the live logo out of iPadOS's native Home Screen icon expansion.
-        revealLaunchLogo(450);
-
-        window.addEventListener("load", () => {
-          const minimumDisplayTime = 1100;
-          hideAfter(Math.max(0, minimumDisplayTime - (performance.now() - openedAt)));
-        }, { once: true });
-
-        window.addEventListener("pagehide", prepareLaunchScreen);
-        window.addEventListener("pageshow", (event) => {
-          if (event.persisted) {
-            revealLaunchLogo(260);
-            hideAfter(560);
-          }
-        });
-        document.addEventListener("visibilitychange", () => {
-          if (document.visibilityState === "hidden") prepareLaunchScreen();
-          else if (document.readyState === "complete") {
-            revealLaunchLogo(260);
-            hideAfter(560);
-          }
-        });
-
-        fallbackTimer = window.setTimeout(hideLaunchScreen, 4000);
-      })();
-    </script>
     <div class="app-shell">
+      <script>
+        (() => {
+          const root = document.documentElement;
+          if (!root.classList.contains("opsdeck-home-screen")) return;
+
+          const shell = document.querySelector(".app-shell");
+          const openedAt = performance.now();
+          let hideTimer = 0;
+          let fallbackTimer = 0;
+          let logoTimer = 0;
+          let releaseTimer = 0;
+          let generation = 0;
+
+          const blockInteraction = () => {
+            shell.inert = true;
+            root.classList.add("opsdeck-launch-blocked");
+          };
+
+          const clearLaunchTimers = () => {
+            window.clearTimeout(hideTimer);
+            window.clearTimeout(fallbackTimer);
+            window.clearTimeout(logoTimer);
+            window.clearTimeout(releaseTimer);
+          };
+
+          const revealLaunchLogo = (delay = 0) => {
+            const currentGeneration = generation;
+            window.clearTimeout(logoTimer);
+            root.classList.remove("opsdeck-launch-snapshot");
+            logoTimer = window.setTimeout(() => {
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  if (currentGeneration === generation && document.visibilityState !== "hidden" &&
+                    root.classList.contains("opsdeck-launching")) root.classList.add("opsdeck-launch-logo-ready");
+                });
+              });
+            }, delay);
+          };
+
+          const hideLaunchScreen = () => {
+            const currentGeneration = generation;
+            clearLaunchTimers();
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                if (currentGeneration !== generation || document.visibilityState === "hidden") return;
+                root.classList.remove("opsdeck-launching");
+                // Keep controls inactive until the cover's CSS fade has finished.
+                const fadeTime = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? 0 : 320;
+                releaseTimer = window.setTimeout(() => {
+                  if (currentGeneration !== generation || document.visibilityState === "hidden") return;
+                  shell.inert = false;
+                  root.classList.remove("opsdeck-launch-blocked");
+                }, fadeTime);
+              });
+            });
+          };
+
+          const hideAfter = (delay) => {
+            window.clearTimeout(hideTimer);
+            hideTimer = window.setTimeout(hideLaunchScreen, delay);
+          };
+
+          const armFallback = () => {
+            window.clearTimeout(fallbackTimer);
+            fallbackTimer = window.setTimeout(hideLaunchScreen, 4000);
+          };
+
+          const prepareLaunchScreen = () => {
+            generation += 1;
+            clearLaunchTimers();
+            blockInteraction();
+            root.classList.remove("opsdeck-launch-logo-ready");
+            root.classList.add("opsdeck-launching", "opsdeck-launch-snapshot");
+          };
+
+          const resumeLaunchScreen = () => {
+            generation += 1;
+            clearLaunchTimers();
+            blockInteraction();
+            armFallback();
+            revealLaunchLogo(260);
+            if (document.readyState === "complete") hideAfter(560);
+          };
+
+          // Keep the live logo out of iPadOS's native Home Screen icon expansion.
+          blockInteraction();
+          revealLaunchLogo(450);
+          armFallback();
+
+          window.addEventListener("load", () => {
+            if (document.visibilityState === "hidden") return;
+            const minimumDisplayTime = 1100;
+            hideAfter(Math.max(0, minimumDisplayTime - (performance.now() - openedAt)));
+          }, { once: true });
+
+          window.addEventListener("pagehide", prepareLaunchScreen);
+          window.addEventListener("pageshow", (event) => {
+            if (event.persisted) resumeLaunchScreen();
+          });
+          document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "hidden") prepareLaunchScreen();
+            else resumeLaunchScreen();
+          });
+        })();
+      </script>
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-139" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-140" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -317,7 +358,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.87</small>
+            <small class="app-version">v2.88</small>
           </section>
 
         </section>
@@ -783,7 +824,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.87</small>
+            <small class="app-version">v2.88</small>
           </section>
         </section>
 
@@ -857,7 +898,7 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.87</small>
+            <small class="app-version">v2.88</small>
           </section>
         </section>
 
@@ -897,7 +938,7 @@
               <button class="text-button secondary" id="gpsSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="gpsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.87</small>
+            <small class="app-version">v2.88</small>
           </section>
         </section>
 
@@ -940,7 +981,7 @@
               <button class="text-button secondary" id="lvtoSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="lvtoSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.87</small>
+            <small class="app-version">v2.88</small>
           </section>
         </section>
 
@@ -1081,7 +1122,7 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.87</small>
+            <small class="app-version">v2.88</small>
           </section>
         </section>
 
@@ -1177,7 +1218,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.87</small>
+            <small class="app-version">v2.88</small>
           </section>
         </section>
 
@@ -1284,7 +1325,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.87</small>
+            <small class="app-version">v2.88</small>
           </section>
         </section>
       </main>
@@ -1388,23 +1429,23 @@
       </article>
     </template>
 
-    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-139"></script>
-    <script src="./supabase-config.js?v=cloud-sync-139"></script>
-    <script src="./ltot-core.js?v=cloud-sync-139"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-139"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-139"></script>
-    <script src="./notoc-policy-store.js?v=cloud-sync-139"></script>
-    <script src="./notoc-core.js?v=cloud-sync-139"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-139"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-139"></script>
-    <script src="./offline-device.js?v=cloud-sync-139"></script>
-    <script src="./checklist-backup.js?v=cloud-sync-139"></script>
-    <script src="./gps-checklist-core.js?v=cloud-sync-139"></script>
-    <script src="./gps-checklist-ui.js?v=cloud-sync-139"></script>
-    <script src="./lvto-checklist-core.js?v=cloud-sync-139"></script>
-    <script src="./lvto-checklist-ui.js?v=cloud-sync-139"></script>
-    <script src="./data-portability.js?v=cloud-sync-139"></script>
-    <script src="./request-retention.js?v=cloud-sync-139"></script>
-    <script src="./app.js?v=cloud-sync-139"></script>
+    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-140"></script>
+    <script src="./supabase-config.js?v=cloud-sync-140"></script>
+    <script src="./ltot-core.js?v=cloud-sync-140"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-140"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-140"></script>
+    <script src="./notoc-policy-store.js?v=cloud-sync-140"></script>
+    <script src="./notoc-core.js?v=cloud-sync-140"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-140"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-140"></script>
+    <script src="./offline-device.js?v=cloud-sync-140"></script>
+    <script src="./checklist-backup.js?v=cloud-sync-140"></script>
+    <script src="./gps-checklist-core.js?v=cloud-sync-140"></script>
+    <script src="./gps-checklist-ui.js?v=cloud-sync-140"></script>
+    <script src="./lvto-checklist-core.js?v=cloud-sync-140"></script>
+    <script src="./lvto-checklist-ui.js?v=cloud-sync-140"></script>
+    <script src="./data-portability.js?v=cloud-sync-140"></script>
+    <script src="./request-retention.js?v=cloud-sync-140"></script>
+    <script src="./app.js?v=cloud-sync-140"></script>
   </body>
 </html>
