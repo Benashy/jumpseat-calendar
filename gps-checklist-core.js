@@ -30,6 +30,8 @@
         (block.exclusiveGroup === undefined || (CHECKABLE_TYPES.has(block.type) && validId(block.exclusiveGroup))) &&
         (block.forBlockId === undefined || (block.type === "note" && validId(block.forBlockId))) &&
         (block.presentation === undefined || (block.type === "note" && NOTE_PRESENTATIONS.has(block.presentation))) &&
+        (block.verificationPending === undefined || (block.type === "note" &&
+          typeof block.verificationPending === "boolean" && block.forBlockId === undefined)) &&
         (block.personalTechnique === undefined || typeof block.personalTechnique === "boolean");
     }
     if (!policy.introduction.every((block) => !CHECKABLE_TYPES.has(block.type) && blockIsValid(block))) return false;

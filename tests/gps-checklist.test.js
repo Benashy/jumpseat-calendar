@@ -50,6 +50,21 @@ test("GPS source hash is key-order independent and detects a wording change", as
   assert.notEqual(hash, await core.policyHash(p, webcrypto));
 });
 
+test("Pending verification is a standalone note, never an action or a conditional child", () => {
+  const p = fixture();
+  const note = { id: "pending-review", type: "note", text: "Awaiting source verification", verificationPending: true };
+  p.sections[0].blocks.push(note);
+  assert.equal(core.validatePolicy(p), true);
+  const state = core.newState("one", "hash");
+  assert.equal(core.setChecked(p, state, note.id, true), state);
+  assert.equal(core.setNotApplicable(p, state, note.id, true), state);
+  note.type = "acknowledgement";
+  assert.equal(core.validatePolicy(p), false);
+  note.type = "note";
+  note.forBlockId = "step-a";
+  assert.equal(core.validatePolicy(p), false);
+});
+
 test("GPS starts with every section visible and no completed actions", () => {
   const state = core.newState("one", "hash");
   assert.deepEqual(state.notApplicableIds, []);

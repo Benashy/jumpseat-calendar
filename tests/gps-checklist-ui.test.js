@@ -108,6 +108,23 @@ test("GPS UI uses the established gold-rule treatment for checkable personal tec
   assert.equal(label, undefined);
 });
 
+test("GPS verification warnings are non-tickable, cannot be marked N/A and survive offline reopening", async () => {
+  const data = await record();
+  data.checklist.sections[0].blocks.push({ id: "pending-review", type: "note",
+    text: "**Awaiting verification** Do not infer permission.", verificationPending: true });
+  data.content_sha256 = await core.policyHash(data.checklist, webcrypto);
+  const page = harness();
+  await page.load("one", async () => data);
+  page.tick("first");
+  const offline = harness(page.storage);
+  offline.navigator.onLine = false;
+  await offline.load("one", async () => { throw new Error("Must not request"); });
+  assert.ok(offline.created.some((element) => element.classList.contains("gps-verification-pending")));
+  assert.equal(offline.item("pending-review"), undefined);
+  assert.equal(offline.created.some((element) => element.dataset.gpsMarkNotApplicable === "pending-review"), false);
+  assert.equal(offline.item("first").checked, true);
+});
+
 test("GPS UI downloads only the PDF supplied for the checklist version currently open", async () => {
   let requestHash = null;
   let downloadOptions = null;

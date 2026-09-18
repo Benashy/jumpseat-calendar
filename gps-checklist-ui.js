@@ -133,6 +133,7 @@
     }
     const tag = block.type === "heading" ? "h4" : "p";
     const element = node(tag, `gps-${block.type}${block.presentation ? ` gps-${block.presentation}` : ""}${block.personalTechnique ? " gps-personal-technique" : ""}${block.indent ? " gps-indented" : ""}`);
+    if (block.verificationPending) element.classList.add("gps-verification-pending");
     if (block.forBlockId) element.dataset.gpsParentItem = block.forBlockId;
     appendText(element, block.text);
     parent.append(element);
