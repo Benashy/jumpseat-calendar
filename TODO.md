@@ -5,8 +5,14 @@
 - [x] Reconcile the parked audit with the focused v2.89 GPS verification-warning release and prepare v2.90. Backend permission hardening and Telegram v13 remain deployed.
 - [x] Add verified, owner-scoped offline PDF backups and restored-checklist indication. Keep operational wording and matching PDFs unchanged.
 - [x] Disable public registration, enable leaked-password protection and switch Pages to test-gated Actions publishing.
-- [x] Complete deployed-release verification and record v2.90 in `AUDIT-IMPLEMENTATION.md`: test-gated publication succeeded, all public files matched, and anonymous private-data access remained denied.
-- [ ] Repeat physical iPad offline and restricted-Wi-Fi reopening after this release; check PDF downloads and deliberate update activation. Keep Under test.
+- [x] Complete deployed-release verification for v2.90 and final wording release v2.91: test-gated publication succeeded, all public files matched, and anonymous private-data access remained denied.
+
+## Outstanding Audit Checks
+
+- [ ] Ben's iPad check: repeat offline and restricted-Wi-Fi reopening on v2.91, confirm saved inputs/ticks and offline PDF downloads, then repeat after an overnight interval. Test VoiceOver or an external keyboard only if Ben uses them. Steps and pass criteria are in `USER-ACCEPTANCE-CHECKS.md`.
+- [ ] Backup and Telegram check: Ben exports a current JSON backup for an isolated restore test, then checks one scheduled TEST reminder and one 15-minute snooze repeat. Do not replace live account data to test restoration. Steps are in `USER-ACCEPTANCE-CHECKS.md`.
+
+Scope decisions, 3 October 2026: F-G/S verification is handled by Ben with a technical pilot and is not an OpsDeck outstanding task; the existing red warning remains until a separately authorised content update. Hosting migration for framing headers and further code reorganisation are removed from the active to-do list. The hosting limitation remains recorded in `SECURITY.md`, not marked as fixed. No application, checklist or PDF wording change is requested by these decisions.
 
 ## Current Status
 
@@ -14,7 +20,7 @@
 - v2.70 completes the short-haul on-duty reference with Ben's confirmed station timings, orders all eight stations alphabetically and clarifies that flight-specific variations and separate pick-up times remain in the current station brief.
 - v2.69 narrows the Revision 8 on-duty reference to eight short-haul stations. It states the documented normal D-60 down-route report, separates report from pick-up time, records Ben's operational D-70 values for MAN, AMM and MXP and D-75 for NAP, and leaves IST, LIS, BCN and ZRH as `Check brief` because their exact variations were not found in the available manuals.
 - v2.68 adds a compact Revision 8 on-duty time variation reference under FTL Clarifications. It identifies the listed stations without storing or inferring reporting times, directs the user to the current station brief, and notes that temporary changes may precede a brief update.
-- v2.90 is published and verified 3 October 2026. The product-audit changes are now included; v2.91 is the final RA shortcut wording refinement, subject to the same release tests. Private GPS wording and its matching PDF remain revision 18 September 2026 with the pending F-G/S verification warning; GPS and LVTO remain Under test.
+- Current visible app version: v2.91, published and verified 3 October 2026. The product-audit changes and final RA shortcut wording refinement are included. Private GPS wording and its matching PDF remain revision 18 September 2026 with the pending F-G/S verification warning; GPS and LVTO remain Under test.
 - v2.67 simplifies the GPS checklist presentation: no completion counts or bottom reference/context drawers, and a single last-updated date/time in Zulu. Every phase may be hidden, retaining linked groups and a visible restore heading. Preliminary cockpit preparation, cockpit preparation and unexpected interference use amber hidden badges; all other phases use red, with red taking precedence in the combined count. Disclosure headings and badges match FDP/LTOT. Private source content, its hash and existing saved progress are unchanged.
 - v2.66 adds the private GPS interference checklist under Tools, retaining the source draft's wording and Under test status. Ticks are manual, reversible and saved on the current device. Related sections stay linked; hidden sections retain a visible Show control and are not counted as checked. Reset is confirmed, and revised source wording cannot silently replace an active checklist. Source content is owner-only in Supabase and cached after sign-in, never bundled in public assets.
 - v2.65 shortens the joint-limit result note to `Discretion: crew comparison.` so it fits the narrower iPad portrait cards without reducing text size. Discretion calculations and the OMA 7.6.1 reminder are unchanged.
@@ -102,7 +108,6 @@
 - Jumpseat real-use polish: review whether BA ID, queue ordering, search, and daily view are showing exactly what is needed during actual requests.
 - Login reliability: keep watching Supabase magic-link rate limits and mobile sign-in behaviour; consider tuning settings or relying more on password sign-in if magic links remain awkward.
 - Day export/copy option: consider copying a clean text summary of jumpseat requests for messaging or email.
-- Code organisation audit: separate Jumpseat and LTOT logic more clearly before adding more tools.
 
 ## Security Workstream (Separate Approval Required)
 
@@ -113,7 +118,7 @@
 - Secrets: inventory and rotate sensitive Supabase, Telegram and deployment credentials where appropriate; confirm that privileged keys exist only in protected server-side or GitHub secret storage.
 - Personal data: seven-day active retention is implemented for Jumpseat requests and OpsDeck reminder records; review exported backups and any remaining logs so they do not retain unnecessary personal information.
 - Password protection: enabled and verified on 3 October 2026. Public registration is disabled; existing-user sign-in and email confirmation remain enabled.
-- Front-end protection: review third-party scripts, dependency pinning, Content Security Policy and available GitHub Pages security headers without reducing iPhone or iPad reliability.
+- Front-end protection: retain the tested Content Security Policy and pinned dependencies. The current lack of server-enforced framing headers is documented in `SECURITY.md`; no hosting migration is an active task.
 - Private automated backup: design a daily encrypted or private Supabase backup using protected credentials, with clear retention and no personal data committed to the public repository.
 - Recovery test: restore a backup into an isolated test environment and verify record counts, calculator state and Jumpseat data before treating the backup system as complete.
 - Security verification: run a focused post-change review of database policies, authentication, Edge Functions, browser code and realistic attack paths, then record any accepted residual risks.

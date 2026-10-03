@@ -2,7 +2,7 @@
 
 ## 3 October 2026: Audit Completion
 
-Target: v2.90, cloud-sync-142, offline cache v158. Accepted launch appearance unchanged. The focused v2.89 GPS warning renderer, source validation and regression tests have been reconciled into this checkout.
+Published: v2.91, cloud-sync-143, offline cache v159. The main audit release was v2.90; v2.91 aligns the RA shortcut wording. Accepted launch appearance unchanged. The focused v2.89 GPS warning renderer, source validation and regression tests have been reconciled into this checkout.
 
 New work in this pass:
 
@@ -17,7 +17,11 @@ Verification: 263 unit/regression tests, exact CSP/shell checks and 43 browser c
 
 Publication completed at release commit `45d7a530834423ea724b631f682a1aa2bbaf4496`. Actions run `37117238832` passed validation and publication. All 34 distinct public files matched the tested local bytes on 3 October 2026; six excluded development/private-release paths returned 404, six anonymous private-data reads returned 401, and public registration remained disabled. The matching private GPS/LVTO checklist and PDF digests were verified separately. This evidence does not replace the remaining physical-device or operational checks.
 
-Remaining boundaries: physical iPad reopening and restricted BA Wi-Fi tests, VoiceOver, longer-term iPadOS storage retention, independent aviation/SME approval, and server-enforced framing headers. GitHub Pages cannot supply the latter through this configuration; no hosting migration has been made. Optional further separation of the main app into domain modules remains deferred.
+The final v2.91 release at `3c86d96d8a812a0dfd3e86ebddd82f648921b825` passed Actions run `37118056477` and live byte/access checks on 3 October 2026.
+
+Active outstanding audit checks are now limited to Ben's physical iPad/offline PDF and restricted-Wi-Fi checks, plus the controlled backup and scheduled Telegram/snooze check. `USER-ACCEPTANCE-CHECKS.md` records the steps and expected results. VoiceOver and external-keyboard testing are relevant only if Ben uses those input methods. Browser results do not promise indefinite iPadOS storage retention or constitute independent aviation/SME approval.
+
+Ben is handling the F-G/S question with a technical pilot, so it is removed from this task's outstanding list; the red source-verification warning is not removed. Hosting migration for framing headers and further code reorganisation are not necessary for this release and are removed from the active list. The lack of server-enforced framing headers remains an accepted, documented hosting limitation rather than a completed security control.
 
 Final visual-review refinement: v2.91 changes the RA Tools shortcut from Expected to Estimated, matching the result wording. Calculation logic, launch behaviour and private checklist/PDF content remain unchanged.
 
@@ -55,7 +59,7 @@ Resume with final unit/reliability checks, visual inspection of the final readin
 
 The previously outstanding dashboard settings were completed and verified on 3 October 2026: public registration disabled, leaked-password protection enabled, and GitHub Pages switched to Actions. Existing users and recovery routes are retained.
 
-Server-enforced framing protection is not available through this GitHub Pages configuration. It remains a hosting decision rather than an unannounced hosting migration.
+Server-enforced framing protection is not available through this GitHub Pages configuration. On 3 October 2026 it was removed from the active work list as a disproportionate reason by itself to migrate this personal app. No hosting migration or weakening of existing controls has been made.
 
 ## Verification boundary
 
