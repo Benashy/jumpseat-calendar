@@ -27,6 +27,33 @@
     "WET-S",
   ]);
   const MOBILITY_CONFIGURATIONS = new Set(["INSTALLED", "REMOVED", "SPARE"]);
+  // Exact historical export digests mapped to the verified canonical content digest.
+  const LEGACY_DIGESTS = {
+    a79ff82f805f758e70d28bd82d2ac080e98cf160bdac9844ab31de3d1b57e526: "8540f335d52d6d0ae7744873af283c9e5cd90ddfe0543c7af52f943dc90add72",
+    "7e5cd18e2ca2f07d5f00007c04a709d1e15fcc1c1da38e56ed5ee088a5ac6e5f": "b5caf840d976b776fd4288dc80ef11900c92c67431fb3e783f99de3135936ac7",
+  };
+
+  function canonicalJson(value) {
+    if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+    if (value && typeof value === "object") return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(",")}}`;
+    return JSON.stringify(value);
+  }
+
+  async function digest(value, cryptoApi = globalScope.crypto) {
+    const bytes = await cryptoApi.subtle.digest("SHA-256", new TextEncoder().encode(canonicalJson(value)));
+    return [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+
+  async function verifyRecord(record, userId, cryptoApi) {
+    const envelope = normaliseRecord(record, userId);
+    if (!envelope) return null;
+    try {
+      for (const [value, expected] of [[envelope.mapping, envelope.mappingSha256], [envelope.mobilityPolicy, envelope.mobilityPolicySha256]]) {
+        if (value && await digest(value, cryptoApi) !== (LEGACY_DIGESTS[expected] || expected)) return null;
+      }
+      return envelope;
+    } catch (_) { return null; }
+  }
 
   function cacheKey(userId) {
     return `${CACHE_KEY_PREFIX}:${String(userId || "")}`;
@@ -120,20 +147,20 @@
       mappingSha256,
       mobilityPolicySha256: mobilityPolicyValid ? mobilityPolicySha256 : null,
       updatedAt: updatedAt || null,
-      cachedAt: new Date().toISOString(),
+      cachedAt: Number.isFinite(Date.parse(record.cachedAt)) ? record.cachedAt : new Date().toISOString(),
       mapping: record.mapping,
       mobilityPolicy: mobilityPolicyValid ? mobilityPolicy : null,
     };
   }
 
-  function save(storage, userId, record) {
-    const envelope = normaliseRecord(record, userId);
+  async function save(storage, userId, record) {
+    const envelope = await verifyRecord(record, userId);
     if (!envelope) throw new Error("The BA policy did not pass validation.");
-    storage.setItem(cacheKey(userId), JSON.stringify(envelope));
+    if (storage.setItem(cacheKey(userId), JSON.stringify(envelope)) === false) throw new Error("Offline copy not saved");
     return envelope;
   }
 
-  function load(storage, userId) {
+  async function load(storage, userId) {
     if (!storage || !userId) return null;
 
     try {
@@ -141,7 +168,7 @@
       if (!raw) return null;
       const parsed = JSON.parse(raw);
       if (parsed.schemaVersion !== CACHE_SCHEMA_VERSION || parsed.userId !== String(userId)) return null;
-      return normaliseRecord(parsed, userId);
+      return await verifyRecord(parsed, userId);
     } catch (_error) {
       return null;
     }
@@ -159,6 +186,7 @@
   }
 
   const api = {
+    canonicalJson, digest, verifyRecord,
     CACHE_SCHEMA_VERSION,
     cacheKey,
     load,

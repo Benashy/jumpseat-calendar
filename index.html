@@ -2,6 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-0OdDqimX/EwN2cjVx4OuUBH4pnosfXcPwjwqQgb+PkA=' 'sha256-uE8efi3g1QQ/7tB+ra4AsYnWQ2/UYVBV+SE2JhH1p5o=' 'sha256-4QXtso0djFKhSMuw4U34twi4Q7CQv+BG1H8hSlgcaak='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://kztwizifuhuvbccyycdm.supabase.co wss://kztwizifuhuvbccyycdm.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; worker-src 'self'">
+    <meta name="referrer" content="no-referrer" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#eef1f2" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -123,25 +126,25 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-141" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-142" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link
       rel="apple-touch-startup-image"
-      href="./icons/launch-ipad-pro-11-m4-portrait.png?v=cloud-sync-141"
+      href="./icons/launch-ipad-pro-11-m4-portrait.png?v=cloud-sync-142"
       media="screen and (device-width: 834px) and (device-height: 1210px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
     />
     <link
       rel="apple-touch-startup-image"
-      href="./icons/launch-ipad-pro-11-m4-landscape.png?v=cloud-sync-141"
+      href="./icons/launch-ipad-pro-11-m4-landscape.png?v=cloud-sync-142"
       media="screen and (device-width: 834px) and (device-height: 1210px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
     />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-141" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-142" />
   </head>
   <body>
     <div id="opsdeckLaunchScreen" aria-hidden="true">
-      <img src="./icons/opsdeck-wordmark.svg?v=cloud-sync-141" alt="" width="1024" height="320" />
+      <img src="./icons/opsdeck-wordmark.svg?v=cloud-sync-142" alt="" width="1024" height="320" />
     </div>
     <div class="app-shell">
       <script>
@@ -251,7 +254,7 @@
       </script>
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-141" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-142" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -278,6 +281,11 @@
 
       </section>
 
+      <p class="storage-warning hidden" id="storageWarning" role="alert"></p>
+      <div class="app-update-notice hidden" id="appUpdateNotice" role="status">
+        <span>OpsDeck update ready</span>
+        <button class="text-button secondary" id="appUpdateReloadButton" type="button">Reload</button>
+      </div>
       <section class="offline-banner hidden" id="offlineBanner" aria-live="polite">
         Offline. Saved tools remain available where this device has been prepared for offline use.
       </section>
@@ -358,7 +366,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.89</small>
+            <small class="app-version">v2.90</small>
           </section>
 
         </section>
@@ -824,7 +832,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.89</small>
+            <small class="app-version">v2.90</small>
           </section>
         </section>
 
@@ -898,7 +906,7 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.89</small>
+            <small class="app-version">v2.90</small>
           </section>
         </section>
 
@@ -921,6 +929,7 @@
             </div>
           </div>
           <p id="gpsRevision" class="gps-revision"></p>
+          <p id="gpsRestoredLabel" class="checklist-restored hidden">Previous checklist restored</p>
           <p id="gpsStatus" class="gps-status" role="status">Sign in to load the checklist.</p>
           <div id="gpsIntroduction" class="gps-introduction"></div>
           <details class="gps-section-options hidden" id="gpsSectionsControl">
@@ -938,7 +947,7 @@
               <button class="text-button secondary" id="gpsSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="gpsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.89</small>
+            <small class="app-version">v2.90</small>
           </section>
         </section>
 
@@ -962,6 +971,7 @@
           </div>
           <div class="lvto-meta-row">
             <p id="lvtoRevision" class="lvto-revision"></p>
+            <p id="lvtoRestoredLabel" class="checklist-restored hidden">Previous checklist restored</p>
             <p id="lvtoProgress" class="lvto-progress hidden" role="status" aria-atomic="true"></p>
           </div>
           <p id="lvtoStatus" class="lvto-status" role="status">Sign in to load the checklist.</p>
@@ -981,7 +991,7 @@
               <button class="text-button secondary" id="lvtoSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="lvtoSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.89</small>
+            <small class="app-version">v2.90</small>
           </section>
         </section>
 
@@ -1122,7 +1132,7 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.89</small>
+            <small class="app-version">v2.90</small>
           </section>
         </section>
 
@@ -1218,7 +1228,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.89</small>
+            <small class="app-version">v2.90</small>
           </section>
         </section>
 
@@ -1258,7 +1268,7 @@
               <h2>Data</h2>
               <span>Backup and restore</span>
             </div>
-            <p class="settings-copy">Download a portable copy of your Jumpseat requests and FDP and LTOT inputs. JSON can restore OpsDeck; CSV opens in spreadsheet software.</p>
+            <p class="settings-copy">Backup: Jumpseat requests and FDP/LTOT inputs. Checklist ticks, saved guidance and PDF downloads are separate.</p>
             <p class="settings-copy"><strong>Retention:</strong> Past Jumpseat requests and OpsDeck reminder records are deleted after seven complete days. Messages already delivered to Telegram are not removed.</p>
             <div class="data-actions">
               <button class="text-button secondary" id="exportJsonButton" type="button">Export JSON</button>
@@ -1267,6 +1277,21 @@
               <input class="hidden" id="restoreBackupInput" type="file" accept="application/json,.json" />
             </div>
             <p class="data-status" id="dataStatus" aria-live="polite"></p>
+          </section>
+
+          <section class="settings-section" aria-label="Device readiness">
+            <div class="section-heading settings-heading"><h2>This device</h2><span>Offline and updates</span></div>
+            <ul class="device-readiness" aria-label="Saved data status" aria-live="polite">
+              <li><span>Jumpseat</span><span id="jumpseatDataState">Cloud not checked</span></li>
+              <li><span>FDP / LTOT</span><span id="calculatorDataState">Cloud not checked</span></li>
+            </ul>
+            <div class="data-actions">
+              <button class="text-button secondary" id="checkOfflineButton" type="button">Check offline readiness</button>
+              <button class="text-button secondary" id="downloadDiagnosticsButton" type="button">Download diagnostics</button>
+              <button class="text-button secondary hidden" id="applyAppUpdateButton" type="button">Update ready: reload</button>
+            </div>
+            <ul class="device-readiness hidden" id="offlineReadinessList" aria-live="polite"></ul>
+            <p class="data-status" id="deviceReadinessStatus" aria-live="polite"></p>
           </section>
 
           <section class="settings-section" aria-label="Notifications">
@@ -1325,7 +1350,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.89</small>
+            <small class="app-version">v2.90</small>
           </section>
         </section>
       </main>
@@ -1429,23 +1454,27 @@
       </article>
     </template>
 
-    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-141"></script>
-    <script src="./supabase-config.js?v=cloud-sync-141"></script>
-    <script src="./ltot-core.js?v=cloud-sync-141"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-141"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-141"></script>
-    <script src="./notoc-policy-store.js?v=cloud-sync-141"></script>
-    <script src="./notoc-core.js?v=cloud-sync-141"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-141"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-141"></script>
-    <script src="./offline-device.js?v=cloud-sync-141"></script>
-    <script src="./checklist-backup.js?v=cloud-sync-141"></script>
-    <script src="./gps-checklist-core.js?v=cloud-sync-141"></script>
-    <script src="./gps-checklist-ui.js?v=cloud-sync-141"></script>
-    <script src="./lvto-checklist-core.js?v=cloud-sync-141"></script>
-    <script src="./lvto-checklist-ui.js?v=cloud-sync-141"></script>
-    <script src="./data-portability.js?v=cloud-sync-141"></script>
-    <script src="./request-retention.js?v=cloud-sync-141"></script>
-    <script src="./app.js?v=cloud-sync-141"></script>
+    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-142"></script>
+    <script src="./supabase-config.js?v=cloud-sync-142"></script>
+    <script src="./ltot-core.js?v=cloud-sync-142"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-142"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-142"></script>
+    <script src="./notoc-policy-store.js?v=cloud-sync-142"></script>
+    <script src="./notoc-core.js?v=cloud-sync-142"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-142"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-142"></script>
+    <script src="./offline-device.js?v=cloud-sync-142"></script>
+    <script src="./device-storage.js?v=cloud-sync-142"></script>
+    <script src="./auth-storage.js?v=cloud-sync-142"></script>
+    <script src="./network.js?v=cloud-sync-142"></script>
+    <script src="./checklist-backup.js?v=cloud-sync-142"></script>
+    <script src="./gps-checklist-core.js?v=cloud-sync-142"></script>
+    <script src="./gps-checklist-ui.js?v=cloud-sync-142"></script>
+    <script src="./lvto-checklist-core.js?v=cloud-sync-142"></script>
+    <script src="./lvto-checklist-ui.js?v=cloud-sync-142"></script>
+    <script src="./data-portability.js?v=cloud-sync-142"></script>
+    <script src="./request-retention.js?v=cloud-sync-142"></script>
+    <script src="./ui-accessibility.js?v=cloud-sync-142"></script>
+    <script src="./app.js?v=cloud-sync-142"></script>
   </body>
 </html>

@@ -40,6 +40,7 @@
       globalScope.crypto,
       globalScope.atob.bind(globalScope)
     );
+    if (options.isCurrent && !options.isCurrent()) throw new Error("Checklist context changed");
     const blob = new globalScope.Blob([verified.bytes], { type: "application/pdf" });
     const url = globalScope.URL.createObjectURL(blob);
     const link = globalScope.document.createElement("a");
@@ -53,7 +54,39 @@
     return verified.filename;
   }
 
-  const api = { MAX_PDF_BYTES, verify, download };
+  function storageKey(owner, key) {
+    if (!/^[A-Za-z0-9-]{1,80}$/.test(owner || "") || !KEY_PATTERN.test(key || "")) throw new Error("Invalid PDF owner");
+    return `opsdeck-pdf-v1:${owner}:${key}`;
+  }
+
+  async function readSaved(storage, owner, key, hash, cryptoApi = globalScope.crypto, decode = globalScope.atob?.bind(globalScope)) {
+    try {
+      const saved = JSON.parse(storage.getItem(storageKey(owner, key)) || "null");
+      if (saved?.schemaVersion !== 1 || saved.userId !== owner) return null;
+      await verify(saved.record, key, hash, cryptoApi, decode);
+      return saved.record;
+    } catch (_) { return null; }
+  }
+
+  async function prepare(storage, owner, key, hash, loader, isCurrent = () => true) {
+    const cached = await readSaved(storage, owner, key, hash);
+    if (!isCurrent()) return null;
+    if (!loader) return cached;
+    try {
+      const record = await loader(hash);
+      await verify(record, key, hash, globalScope.crypto, globalScope.atob.bind(globalScope));
+      if (!isCurrent()) return null;
+      try { storage.setItem(storageKey(owner, key), JSON.stringify({ schemaVersion: 1, userId: owner, record })); }
+      catch (_) { /* Download remains possible when the offline PDF cannot be retained. */ }
+      return record;
+    } catch (_) { return isCurrent() ? cached : null; }
+  }
+
+  function forget(storage, owner, key) {
+    try { storage.removeItem(storageKey(owner, key)); } catch (_) { /* Clear the signed-out UI even if storage fails. */ }
+  }
+
+  const api = { MAX_PDF_BYTES, verify, download, storageKey, readSaved, prepare, forget };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else globalScope.OpsDeckChecklistBackup = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);

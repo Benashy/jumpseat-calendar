@@ -2,7 +2,7 @@ const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
 const JUMPSEAT_DRAFT_KEY = "opsdeck-jumpseat-draft-v1";
 const JUMPSEAT_DRAFT_SCHEMA_VERSION = 1;
-const APP_VERSION = "2.89";
+const APP_VERSION = "2.90";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 5;
 const CREW_LIMIT_CAPS = { flight: 3, cabin: 6 };
@@ -273,6 +273,9 @@ const FDP_TABLE_THREE_ROWS = [
   { start: "Maximum FDP", oneTwo: "11:00", three: "10:30", four: "10:00", five: "09:30" },
 ];
 
+const deviceStorage = window.OpsDeckStorage.create(() => window.localStorage, updateStorageStatus);
+const rememberedOwner = window.OpsDeckOfflineDevice.read(deviceStorage);
+deviceStorage.setOwner(IS_LOCAL_PREVIEW ? "local-preview" : rememberedOwner?.userId || null, Boolean(rememberedOwner));
 const initialRequestEnvelope = loadRequestEnvelope();
 let requests = initialRequestEnvelope.requests;
 let currentUser = null;
@@ -321,6 +324,13 @@ let calculatorLocalDirty = false;
 let calculatorLocalBaseUpdatedAt = null;
 let elapsedInfoTrigger = null;
 let manualSignOutInProgress = false;
+let sessionGeneration = 0;
+let requestLoadGeneration = 0;
+let calculatorLoadGeneration = 0;
+let appWorkerRegistration = null;
+let updateRequested = false;
+let latestReadiness = null;
+const diagnosticErrors = [];
 
 const ftlCrewControls = {};
 
@@ -332,9 +342,17 @@ const hasCloudConfig = Boolean(
     !cloudConfig.url.includes("YOUR_PROJECT_REF") &&
     !cloudConfig.anonKey.includes("YOUR_SUPABASE_ANON_KEY")
 );
+const authStorage = window.OpsDeckAuthStorage.create(deviceStorage);
+const authStorageKey = hasCloudConfig ? `sb-${new URL(cloudConfig.url).hostname.split(".")[0]}-auth-token` : "opsdeck-auth";
+if (PAGE_QUERY.has("code") || new URLSearchParams(window.location.hash.slice(1)).has("access_token")) authStorage.allow();
 const supabaseClient = hasCloudConfig && window.supabase
-  ? window.supabase.createClient(cloudConfig.url, cloudConfig.anonKey)
+  ? window.supabase.createClient(cloudConfig.url, cloudConfig.anonKey, {
+    auth: { storage: authStorage, storageKey: authStorageKey },
+    global: { fetch: window.OpsDeckNetwork.boundedFetch(window.fetch.bind(window)) },
+  })
   : null;
+let authCleanup = Promise.resolve();
+let authSubscription = null;
 const notocPolicyApi = window.OpsDeckNotocPolicy || null;
 const notocPolicyStore = window.OpsDeckNotocPolicyStore || null;
 const offlineDeviceApi = window.OpsDeckOfflineDevice || null;
@@ -373,10 +391,10 @@ function policyStatusMessage(policyRecord, source) {
   return mobilityReady ? prefix : `${prefix} · mobility-aid guidance unavailable`;
 }
 
-function applyNotocPolicyRecord(record, userId, source) {
+async function applyNotocPolicyRecord(record, userId, source) {
   if (!notocPolicyApi?.setHandlingCodeMapping || !notocPolicyApi?.setMobilityAidPolicy || !notocPolicyStore) return false;
-  const envelope = notocPolicyStore.normaliseRecord(record, userId);
-  if (!envelope) return false;
+  const envelope = await notocPolicyStore.verifyRecord(record, userId);
+  if (!envelope || deviceStorage.owner !== userId) return false;
 
   notocPolicyApi.setHandlingCodeMapping(envelope.mapping, {
     policyVersion: envelope.policyVersion,
@@ -403,16 +421,17 @@ function applyNotocPolicyRecord(record, userId, source) {
   return true;
 }
 
-function loadCachedNotocPolicy(user) {
+async function loadCachedNotocPolicy(user) {
   if (!user?.id || !notocPolicyStore) return false;
-  const cached = notocPolicyStore.load(localStorage, user.id);
+  const cached = await notocPolicyStore.load(deviceStorage, user.id);
   return cached ? applyNotocPolicyRecord(cached, user.id, "cache") : false;
 }
 
 async function loadNotocPolicy({ forceCloud = false } = {}) {
   if (!currentUser?.id || !notocPolicyStore || !notocPolicyApi) return;
   const userId = currentUser.id;
-  const hasCachedPolicy = loadCachedNotocPolicy(currentUser);
+  const hasCachedPolicy = await loadCachedNotocPolicy(currentUser);
+  if (currentUser?.id !== userId) return;
 
   if (!navigator.onLine || !supabaseClient) {
     if (!hasCachedPolicy) resetNotocPolicy("BA guidance unavailable offline.");
@@ -426,7 +445,7 @@ async function loadNotocPolicy({ forceCloud = false } = {}) {
     .from(NOTOC_POLICY_TABLE)
     .select("policy_version,mapping,mapping_sha256,mobility_policy,mobility_policy_sha256,updated_at")
     .eq("user_id", userId)
-    .maybeSingle();
+    .maybeSingle().then((result) => result, (error) => ({ data: null, error }));
 
   if (currentUser?.id !== userId) return;
   if (error || !data) {
@@ -445,13 +464,13 @@ async function loadNotocPolicy({ forceCloud = false } = {}) {
     return;
   }
 
-  if (!applyNotocPolicyRecord(data, userId, "cloud")) {
+  if (!await applyNotocPolicyRecord(data, userId, "cloud")) {
     if (!hasCachedPolicy) resetNotocPolicy("BA policy failed validation. Refer instead.");
     return;
   }
 
   try {
-    notocPolicyStore.save(localStorage, userId, data);
+    await notocPolicyStore.save(deviceStorage, userId, data);
   } catch (_error) {
     setNotocPolicyStatus(`${policyStatusMessage(data, "cloud")} · offline copy not saved`, "warning");
   }
@@ -461,7 +480,7 @@ const systemAppearanceQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
 function readAppearancePreference() {
   try {
-    const preference = localStorage.getItem(APPEARANCE_STORAGE_KEY);
+    const preference = deviceStorage.getItem(APPEARANCE_STORAGE_KEY);
     return ["automatic", "light", "night"].includes(preference) ? preference : "automatic";
   } catch (_error) {
     return "automatic";
@@ -493,7 +512,7 @@ function applyAppearance(preference, persist = false) {
   if (!persist) return;
 
   try {
-    localStorage.setItem(APPEARANCE_STORAGE_KEY, safePreference);
+    deviceStorage.setItem(APPEARANCE_STORAGE_KEY, safePreference);
   } catch (_error) {
     // The selected appearance still applies for this session.
   }
@@ -534,6 +553,12 @@ function isSuccessStatus(message) {
 }
 
 function setSyncStatus(message, isError = false, isWarning = false) {
+  updateDomainSyncStatus();
+  if (!deviceStorage.saved) {
+    message = "Not saved on this device. Keep OpsDeck open and download a backup.";
+    isError = true;
+    isWarning = false;
+  }
   [
     elements.homeSyncStatus,
     elements.ftlSyncStatus,
@@ -551,6 +576,31 @@ function setSyncStatus(message, isError = false, isWarning = false) {
   });
 }
 
+function updateDomainSyncStatus() {
+  const describe = (loaded, dirty, saving) => {
+    if (!deviceStorage.saved) return "Not saved on this device";
+    if (!deviceStorage.owner) return "Sign in to restore saved data";
+    if (!navigator.onLine || isOfflineReadOnly) return dirty ? "On this device; cloud pending" : "On this device; cloud not checked";
+    if (saving) return "Saving to cloud";
+    if (dirty) return loaded ? "On this device; cloud pending" : "On this device; cloud review required";
+    return loaded ? "Saved on this device and in cloud" : "On this device; cloud not confirmed";
+  };
+  for (const [id, loaded, dirty, saving] of [
+    ["jumpseatDataState", cloudLoaded, requestLocalDirty, requestSaveInFlight],
+    ["calculatorDataState", calculatorCloudLoaded, calculatorLocalDirty, calculatorSaveInFlight],
+  ]) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = describe(loaded, dirty, saving);
+  }
+}
+
+function updateStorageStatus(status) {
+  const banner = document.querySelector("#storageWarning");
+  if (!banner) return;
+  banner.classList.toggle("hidden", status.saved);
+  banner.textContent = status.saved ? "" : "Not saved on this device. Keep OpsDeck open and download a backup in Settings.";
+}
+
 function formatElapsed(fromDate) {
   const elapsedSeconds = Math.max(0, Math.floor((Date.now() - fromDate.getTime()) / 1000));
   const elapsedMinutes = Math.floor(elapsedSeconds / 60);
@@ -564,7 +614,7 @@ function formatElapsed(fromDate) {
 }
 
 function updateCloudSuccessStatus() {
-  if (!lastCloudSuccess) return;
+  if (!lastCloudSuccess || !cloudLoaded || !calculatorCloudLoaded || requestLocalDirty || calculatorLocalDirty || isOfflineReadOnly) return;
   const elapsedHours = (Date.now() - lastCloudSuccess.at.getTime()) / (60 * 60 * 1000);
   const isStale = elapsedHours >= CLOUD_STALE_HOURS;
   const isAged = elapsedHours >= CLOUD_FRESH_HOURS && !isStale;
@@ -573,6 +623,7 @@ function updateCloudSuccessStatus() {
 }
 
 function setCloudSuccessStatus() {
+  if (!cloudLoaded || !calculatorCloudLoaded) return;
   if (requestLocalDirty || calculatorLocalDirty) {
     setSyncStatus("Changes not yet synced · retrying automatically", false, true);
     return;
@@ -623,7 +674,7 @@ function getRetrySeconds(message) {
 }
 
 function getMagicLinkCooldownSeconds() {
-  const sentAt = Number(localStorage.getItem(MAGIC_LINK_SENT_KEY));
+  const sentAt = Number(deviceStorage.getItem(MAGIC_LINK_SENT_KEY));
   if (!Number.isFinite(sentAt)) return 0;
 
   const elapsedSeconds = Math.floor((Date.now() - sentAt) / 1000);
@@ -631,7 +682,7 @@ function getMagicLinkCooldownSeconds() {
 }
 
 function rememberMagicLinkSent() {
-  localStorage.setItem(MAGIC_LINK_SENT_KEY, String(Date.now()));
+  deviceStorage.setItem(MAGIC_LINK_SENT_KEY, String(Date.now()));
 }
 
 function isRateLimitError(message) {
@@ -697,6 +748,12 @@ function setOfflineReadOnly(isReadOnly) {
 }
 
 function startOfflineMode(message = "Offline: viewing saved data", privateChecklistsAvailable = false) {
+  if (!privateChecklistsAvailable) {
+    deviceStorage.setOwner(null);
+    setPrivateChecklistContext(null);
+    resetNotocPolicy();
+    if (calculatorInitialised) applyCalculatorState(createDefaultCalculatorState());
+  }
   const local = loadRequestEnvelope();
   requests = local.requests;
   requestLocalDirty = local.dirty;
@@ -715,7 +772,7 @@ function startOfflineMode(message = "Offline: viewing saved data", privateCheckl
   elements.settingsAccountPanel.classList.add("hidden");
   elements.offlineBanner.textContent = privateChecklistsAvailable
     ? "Offline on this device. Cloud sync is paused; saved checklists and guidance remain available."
-    : "Offline. Jumpseat is view only; FDP, LTOT and RA position check remain available. Connect once to prepare private checklists for offline use.";
+    : "Offline. No private saved data is available. Connect and sign in to prepare this device.";
   setAppVisible(true);
   setOfflineReadOnly(true);
   setSyncStatus(message, false, true);
@@ -775,7 +832,7 @@ async function requestPersistentDeviceStorage() {
 
 function rememberTrustedOfflineDevice(userId) {
   try {
-    offlineDeviceApi?.remember(localStorage, userId);
+    offlineDeviceApi?.remember(deviceStorage, userId);
   } catch (_) {
     // Cloud use continues even if this browser cannot prepare offline access.
   }
@@ -783,8 +840,10 @@ function rememberTrustedOfflineDevice(userId) {
 }
 
 function restoreTrustedOfflineDevice() {
-  const profile = offlineDeviceApi?.read(localStorage);
+  if (authStorage.blocked) return false;
+  const profile = offlineDeviceApi?.read(deviceStorage);
   if (!profile) return false;
+  deviceStorage.setOwner(profile.userId, true);
   setPrivateChecklistContext(profile.userId);
   loadCachedNotocPolicy({ id: profile.userId });
   return true;
@@ -792,6 +851,30 @@ function restoreTrustedOfflineDevice() {
 
 function setSignedInState(user) {
   const previousUserId = currentUser?.id || null;
+  if (previousUserId !== (user?.id || null)) {
+    sessionGeneration += 1;
+    requestSaveInFlight = false;
+    calculatorSaveInFlight = false;
+    window.clearTimeout(saveTimer);
+    window.clearTimeout(calculatorSaveTimer);
+    window.clearTimeout(requestRetryTimer);
+    window.clearTimeout(calculatorRetryTimer);
+    cloudLoaded = false;
+    calculatorCloudLoaded = false;
+  }
+  if (user && deviceStorage.owner !== user.id) {
+    const priorProfile = offlineDeviceApi?.read(deviceStorage);
+    deviceStorage.setOwner(user.id, priorProfile?.userId === user.id);
+    const local = loadRequestEnvelope();
+    requests = local.requests;
+    requestLocalDirty = local.dirty;
+    requestLocalBaseUpdatedAt = local.baseUpdatedAt;
+    const calculator = loadCalculatorEnvelope();
+    applyCalculatorState(calculator.state);
+    calculatorLocalDirty = calculator.dirty;
+    calculatorLocalBaseUpdatedAt = calculator.baseUpdatedAt;
+    clearForm();
+  }
   currentUser = user;
   setPrivateChecklistContext(user?.id || null);
   if (!user || (previousUserId && previousUserId !== user.id)) resetNotocPolicy();
@@ -1118,7 +1201,7 @@ function sanitizeCalculatorState(value) {
 
 function loadCalculatorEnvelope() {
   try {
-    const saved = JSON.parse(localStorage.getItem(CALCULATOR_STORAGE_KEY) || "null");
+    const saved = JSON.parse(deviceStorage.getItem(CALCULATOR_STORAGE_KEY) || "null");
     if (!saved) return { state: createDefaultCalculatorState(), dirty: false, baseUpdatedAt: null };
     if (saved.state) {
       return {
@@ -1824,8 +1907,8 @@ function serializeCalculatorState() {
 }
 
 function saveCalculatorEnvelope() {
-  if (!calculatorInitialised) return;
-  localStorage.setItem(CALCULATOR_STORAGE_KEY, JSON.stringify({
+  if (!calculatorInitialised || (!deviceStorage.owner && !calculatorLocalDirty)) return false;
+  return deviceStorage.setItem(CALCULATOR_STORAGE_KEY, JSON.stringify({
     state: serializeCalculatorState(),
     dirty: calculatorLocalDirty,
     baseUpdatedAt: calculatorLocalBaseUpdatedAt,
@@ -2494,24 +2577,20 @@ function clearFtlCalculator() {
 }
 
 function openBdxInfo() {
-  elements.bdxInfoDialog?.classList.remove("hidden");
-  elements.bdxInfoCloseButton?.focus();
+  window.OpsDeckDialogs.open(elements.bdxInfoDialog, elements.bdxInfoButton);
 }
 
 function closeBdxInfo() {
-  elements.bdxInfoDialog?.classList.add("hidden");
-  elements.bdxInfoButton?.focus();
+  window.OpsDeckDialogs.close(elements.bdxInfoDialog);
 }
 
 function openElapsedInfo(event) {
   elapsedInfoTrigger = event?.currentTarget || null;
-  elements.elapsedInfoDialog?.classList.remove("hidden");
-  elements.elapsedInfoCloseButton?.focus();
+  window.OpsDeckDialogs.open(elements.elapsedInfoDialog, elapsedInfoTrigger);
 }
 
 function closeElapsedInfo() {
-  elements.elapsedInfoDialog?.classList.add("hidden");
-  elapsedInfoTrigger?.focus();
+  window.OpsDeckDialogs.close(elements.elapsedInfoDialog);
   elapsedInfoTrigger = null;
 }
 
@@ -2558,8 +2637,7 @@ function loadRequests() {
 
 function persistLoadedRequestEnvelope(envelope) {
   try {
-    localStorage.setItem(REQUESTS_ENVELOPE_KEY, JSON.stringify(envelope));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(envelope.requests));
+    if (deviceStorage.owner) deviceStorage.setItem(REQUESTS_ENVELOPE_KEY, JSON.stringify(envelope));
   } catch {
     // Loading can continue with the retained in-memory copy if device storage is unavailable.
   }
@@ -2567,7 +2645,7 @@ function persistLoadedRequestEnvelope(envelope) {
 
 function loadRequestEnvelope() {
   try {
-    const saved = JSON.parse(localStorage.getItem(REQUESTS_ENVELOPE_KEY) || "null");
+    const saved = JSON.parse(deviceStorage.getItem(REQUESTS_ENVELOPE_KEY) || "null");
     if (saved && Array.isArray(saved.requests)) {
       const envelope = {
         requests: sanitizeRequests(saved.requests),
@@ -2578,7 +2656,7 @@ function loadRequestEnvelope() {
       return envelope;
     }
 
-    const legacy = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    const legacy = JSON.parse(deviceStorage.getItem(STORAGE_KEY) || "[]");
     const envelope = {
       requests: sanitizeRequests(Array.isArray(legacy) ? legacy : []),
       dirty: false,
@@ -2594,13 +2672,11 @@ function loadRequestEnvelope() {
 function saveRequestEnvelope() {
   try {
     const sanitized = sanitizeRequests(requests);
-    localStorage.setItem(REQUESTS_ENVELOPE_KEY, JSON.stringify({
+    return deviceStorage.setItem(REQUESTS_ENVELOPE_KEY, JSON.stringify({
       requests: sanitized,
       dirty: requestLocalDirty,
       baseUpdatedAt: requestLocalBaseUpdatedAt,
     }));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
-    return true;
   } catch {
     setSyncStatus("This device could not store the latest changes.", true);
     return false;
@@ -2611,10 +2687,10 @@ function saveRequests() {
   requestChangeRevision += 1;
   requestLocalDirty = true;
   if (cloudLoaded) requestLocalBaseUpdatedAt = cloudUpdatedAt;
-  saveRequestEnvelope();
+  const saved = saveRequestEnvelope();
 
   if (!navigator.onLine || !supabaseClient || !currentUser || !cloudLoaded) {
-    setSyncStatus("Changes saved on this device · waiting for cloud", false, true);
+    setSyncStatus(saved ? "Changes saved on this device · waiting for cloud" : "Changes not saved on this device", !saved, saved);
   }
   queueCloudSave();
 }
@@ -2648,7 +2724,7 @@ function sanitizeRequests(value) {
   if (!Array.isArray(value)) return [];
 
   const sanitized = value
-    .filter((request) => request.date && request.flightNumber && Array.isArray(request.staff))
+    .filter((request) => request && window.OpsDeckLtot.isIsoDate(request.date) && request.flightNumber && Array.isArray(request.staff))
     .map((request) => ({
       id: request.id || createId(),
       date: request.date,
@@ -2712,6 +2788,107 @@ function setDataStatus(message = "", isError = false, isSuccess = false) {
   elements.dataStatus.classList.toggle("status-success", isSuccess);
 }
 
+function savedChecklistReady(core, kind, owner) {
+  return (async () => {
+    if (!owner) return false;
+    const cached = core.readSaved(deviceStorage, "policy", owner);
+    if (!cached || !core.validatePolicy(cached.checklist)) return false;
+    return await core.policyHash(cached.checklist, window.crypto) === cached.content_sha256;
+  })().catch(() => false);
+}
+
+function checkOfflineShell() {
+  return new Promise((resolve) => {
+    const worker = navigator.serviceWorker?.controller;
+    if (!worker) { resolve(false); return; }
+    const channel = new MessageChannel();
+    const done = (value) => { window.clearTimeout(timer); channel.port1.close(); resolve(value); };
+    const timer = window.setTimeout(() => done(false), 3000);
+    channel.port1.onmessage = (event) => done(event.data?.ready === true);
+    try { worker.postMessage({ type: "CHECK_OFFLINE_SHELL" }, [channel.port2]); }
+    catch (_) { done(false); }
+  });
+}
+
+async function savedPdfReady(core, kind, owner) {
+  if (!owner) return false;
+  try {
+    const cached = core.readSaved(deviceStorage, "policy", owner);
+    return Boolean(cached && await window.OpsDeckChecklistBackup.readSaved(deviceStorage, owner, kind, cached.content_sha256));
+  } catch (_) { return false; }
+}
+
+async function checkOfflineReadiness() {
+  const button = document.querySelector("#checkOfflineButton");
+  const list = document.querySelector("#offlineReadinessList");
+  const status = document.querySelector("#deviceReadinessStatus");
+  button.disabled = true;
+  status.textContent = "Checking saved copies...";
+  const generation = sessionGeneration;
+  const owner = authStorage.blocked ? null : deviceStorage.owner;
+  const localWrites = deviceStorage.probe();
+  const shell = await checkOfflineShell();
+  const gps = await savedChecklistReady(window.OpsDeckGpsChecklist, "gps", owner);
+  const lvto = await savedChecklistReady(window.OpsDeckLvtoChecklist, "lvto", owner);
+  const gpsPdf = await savedPdfReady(window.OpsDeckGpsChecklist, "gps", owner);
+  const lvtoPdf = await savedPdfReady(window.OpsDeckLvtoChecklist, "lvto", owner);
+  const notoc = owner ? Boolean(await notocPolicyStore.load(deviceStorage, owner)) : false;
+  if (generation !== sessionGeneration || owner !== deviceStorage.owner) { button.disabled = false; return; }
+  latestReadiness = { checkedAt: new Date().toISOString(), appVersion: APP_VERSION, shell, gps, lvto, gpsPdf, lvtoPdf, notoc, localWrites };
+  list.replaceChildren();
+  for (const [label, ready] of [["App and calculators", shell], ["GPS interference", gps], ["GPS PDF backup", gpsPdf], ["Low-visibility take-off", lvto], ["Take-off PDF backup", lvtoPdf], ["NOTOC guidance", notoc], ["Local saving", localWrites && deviceStorage.saved && Boolean(owner)]]) {
+    const row = document.createElement("li");
+    const name = document.createElement("span");
+    const result = document.createElement("strong");
+    name.textContent = label;
+    result.textContent = ready ? "Prepared" : "Not confirmed";
+    result.className = ready ? "ready" : "unavailable";
+    row.append(name, result);
+    list.append(row);
+  }
+  list.classList.remove("hidden");
+  status.textContent = shell && gps && lvto && notoc && deviceStorage.saved && owner ?
+    (gpsPdf && lvtoPdf ? "Saved checklists and PDF backups checked. Keep separate PDF copies before departure." :
+      "Saved checklists checked. Open both checklists online to prepare their PDF backups, then check again.") :
+    "Connect, sign in and open the unconfirmed tools before departure. Reopen after an app update, then check again.";
+  button.disabled = false;
+}
+
+function downloadDiagnostics() {
+  downloadJsonFile(`opsdeck-diagnostics-${backupTimestamp()}.json`, {
+    version: APP_VERSION, generatedAt: new Date().toISOString(),
+    browserReportsOnline: navigator.onLine, standalone: navigator.standalone === true,
+    signedIn: Boolean(currentUser), trustedDevice: !authStorage.blocked && Boolean(offlineDeviceApi.read(deviceStorage)),
+    localWritesSucceeded: deviceStorage.saved,
+    pending: { jumpseat: requestLocalDirty, calculator: calculatorLocalDirty },
+    readiness: latestReadiness, errors: diagnosticErrors,
+  });
+  document.querySelector("#deviceReadinessStatus").textContent = "Diagnostics downloaded. No names, tokens or checklist content included.";
+}
+
+function watchAppUpdate(registration) {
+  appWorkerRegistration = registration;
+  const show = () => {
+    document.querySelector("#applyAppUpdateButton").classList.toggle("hidden", !registration.waiting);
+    document.querySelector("#appUpdateNotice").classList.toggle("hidden", !registration.waiting);
+  };
+  show();
+  registration.addEventListener("updatefound", () => {
+    registration.installing?.addEventListener("statechange", () => window.setTimeout(show, 0));
+  });
+}
+
+function applyAppUpdate() {
+  if (!appWorkerRegistration?.waiting) return;
+  if (!deviceStorage.saved || window.OpsDeckGpsUi?.getStatus().saved === false || window.OpsDeckLvtoUi?.getStatus().saved === false) {
+    document.querySelector("#deviceReadinessStatus").textContent = "Some changes are not saved on this device. Keep this window open and preserve them before reloading.";
+    return;
+  }
+  if (!window.confirm("Reload OpsDeck to apply the downloaded update? Saved entries and checklist progress will be retained.")) return;
+  updateRequested = true;
+  appWorkerRegistration.waiting.postMessage({ type: "ACTIVATE_UPDATE" });
+}
+
 function buildPortableBackup() {
   return window.OpsDeckData.buildBackup({
     appVersion: APP_VERSION,
@@ -2737,13 +2914,17 @@ function exportCsvBackup() {
 async function restoreJsonBackup(event) {
   const file = event.target.files?.[0];
   if (!file) return;
+  const owner = deviceStorage.owner;
+  const generation = sessionGeneration;
 
   try {
+    if (file.size > window.OpsDeckData.MAX_BACKUP_BYTES) throw new Error("This backup is too large. Maximum size is 2 MB.");
     const backup = window.OpsDeckData.parseBackup(await file.text());
+    if (owner !== deviceStorage.owner || generation !== sessionGeneration) throw new Error("Account changed. Open the backup again in the intended account.");
     const restoredRequests = sanitizeRequests(backup.jumpseatRequests);
     const restoredCalculator = sanitizeCalculatorState(backup.calculatorState);
     const confirmed = window.confirm(
-      `Restore ${restoredRequests.length} ${pluralize(restoredRequests.length, "flight")} and the saved FDP and LTOT inputs? This replaces the current data on this account.`
+      `Restore ${restoredRequests.length} ${pluralize(restoredRequests.length, "flight")} and the saved FDP and LTOT inputs? This replaces the current data on this account.${backup.jumpseatRequests.length > restoredRequests.length ? " Older flights outside the retention period will not be restored." : ""}`
     );
     if (!confirmed) {
       setDataStatus("Restore cancelled.");
@@ -2755,7 +2936,7 @@ async function restoreJsonBackup(event) {
     saveRequests();
     queueCalculatorSave();
     render();
-    setDataStatus("Backup restored. Cloud synchronisation is in progress.", false, true);
+    setDataStatus(deviceStorage.saved ? "Backup restored on this device. Cloud synchronisation is pending." : "Backup is open but could not be saved on this device. Keep this window open.", !deviceStorage.saved, deviceStorage.saved);
   } catch (error) {
     setDataStatus(error.message || "The backup could not be restored.", true);
   } finally {
@@ -2764,7 +2945,7 @@ async function restoreJsonBackup(event) {
 }
 
 function closeRequestConflictDialog() {
-  elements.requestConflictDialog?.classList.add("hidden");
+  window.OpsDeckDialogs.close(elements.requestConflictDialog);
   pendingRequestConflict = null;
 }
 
@@ -2775,8 +2956,7 @@ function showRequestConflict(localRequests, cloudRequests, latestCloudUpdatedAt)
     cloudUpdatedAt: latestCloudUpdatedAt || null,
   };
   elements.requestConflictSummary.textContent = `This device has ${localRequests.length} ${pluralize(localRequests.length, "flight")} and the cloud has ${cloudRequests.length}. Choose which copy to keep.`;
-  elements.requestConflictDialog.classList.remove("hidden");
-  elements.useCloudConflictButton.focus();
+  window.OpsDeckDialogs.open(elements.requestConflictDialog);
 }
 
 function useCloudConflictCopy() {
@@ -2817,6 +2997,9 @@ function downloadRequestConflictCopies() {
 }
 
 async function handleCloudConflict() {
+  if (!currentUser) return;
+  const owner = currentUser.id;
+  const generation = sessionGeneration;
   cloudLoaded = false;
   window.clearTimeout(saveTimer);
   window.clearTimeout(requestRetryTimer);
@@ -2825,8 +3008,10 @@ async function handleCloudConflict() {
   const { data, error } = await supabaseClient
     .from("jumpseat_data")
     .select("requests, updated_at")
-    .eq("user_id", currentUser.id)
-    .maybeSingle();
+    .eq("user_id", owner)
+    .maybeSingle().then((result) => result, (error) => ({ data: null, error }));
+
+  if (currentUser?.id !== owner || generation !== sessionGeneration) return;
   if (error || !Array.isArray(data?.requests)) {
     setSyncStatus("Cloud changed on another device. Refresh when the connection is stable.", true);
     return;
@@ -2842,6 +3027,7 @@ async function saveCloudRequests() {
   requestSaveInFlight = true;
   const saveRevision = requestChangeRevision;
   const saveUserId = currentUser.id;
+  const saveGeneration = sessionGeneration;
   const requestSnapshot = sanitizeRequests(requests);
   let shouldSaveAgain = false;
   setSyncStatus("Saving...");
@@ -2863,6 +3049,7 @@ async function saveCloudRequests() {
 
   try {
     const { data, error } = await query.select("updated_at").maybeSingle();
+    if (currentUser?.id !== saveUserId || sessionGeneration !== saveGeneration) return;
 
     if (error) {
       if (error.code === "23505") {
@@ -2893,10 +3080,11 @@ async function saveCloudRequests() {
     shouldSaveAgain = requestLocalDirty;
     setCloudSuccessStatus();
   } catch {
-    scheduleRequestRetry();
+    if (currentUser?.id === saveUserId && sessionGeneration === saveGeneration) scheduleRequestRetry();
   } finally {
-    requestSaveInFlight = false;
-    if (shouldSaveAgain && currentUser?.id === saveUserId) queueCloudSave(100);
+    if (sessionGeneration === saveGeneration) requestSaveInFlight = false;
+    updateDomainSyncStatus();
+    if (shouldSaveAgain && sessionGeneration === saveGeneration && currentUser?.id === saveUserId) queueCloudSave(100);
   }
 }
 
@@ -2914,6 +3102,7 @@ async function saveCloudCalculatorState() {
   calculatorSaveInFlight = true;
   const saveRevision = calculatorChangeRevision;
   const saveUserId = currentUser.id;
+  const saveGeneration = sessionGeneration;
   let shouldSaveAgain = false;
   setSyncStatus("Saving...");
   const nextUpdatedAt = new Date().toISOString();
@@ -2933,6 +3122,7 @@ async function saveCloudCalculatorState() {
 
   try {
     const { data, error } = await query.select("updated_at").maybeSingle();
+    if (currentUser?.id !== saveUserId || sessionGeneration !== saveGeneration) return;
 
     if (error) {
       if (isRateLimitError(error.message || "")) {
@@ -2960,10 +3150,11 @@ async function saveCloudCalculatorState() {
     saveCalculatorEnvelope();
     setCloudSuccessStatus();
   } catch (error) {
-    scheduleCalculatorRetry();
+    if (currentUser?.id === saveUserId && sessionGeneration === saveGeneration) scheduleCalculatorRetry();
   } finally {
-    calculatorSaveInFlight = false;
-    if (shouldSaveAgain && navigator.onLine && currentUser?.id === saveUserId && calculatorCloudLoaded) {
+    if (sessionGeneration === saveGeneration) calculatorSaveInFlight = false;
+    updateDomainSyncStatus();
+    if (shouldSaveAgain && sessionGeneration === saveGeneration && navigator.onLine && currentUser?.id === saveUserId && calculatorCloudLoaded) {
       window.clearTimeout(calculatorSaveTimer);
       calculatorSaveTimer = window.setTimeout(() => {
         saveCloudCalculatorState();
@@ -2975,15 +3166,21 @@ async function saveCloudCalculatorState() {
 async function loadCloudCalculatorState(options = {}) {
   if (!supabaseClient || !currentUser || !navigator.onLine) return;
 
-  const forceCloud = Boolean(options.forceCloud);
-  const local = loadCalculatorEnvelope();
+  const owner = currentUser.id;
+  const generation = sessionGeneration;
+  const loadId = ++calculatorLoadGeneration;
+  const revision = calculatorChangeRevision;
   calculatorCloudLoaded = false;
   setSyncStatus("Loading calculator data...");
   const { data, error } = await supabaseClient
     .from("opsdeck_calculator_state")
     .select("state, updated_at")
-    .eq("user_id", currentUser.id)
-    .maybeSingle();
+    .eq("user_id", owner)
+    .maybeSingle().then((result) => result, (error) => ({ data: null, error }));
+
+  if (currentUser?.id !== owner || generation !== sessionGeneration || loadId !== calculatorLoadGeneration) return;
+  const local = loadCalculatorEnvelope();
+  const forceCloud = Boolean(options.forceCloud) && revision === calculatorChangeRevision;
 
   if (error) {
     calculatorLocalDirty = local.dirty;
@@ -3037,16 +3234,22 @@ async function loadCloudRequests(options = {}) {
     return;
   }
 
-  const forceCloud = Boolean(options.forceCloud);
-  const local = loadRequestEnvelope();
+  const owner = currentUser.id;
+  const generation = sessionGeneration;
+  const loadId = ++requestLoadGeneration;
+  const revision = requestChangeRevision;
   cloudLoaded = false;
   setSyncStatus("Loading cloud data...");
 
   const { data, error } = await supabaseClient
     .from("jumpseat_data")
     .select("requests, updated_at")
-    .eq("user_id", currentUser.id)
-    .maybeSingle();
+    .eq("user_id", owner)
+    .maybeSingle().then((result) => result, (error) => ({ data: null, error }));
+
+  if (currentUser?.id !== owner || generation !== sessionGeneration || loadId !== requestLoadGeneration) return;
+  const local = loadRequestEnvelope();
+  const forceCloud = Boolean(options.forceCloud) && revision === requestChangeRevision;
 
   if (error) {
     requestLocalDirty = local.dirty;
@@ -3105,7 +3308,7 @@ function normalizeText(value) {
 
 function readJumpseatDraft() {
   try {
-    const draft = JSON.parse(localStorage.getItem(JUMPSEAT_DRAFT_KEY) || "null");
+    const draft = JSON.parse(deviceStorage.getItem(JUMPSEAT_DRAFT_KEY) || "null");
     if (!draft || draft.schemaVersion !== JUMPSEAT_DRAFT_SCHEMA_VERSION) return null;
 
     const ownerId = currentUser?.id || null;
@@ -3119,7 +3322,7 @@ function readJumpseatDraft() {
 
 function clearJumpseatDraft() {
   try {
-    localStorage.removeItem(JUMPSEAT_DRAFT_KEY);
+    deviceStorage.removeItem(JUMPSEAT_DRAFT_KEY);
   } catch (_error) {
     // The form can still be cleared when browser storage is unavailable.
   }
@@ -3163,7 +3366,8 @@ function persistJumpseatDraft() {
   }
 
   try {
-    localStorage.setItem(JUMPSEAT_DRAFT_KEY, JSON.stringify(draft));
+    const saved = deviceStorage.setItem(JUMPSEAT_DRAFT_KEY, JSON.stringify(draft));
+    if (!saved) return;
   } catch (_error) {
     // An in-memory draft remains available until the page is closed.
   }
@@ -3729,6 +3933,7 @@ function deleteRequest(id) {
 }
 
 async function handleSession(session) {
+  if (authStorage.blocked || manualSignOutInProgress) return;
   const user = session?.user || null;
   const isSameLoadedUser = user?.id && user.id === currentUser?.id && cloudLoaded && calculatorCloudLoaded;
 
@@ -3753,6 +3958,8 @@ async function signIn() {
   }
 
   setAuthStatus("Signing in...");
+  await authCleanup;
+  authStorage.allow();
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
   if (error) {
@@ -3761,6 +3968,7 @@ async function signIn() {
   }
 
   elements.authPassword.value = "";
+  supabaseClient.auth.startAutoRefresh();
   await handleSession(data.session);
 }
 
@@ -3781,6 +3989,8 @@ async function sendMagicLink() {
   window.clearInterval(magicLinkRetryTimer);
   elements.magicLinkButton.disabled = true;
   setAuthStatus("Sending magic link...");
+  await authCleanup;
+  authStorage.allow();
   const { error } = await supabaseClient.auth.signInWithOtp({
     email,
     options: {
@@ -3809,23 +4019,45 @@ async function sendMagicLink() {
 }
 
 async function signOut(message = "Sign in to load and save your OpsDeck data.") {
-  offlineDeviceApi?.forget(localStorage);
+  if ((requestLocalDirty || calculatorLocalDirty || !deviceStorage.saved) &&
+      !window.confirm("This device has changes that are not confirmed saved to the cloud. Sign out and remove its private cached records? Cancel to download a backup in Settings first.")) return;
+  manualSignOutInProgress = true;
+  sessionGeneration += 1;
+  requestLoadGeneration += 1;
+  calculatorLoadGeneration += 1;
+  requestSaveInFlight = false;
+  calculatorSaveInFlight = false;
+  window.clearTimeout(saveTimer);
+  window.clearTimeout(calculatorSaveTimer);
+  supabaseClient?.auth.stopAutoRefresh();
+  const owner = deviceStorage.owner;
+  offlineDeviceApi?.forget(deviceStorage);
   window.OpsDeckGpsUi?.forget();
   window.OpsDeckLvtoUi?.forget();
+  if (owner) deviceStorage.removeItem(notocPolicyStore.cacheKey(owner));
+  // Block late token refresh writes as well as clearing the existing local session.
+  authCleanup = supabaseClient?.auth.signOut({ scope: "local" }).catch(() => {}) || Promise.resolve();
+  const authRemoved = authStorage.block(authStorageKey);
+  const recordsRemoved = deviceStorage.forgetOwner();
+  requests = [];
+  requestLocalDirty = false;
+  calculatorLocalDirty = false;
+  requestLocalBaseUpdatedAt = null;
+  calculatorLocalBaseUpdatedAt = null;
+  applyCalculatorState(createDefaultCalculatorState());
+  clearForm();
+  render();
   setSyncStatus("Signing out...");
-  manualSignOutInProgress = true;
 
   try {
-    if (supabaseClient && navigator.onLine) {
-      await supabaseClient.auth.signOut().catch(() => {});
-    }
+    await Promise.race([authCleanup, new Promise((resolve) => window.setTimeout(resolve, 1500))]);
 
     cloudLoaded = false;
     cloudUpdatedAt = null;
     calculatorCloudLoaded = false;
     calculatorCloudUpdatedAt = calculatorLocalBaseUpdatedAt;
     setSignedInState(null);
-    setAuthStatus(message, false);
+    setAuthStatus(authRemoved && recordsRemoved ? message : "Signed out here, but device storage could not be cleared. Clear this site's website data before sharing the iPad.", !authRemoved || !recordsRemoved);
   } finally {
     manualSignOutInProgress = false;
   }
@@ -4053,6 +4285,7 @@ async function sendLtotTelegramSummary() {
 }
 
 async function returnOnline() {
+  if (authStorage.blocked) { setSignedInState(null); return; }
   setOfflineReadOnly(false);
   elements.authPanel.classList.remove("hidden");
 
@@ -4081,6 +4314,23 @@ async function returnOnline() {
 }
 
 async function initCloud() {
+  if (supabaseClient && !IS_LOCAL_PREVIEW && !authSubscription) {
+    authSubscription = supabaseClient.auth.onAuthStateChange((event, session) => {
+      // Defer SDK calls until its auth callback has released the session lock.
+      window.setTimeout(() => {
+        if (authStorage.blocked || manualSignOutInProgress) return;
+        if (event === "SIGNED_OUT" && !navigator.onLine) {
+          const privateAccess = restoreTrustedOfflineDevice();
+          startOfflineMode("Offline: viewing saved data", privateAccess);
+          return;
+        }
+        const ended = event === "SIGNED_OUT" && Boolean(currentUser);
+        handleSession(session).then(() => {
+          if (ended) setAuthStatus("Session expired. Sign in again.", true);
+        });
+      }, 0);
+    }).data.subscription;
+  }
   if (IS_LOCAL_PREVIEW) {
     if (LOCAL_PREVIEW_VIEW === "gps") window.OpsDeckGpsUi?.setContext("local-preview", async () => {
       const response = await fetch("./__gps-checklist-preview.json", { cache: "no-store" });
@@ -4102,6 +4352,8 @@ async function initCloud() {
     startOfflineMode("Offline: viewing saved data", privateAccess);
     return;
   }
+
+  if (authStorage.blocked) { setSignedInState(null); return; }
 
   if (!hasCloudConfig) {
     cloudReady = false;
@@ -4133,17 +4385,6 @@ async function initCloud() {
 
   await handleSession(data.session);
 
-  supabaseClient.auth.onAuthStateChange((event, session) => {
-    if (event === "SIGNED_OUT" && !manualSignOutInProgress && !navigator.onLine) {
-      const privateAccess = Boolean(currentUser?.id) || restoreTrustedOfflineDevice();
-      startOfflineMode("Offline: viewing saved data", privateAccess);
-      return;
-    }
-    const sessionEndedUnexpectedly = event === "SIGNED_OUT" && Boolean(currentUser) && !manualSignOutInProgress;
-    handleSession(session).then(() => {
-      if (sessionEndedUnexpectedly) setAuthStatus("Session expired. Sign in again.", true);
-    });
-  });
 }
 
 elements.requestForm.addEventListener("submit", (event) => {
@@ -4308,6 +4549,16 @@ elements.exportJsonButton.addEventListener("click", exportJsonBackup);
 elements.exportCsvButton.addEventListener("click", exportCsvBackup);
 elements.restoreBackupButton.addEventListener("click", () => elements.restoreBackupInput.click());
 elements.restoreBackupInput.addEventListener("change", restoreJsonBackup);
+document.querySelector("#checkOfflineButton").addEventListener("click", () => void checkOfflineReadiness());
+document.querySelector("#downloadDiagnosticsButton").addEventListener("click", downloadDiagnostics);
+document.querySelector("#applyAppUpdateButton").addEventListener("click", applyAppUpdate);
+document.querySelector("#appUpdateReloadButton").addEventListener("click", applyAppUpdate);
+window.addEventListener("error", () => {
+  if (diagnosticErrors.length < 20) diagnosticErrors.push({ type: "script-error", at: new Date().toISOString() });
+});
+window.addEventListener("unhandledrejection", () => {
+  if (diagnosticErrors.length < 20) diagnosticErrors.push({ type: "unhandled-operation", at: new Date().toISOString() });
+});
 window.addEventListener("offline", () => {
   const privateAccess = Boolean(currentUser?.id) || restoreTrustedOfflineDevice();
   startOfflineMode("Offline: viewing saved data", privateAccess);
@@ -4333,7 +4584,8 @@ if (LOCAL_PREVIEW_VIEW === "settings") openSettings();
 else if (["ftl", "checks", "ra", "notoc", "gps", "lvto"].includes(LOCAL_PREVIEW_VIEW)) setActiveTool(LOCAL_PREVIEW_VIEW);
 
 if ("serviceWorker" in navigator && !IS_LOCAL_PREVIEW) {
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (updateRequested) window.location.reload(); });
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+    navigator.serviceWorker.register("./service-worker.js", { updateViaCache: "none" }).then(watchAppUpdate).catch(() => {});
   });
 }

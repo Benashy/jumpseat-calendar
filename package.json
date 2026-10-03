@@ -1,9 +1,17 @@
 {
   "name": "bens-opsdeck",
-  "version": "2.89.0",
+  "version": "2.90.0",
   "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "devDependencies": {
+    "playwright": "1.62.1",
+    "axe-core": "4.10.3"
+  },
   "scripts": {
     "check": "node --check app.js && node --check ltot-core.js && node --check radio-altimeter-core.js && node --check radio-altimeter-ui.js && node --check notoc-policy.js && node --check notoc-policy-store.js && node --check notoc-core.js && node --check notoc-ui.js && node --check offline-device.js && node --check checklist-backup.js && node --check gps-checklist-core.js && node --check gps-checklist-ui.js && node --check lvto-checklist-core.js && node --check lvto-checklist-ui.js && node --check data-portability.js && node --check request-retention.js && node scripts/check-dom-contract.mjs && node scripts/check-release.mjs && node --test tests/*.test.js",
+    "check:reliability": "node --check device-storage.js && node --check auth-storage.js && node --check network.js && node --check ui-accessibility.js && node --check service-worker.js && node scripts/build-csp.mjs --check && node scripts/build-shell.mjs --check",
+    "test:browser": "node scripts/browser-tests.cjs",
+    "prepare:release": "node scripts/build-csp.mjs && node scripts/build-shell.mjs",
     "release": "node scripts/set-release.mjs"
   }
 }

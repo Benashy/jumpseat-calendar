@@ -139,9 +139,15 @@
     const item = allItems(policy).find((entry) => entry.id === itemId && entry.type === "field");
     const section = policy.sections.find((entry) => entry.items.some((candidate) => candidate.id === itemId));
     if (!item || !isVisible(item, state) || state.hiddenSectionIds.includes(section?.id) || typeof value !== "string") return state;
+    const minimaOrRvr = itemId.startsWith("lvto.minima.") || itemId.startsWith("lvto.rvr.");
+    const affected = (check) => minimaOrRvr && (check.id.startsWith("lvto.rvr.") ||
+      ["lvto.lineup.compare-rvr", "lvto.lineup.final-rvr-assessment"].includes(check.id)) ||
+      item.condition && check.condition?.decisionId === item.condition.decisionId;
     return {
       ...state,
       values: { ...state.values, [itemId]: value.slice(0, item.maxLength || 80) },
+      completedIds: state.values[itemId] === value ? state.completedIds : state.completedIds.filter((id) =>
+        !allItems(policy).some((check) => check.id === id && check.type === "check" && affected(check))),
       updatedAt: now,
     };
   }
@@ -154,7 +160,9 @@
     const decisions = { ...state.decisions };
     if (value === null) delete decisions[itemId];
     else decisions[itemId] = value;
-    return { ...state, decisions, updatedAt: now };
+    const completedIds = state.decisions[itemId] === value ? state.completedIds : state.completedIds.filter((id) =>
+      !allItems(policy).some((entry) => entry.id === id && entry.condition?.decisionId === itemId));
+    return { ...state, decisions, completedIds, updatedAt: now };
   }
 
   function clearChecks(state, now = new Date().toISOString()) {
@@ -197,6 +205,21 @@
     };
   }
 
+  function completion(policy, state) {
+    const items = allItems(policy).filter((item) => isVisible(item, state));
+    const unanswered = items.filter((item) => item.type === "decision" && !state.decisions[item.id]);
+    const requiredInputs = new Set(items.filter((item) => item.type === "computed").flatMap((item) => item.inputIds));
+    const missing = items.filter((item) => item.type === "field" && requiredInputs.has(item.id) && !state.values[item.id]?.trim());
+    const invalid = items.filter((item) => item.type === "field" && ["numeric", "decimal"].includes(item.inputMode) &&
+      state.values[item.id]?.trim() && numericValue(state.values[item.id]) === null);
+    const counts = progress(policy, state);
+    return {
+      complete: counts.total > 0 && counts.checked === counts.total && !unanswered.length && !missing.length && !invalid.length,
+      unansweredIds: unanswered.map((item) => item.id),
+      invalidIds: [...missing, ...invalid].map((item) => item.id),
+    };
+  }
+
   function hasProgress(state) {
     return Boolean(state.completedIds.length || state.hiddenSectionIds.length ||
       Object.keys(state.values).some((id) => state.values[id]) || Object.keys(state.decisions).length);
@@ -225,6 +248,7 @@
   }
 
   const api = {
+    completion,
     SCHEMA_VERSION,
     allItems,
     validatePolicy,

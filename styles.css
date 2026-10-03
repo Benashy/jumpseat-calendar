@@ -1477,6 +1477,9 @@ strong.fdp-state-x-label {
   padding: 12px;
 }
 
+.settings-section + .settings-section { margin-top: 14px; }
+.app-update-notice { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 12px 0; padding: 8px 12px; background: var(--panel-soft); border: 1px solid var(--line); border-radius: 6px; color: var(--ink); }
+
 .settings-heading {
   margin-bottom: 0;
 }
@@ -3536,7 +3539,7 @@ html[data-theme="night"] input[type="time"] {
 .checks-action-title-row .under-test-badge {
   min-height: 20px;
   padding: 4px 6px;
-  font-size: 0.58rem;
+  font-size: 0.75rem;
 }
 
 /* Private GPS checklist: one continuous, readable procedure column. */
@@ -3663,6 +3666,13 @@ html[data-theme="night"] input[type="time"] {
   margin: 12px 0;
   font-size: 0.875rem;
   line-height: 1.5;
+}
+
+.checklist-restored {
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 4px 0 12px;
 }
 
 .gps-verification-pending strong {
@@ -4501,8 +4511,8 @@ html[data-theme="night"] input[type="time"] {
   border: 1px solid rgba(169, 120, 36, 0.62);
   border-radius: 6px;
   background: var(--amber-soft);
-  color: var(--amber);
-  font-size: 0.66rem;
+  color: #765016;
+  font-size: 0.75rem;
   font-weight: 850;
   line-height: 1;
   padding: 5px 8px;
@@ -4512,6 +4522,25 @@ html[data-theme="night"] input[type="time"] {
 .under-test-badge.hidden {
   display: none;
 }
+
+:root[data-theme="night"] .under-test-badge { color: #f0cb87; }
+
+.storage-warning {
+  margin: 0 0 16px;
+  border-left: 4px solid var(--red, #a12b36);
+  background: var(--red-soft, #fff0f1);
+  color: var(--ink);
+  padding: 12px 16px;
+  font-size: 0.875rem;
+}
+
+.lvto-field input[aria-invalid="true"] { border-color: var(--red, #a12b36); }
+
+.device-readiness { list-style: none; margin: 16px 0 0; padding: 0; }
+.device-readiness li { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.device-readiness .ready { color: var(--good); }
+.device-readiness .unavailable { color: #765016; }
+:root[data-theme="night"] .device-readiness .unavailable { color: #f0cb87; }
 
 .checks-back-button {
   flex: 0 0 44px;
@@ -6161,4 +6190,10 @@ html[data-theme="night"] .gps-panel {
   .ftl-form .crew-limit-duration-grid .crew-report-control {
     grid-template-columns: 1fr;
   }
+}
+.lvto-completion-hint {
+  margin: 8px 0 16px;
+  color: var(--ink);
+  font-size: 0.875rem;
+  text-align: center;
 }

@@ -83,13 +83,29 @@ test("rejects duplicate codes and unsupported verification states", () => {
   assert.equal(store.validateMapping([mappingEntry({ verificationStatus: "GUESSED" })]), false);
 });
 
-test("cache is isolated by authenticated user id", () => {
+test("cache is isolated by authenticated user id", async () => {
   const storage = memoryStorage();
-  store.save(storage, "user-a", policyRecord([mappingEntry()], mobilityPolicy()));
+  const record = policyRecord([mappingEntry()], mobilityPolicy());
+  record.mapping_sha256 = await store.digest(record.mapping);
+  record.mobility_policy_sha256 = await store.digest(record.mobility_policy);
+  await store.save(storage, "user-a", record);
 
-  assert.equal(store.load(storage, "user-a").mapping[0].code, "ICE");
-  assert.equal(store.load(storage, "user-a").mobilityPolicy.decision_branches.length, 15);
-  assert.equal(store.load(storage, "user-b"), null);
+  assert.equal((await store.load(storage, "user-a")).mapping[0].code, "ICE");
+  assert.equal((await store.load(storage, "user-a")).mobilityPolicy.decision_branches.length, 15);
+  assert.equal(await store.load(storage, "user-b"), null);
+});
+
+test("changed contents cannot retain a previous digest or replace a verified cache", async () => {
+  const storage = memoryStorage();
+  const record = policyRecord([mappingEntry()]);
+  record.mapping_sha256 = await store.digest(record.mapping);
+  const first = await store.save(storage, "user-a", record);
+  record.mapping[0].crewAction = "Changed action";
+  assert.equal(await store.verifyRecord(record, "user-a"), null);
+  await assert.rejects(store.save(storage, "user-a", record));
+  const retained = await store.load(storage, "user-a");
+  assert.equal(retained.mapping[0].crewAction, "Cross-check the entry.");
+  assert.equal(retained.cachedAt, first.cachedAt);
 });
 
 test("private mobility policy requires all controlled branches and a hash", () => {

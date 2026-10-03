@@ -12,8 +12,12 @@
   const hiddenStatus = document.querySelector("#lvtoHiddenStatus");
   const status = document.querySelector("#lvtoStatus");
   const revision = document.querySelector("#lvtoRevision");
+  const restoredLabel = document.querySelector("#lvtoRestoredLabel");
   const progressLabel = document.querySelector("#lvtoProgress");
   const completionStatus = document.querySelector("#lvtoCompletionStatus");
+  const completionHint = document.createElement("p");
+  completionHint.className = "lvto-completion-hint hidden";
+  completionHint.setAttribute("role", "status");
   const resetButton = document.querySelector("#lvtoResetButton");
   const restoreButton = document.querySelector("#lvtoRestoreSectionsButton");
   const refreshButton = document.querySelector("#lvtoRefreshButton");
@@ -29,6 +33,7 @@
   let cloudLoaded = false;
   let progressSaved = true;
   let policyRevised = false;
+  let cachedPdf = null;
 
   function saved(kind) {
     try {
@@ -45,9 +50,17 @@
   }
 
   function updateDownloadControl() {
-    const ready = Boolean(policy && hash && fetchBackup && backupApi && navigator.onLine);
+    const ready = Boolean(policy && hash && backupApi && (cachedPdf || (fetchBackup && navigator.onLine)));
     downloadButton.disabled = !ready;
-    downloadButton.title = navigator.onLine ? "Download PDF backup" : "Connect to download PDF backup";
+    downloadButton.title = ready ? "Download PDF backup" : "Connect to save the PDF backup first";
+  }
+
+  async function preparePdf(token, refresh = true) {
+    if (!policy || !backupApi?.prepare) return;
+    const expectedHash = hash;
+    const result = await backupApi.prepare(globalScope.localStorage, userId, "lvto", expectedHash,
+      refresh && navigator.onLine ? fetchBackup : null, () => generation === token && hash === expectedHash);
+    if (generation === token && hash === expectedHash) { cachedPdf = result; updateDownloadControl(); }
   }
 
   function node(tag, className, text) {
@@ -64,6 +77,7 @@
   }
 
   function persist() {
+    restoredLabel.classList.add("hidden");
     try {
       globalScope.localStorage.setItem(core.storageKey("progress", userId), JSON.stringify(state));
       progressSaved = true;
@@ -234,13 +248,18 @@
     progressLabel.textContent = `${checklistProgress.checked} of ${checklistProgress.total} actions checked`;
     progressLabel.classList.remove("hidden");
     const checklistStarted = checklistProgress.checked > 0;
-    const checklistComplete = checklistStarted && checklistProgress.total > 0 &&
-      checklistProgress.checked === checklistProgress.total;
+    const completion = core.completion(policy, state);
+    const checklistComplete = checklistStarted && completion.complete;
     completionStatus.textContent = checklistStarted ?
       (checklistComplete ? "CHECKLIST COMPLETE" : "CHECKLIST INCOMPLETE") : "";
     completionStatus.classList.toggle("hidden", !checklistStarted);
     completionStatus.classList.toggle("is-complete", checklistComplete);
     completionStatus.classList.toggle("is-incomplete", checklistStarted && !checklistComplete);
+    completionStatus.title = completion.unansweredIds.length ? "Return decision required" :
+      completion.invalidIds.length ? "Check the minimum and numeric entries" : "";
+    completionHint.textContent = completionStatus.title;
+    completionHint.classList.toggle("hidden", !checklistStarted || !completionHint.textContent);
+    completionStatus.after(completionHint);
     hiddenStatus.textContent = checklistProgress.hiddenSections ?
       `${checklistProgress.hiddenSections} ${checklistProgress.hiddenSections === 1 ? "section" : "sections"} hidden` : "";
     hiddenStatus.classList.toggle("hidden", !checklistProgress.hiddenSections);
@@ -251,6 +270,7 @@
     root.querySelectorAll("[data-lvto-field]").forEach((input) => {
       const value = state.values[input.dataset.lvtoField] || "";
       if (input.value !== value) input.value = value;
+      input.setAttribute("aria-invalid", String(checklistStarted && completion.invalidIds.includes(input.dataset.lvtoField)));
     });
     root.querySelectorAll("[data-lvto-computed]").forEach((element) => {
       const value = core.computedValue(policy, state, element.dataset.lvtoComputed);
@@ -299,6 +319,7 @@
     progressLabel.classList.add("hidden");
     completionStatus.textContent = "";
     completionStatus.classList.add("hidden");
+    completionHint.classList.add("hidden");
     completionStatus.classList.remove("is-complete", "is-incomplete");
     resetButton.disabled = true;
     restoreButton.disabled = true;
@@ -333,9 +354,11 @@
     const digest = await core.policyHash(record.checklist, globalScope.crypto);
     if (generation !== token || digest !== record.content_sha256) return false;
     const previous = saved("progress");
+    cachedPdf = null;
     policy = record.checklist;
     hash = digest;
     state = core.restoreState(policy, userId, hash, previous);
+    restoredLabel.classList.toggle("hidden", !(previous?.policyHash === hash && core.hasProgress(state)));
     render();
     if (previous && previous.policyHash !== hash) {
       persist();
@@ -362,6 +385,8 @@
           // A damaged offline copy must not prevent a fresh download.
         }
       }
+      if (generation !== token) return;
+      await preparePdf(token, false);
       if (generation !== token) return;
       if (!navigator.onLine) {
         message(policy ? "Using the saved checklist offline." : "Connect and sign in once to download the checklist.", !policy);
@@ -396,6 +421,7 @@
         } catch (_) {
           message("The checklist is open, but its offline copy could not be saved.", true);
         }
+        await preparePdf(token);
       } catch (_) {
         if (generation === token) message(policy ? "Could not refresh. The saved checklist is still available." : "Checklist unavailable. Refresh when connected.", true);
       }
@@ -430,6 +456,8 @@
     cloudLoaded = false;
     progressSaved = true;
     policyRevised = false;
+    cachedPdf = null;
+    restoredLabel.classList.add("hidden");
     refreshButton.disabled = !owner;
     render();
     message(owner ? "Loading checklist..." : "Sign in to load the checklist.");
@@ -443,6 +471,8 @@
       } catch (_) {
         // The signed-out view still clears all checklist text.
       }
+      try { globalScope.localStorage.removeItem(core.storageKey("progress", userId)); } catch (_) {}
+      backupApi?.forget?.(globalScope.localStorage, userId, "lvto");
     }
     setContext(null, null);
   }
@@ -462,15 +492,20 @@
     persist();
   });
   downloadButton.addEventListener("click", async () => {
-    if (!policy || !hash || !fetchBackup || !backupApi || !navigator.onLine) return;
+    if (!policy || !hash || !backupApi || (!cachedPdf && (!fetchBackup || !navigator.onLine))) return;
+    const token = generation;
+    const expectedHash = hash;
     downloadButton.disabled = true;
     message("Preparing PDF backup...");
     try {
-      const record = await fetchBackup(hash);
-      await backupApi.download(record, { expectedKey: "lvto", expectedContentHash: hash });
+      const record = cachedPdf || await fetchBackup(expectedHash);
+      if (generation !== token || hash !== expectedHash) return;
+      await backupApi.download(record, { expectedKey: "lvto", expectedContentHash: expectedHash,
+        isCurrent: () => generation === token && hash === expectedHash });
+      if (generation !== token || hash !== expectedHash) return;
       message("PDF backup downloaded.");
     } catch (_) {
-      message("PDF backup unavailable. Refresh when connected.", true);
+      if (generation === token) message("PDF backup unavailable. Refresh when connected.", true);
     } finally {
       updateDownloadControl();
     }
@@ -485,6 +520,6 @@
     }
   });
 
-  globalScope.OpsDeckLvtoUi = { setContext, load, forget };
+  globalScope.OpsDeckLvtoUi = { setContext, load, forget, getStatus: () => ({ ready: Boolean(policy), saved: progressSaved }) };
   render();
 })(window);

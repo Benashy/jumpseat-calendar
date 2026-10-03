@@ -1,0 +1,14 @@
+{
+  "reviewedOn": "2026-10-03",
+  "wordingChanged": false,
+  "checklists": {
+    "gps": {
+      "contentSha256": "2e1941bcfd632f2c650cfbdaeb130a796ba9c7c3d8b82ffbf336452b403c5e8e",
+      "pdfSha256": "e7525ffbf06f76e00fc0a216bd7fdf768d754962e7eb3cab5bc8c7d6f90df765"
+    },
+    "lvto": {
+      "contentSha256": "c4ffe5be3dc80e02140411cc9405cb0237cffbfb5320db6d251193ee37578bf1",
+      "pdfSha256": "8753166f5a6a11b3488813d057f9087bb7826f4253280ac2e962d1f1087a2731"
+    }
+  }
+}

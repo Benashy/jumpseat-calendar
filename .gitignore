@@ -1,1 +1,5 @@
 supabase/.temp/
+node_modules/
+dist/
+test-results/
+test-results-webkit/

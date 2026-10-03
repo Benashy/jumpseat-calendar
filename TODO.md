@@ -1,12 +1,20 @@
 # Ben's OpsDeck To-Do
 
+## Product Audit Completion, 3 October 2026
+
+- [x] Reconcile the parked audit with the focused v2.89 GPS verification-warning release and prepare v2.90. Backend permission hardening and Telegram v13 remain deployed.
+- [x] Add verified, owner-scoped offline PDF backups and restored-checklist indication. Keep operational wording and matching PDFs unchanged.
+- [x] Disable public registration, enable leaked-password protection and switch Pages to test-gated Actions publishing.
+- [ ] Complete deployed-release verification, then record the published release in `AUDIT-IMPLEMENTATION.md`.
+- [ ] Repeat physical iPad offline and restricted-Wi-Fi reopening after this release; check PDF downloads and deliberate update activation. Keep Under test.
+
 ## Current Status
 
 - v2.81 removes the partial `Clear ticks` action from the GPS and low-visibility take-off checklists. `New checklist` is now the single confirmed reset and clears the entire working state for that checklist.
 - v2.70 completes the short-haul on-duty reference with Ben's confirmed station timings, orders all eight stations alphabetically and clarifies that flight-specific variations and separate pick-up times remain in the current station brief.
 - v2.69 narrows the Revision 8 on-duty reference to eight short-haul stations. It states the documented normal D-60 down-route report, separates report from pick-up time, records Ben's operational D-70 values for MAN, AMM and MXP and D-75 for NAP, and leaves IST, LIS, BCN and ZRH as `Check brief` because their exact variations were not found in the available manuals.
 - v2.68 adds a compact Revision 8 on-duty time variation reference under FTL Clarifications. It identifies the listed stations without storing or inferring reporting times, directs the user to the current station brief, and notes that temporary changes may precede a brief update.
-- Current visible app version: v2.81.
+- Current visible app version: v2.89, verified 18 September 2026. This is the focused GPS verification-warning release, not the parked product audit. Its private GPS checklist and PDF are revision 18 September 2026 and remain Under test.
 - v2.67 simplifies the GPS checklist presentation: no completion counts or bottom reference/context drawers, and a single last-updated date/time in Zulu. Every phase may be hidden, retaining linked groups and a visible restore heading. Preliminary cockpit preparation, cockpit preparation and unexpected interference use amber hidden badges; all other phases use red, with red taking precedence in the combined count. Disclosure headings and badges match FDP/LTOT. Private source content, its hash and existing saved progress are unchanged.
 - v2.66 adds the private GPS interference checklist under Tools, retaining the source draft's wording and Under test status. Ticks are manual, reversible and saved on the current device. Related sections stay linked; hidden sections retain a visible Show control and are not counted as checked. Reset is confirmed, and revised source wording cannot silently replace an active checklist. Source content is owner-only in Supabase and cached after sign-in, never bundled in public assets.
 - v2.65 shortens the joint-limit result note to `Discretion: crew comparison.` so it fits the narrower iPad portrait cards without reducing text size. Discretion calculations and the OMA 7.6.1 reminder are unchanged.
@@ -104,7 +112,7 @@
 - Telegram protection: review the browser-to-Edge-Function authentication path, Cron authentication, permitted origins and pairing behaviour without exposing the bot token or Cron secret.
 - Secrets: inventory and rotate sensitive Supabase, Telegram and deployment credentials where appropriate; confirm that privileged keys exist only in protected server-side or GitHub secret storage.
 - Personal data: seven-day active retention is implemented for Jumpseat requests and OpsDeck reminder records; review exported backups and any remaining logs so they do not retain unnecessary personal information.
-- Password protection: review the Supabase warning that leaked-password protection is disabled and decide whether to enable it during the separate authentication phase.
+- Password protection: enabled and verified on 3 October 2026. Public registration is disabled; existing-user sign-in and email confirmation remain enabled.
 - Front-end protection: review third-party scripts, dependency pinning, Content Security Policy and available GitHub Pages security headers without reducing iPhone or iPad reliability.
 - Private automated backup: design a daily encrypted or private Supabase backup using protected credentials, with clear retention and no personal data committed to the public repository.
 - Recovery test: restore a backup into an isolated test environment and verify record counts, calculator state and Jumpseat data before treating the backup system as complete.

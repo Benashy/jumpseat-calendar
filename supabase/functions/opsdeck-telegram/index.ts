@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.112.3";
 
 const FUNCTION_NAME = "opsdeck-telegram";
 const REMINDER_OFFSET_MINUTES = 75;

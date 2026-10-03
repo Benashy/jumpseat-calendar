@@ -2,7 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 const vm = require("node:vm");
 const fs = require("node:fs");
-const { webcrypto } = require("node:crypto");
+const { webcrypto, createHash } = require("node:crypto");
 const core = require("../lvto-checklist-core");
 const { fixture } = require("./lvto-fixture");
 const uiSource = fs.readFileSync(require.resolve("../lvto-checklist-ui"), "utf8");
@@ -38,6 +38,12 @@ function harness(storage = new Map(), backupApi = null) {
     get className() { return [...this.classes].join(" "); }
     setAttribute(name, value) { this[name] = String(value); }
     append(...nodes) { nodes.forEach((entry) => { entry.parent = this; this.children.push(entry); }); }
+    after(node) {
+      if (!this.parent) return;
+      this.parent.children = this.parent.children.filter((entry) => entry !== node);
+      this.parent.children.splice(this.parent.children.indexOf(this) + 1, 0, node);
+      node.parent = this.parent;
+    }
     replaceChildren(...nodes) { this.children = []; this.append(...nodes); }
     addEventListener(name, action) { this.listeners[name] = action; }
     closest(selector) {
@@ -121,6 +127,39 @@ function harness(storage = new Map(), backupApi = null) {
   };
 }
 
+test("LVTO previous progress is identified without preventing continuation", async () => {
+  const data = await record();
+  const page = harness();
+  await page.load("owner", async () => data);
+  assert.equal(page.elements.get("#lvtoRestoredLabel").classList.contains("hidden"), true);
+  page.check("action");
+  const reopened = harness(page.storage);
+  await reopened.load("owner", async () => data);
+  assert.equal(reopened.elements.get("#lvtoRestoredLabel").classList.contains("hidden"), false);
+  reopened.field("entered", "125");
+  assert.equal(reopened.elements.get("#lvtoRestoredLabel").classList.contains("hidden"), true);
+});
+
+test("LVTO PDF downloads from its verified private cache while offline and is removed on sign-out", async () => {
+  const data = await record();
+  const bytes = Buffer.from("%PDF-1.4\nSynthetic backup\n%%EOF");
+  const pdf = { checklist_key: "lvto", content_sha256: data.content_sha256,
+    pdf_sha256: createHash("sha256").update(bytes).digest("hex"), filename: "LVTO-test.pdf", pdf_base64: bytes.toString("base64") };
+  const api = { ...require("../checklist-backup"), download: async value => assert.deepEqual(value, pdf) };
+  const page = harness(new Map(), api);
+  await page.load("owner", async () => data, async () => pdf);
+  page.check("action");
+  const offline = harness(page.storage, api);
+  offline.navigator.onLine = false;
+  await offline.load("owner", async () => { throw new Error("No network"); }, async () => { throw new Error("No network"); });
+  assert.equal(offline.elements.get("#lvtoDownloadButton").disabled, false);
+  await offline.elements.get("#lvtoDownloadButton").listeners.click();
+  assert.match(offline.status(), /downloaded/);
+  offline.ui.forget();
+  assert.equal(page.storage.has(api.storageKey("owner", "lvto")), false);
+  assert.equal(page.storage.has(core.storageKey("progress", "owner")), false);
+});
+
 test("LVTO UI loads authenticated content and restores entries after reopening", async () => {
   const data = await record();
   const first = harness();
@@ -164,6 +203,7 @@ test("LVTO UI shows incomplete after the first tick and complete only when every
   assert.equal(completion.classList.contains("hidden"), true);
 
   page.choose("return-decision", "no");
+  page.field("entered", "125");
   page.check("action");
   assert.equal(completion.textContent, "CHECKLIST INCOMPLETE");
   assert.equal(completion.classList.contains("is-incomplete"), true);
@@ -198,7 +238,7 @@ test("LVTO UI starts with no answer selected and reveals the alternate branch on
   page.field("alternate", "EGLL");
   page.choose("return-decision", "yes");
   assert.equal(alternate.closest(".lvto-field").classList.contains("hidden"), true);
-  assert.deepEqual(page.progress().completedIds, ["alternate-action"]);
+  assert.deepEqual(page.progress().completedIds, []);
   assert.equal(page.progress().values.alternate, "EGLL");
   page.choose("return-decision", "yes");
   assert.deepEqual(page.progress().decisions, {});

@@ -11,6 +11,7 @@
   const hiddenStatus = document.querySelector("#gpsHiddenStatus");
   const status = document.querySelector("#gpsStatus");
   const revision = document.querySelector("#gpsRevision");
+  const restoredLabel = document.querySelector("#gpsRestoredLabel");
   const resetButton = document.querySelector("#gpsResetButton");
   const restoreButton = document.querySelector("#gpsRestoreSectionsButton");
   const refreshButton = document.querySelector("#gpsRefreshButton");
@@ -26,6 +27,7 @@
   let cloudLoaded = false;
   let progressSaved = true;
   let policyRevised = false;
+  let cachedPdf = null;
   const notApplicableViews = new Map();
 
   function saved(kind) {
@@ -40,9 +42,17 @@
   }
 
   function updateDownloadControl() {
-    const ready = Boolean(policy && hash && fetchBackup && backupApi && navigator.onLine);
+    const ready = Boolean(policy && hash && backupApi && (cachedPdf || (fetchBackup && navigator.onLine)));
     downloadButton.disabled = !ready;
-    downloadButton.title = navigator.onLine ? "Download PDF backup" : "Connect to download PDF backup";
+    downloadButton.title = ready ? "Download PDF backup" : "Connect to save the PDF backup first";
+  }
+
+  async function preparePdf(token, refresh = true) {
+    if (!policy || !backupApi?.prepare) return;
+    const expectedHash = hash;
+    const result = await backupApi.prepare(globalScope.localStorage, userId, "gps", expectedHash,
+      refresh && navigator.onLine ? fetchBackup : null, () => generation === token && hash === expectedHash);
+    if (generation === token && hash === expectedHash) { cachedPdf = result; updateDownloadControl(); }
   }
 
   function node(tag, className, text) {
@@ -72,6 +82,7 @@
   }
 
   function persist() {
+    restoredLabel.classList.add("hidden");
     try {
       globalScope.localStorage.setItem(core.storageKey("progress", userId), JSON.stringify(state));
       progressSaved = true;
@@ -290,9 +301,12 @@
     const digest = await core.policyHash(record.checklist, globalScope.crypto);
     if (generation !== token || digest !== record.content_sha256) return false;
     const previous = saved("progress");
+    cachedPdf = null;
     policy = record.checklist;
     hash = digest;
     state = core.restoreState(policy, userId, hash, previous);
+    restoredLabel.classList.toggle("hidden", !(previous?.policyHash === hash &&
+      (state.completedIds.length || state.notApplicableIds.length || state.hiddenSectionIds.length)));
     render();
     if (previous && previous.policyHash !== hash) {
       persist();
@@ -317,6 +331,8 @@
           if (cached) await acceptRecord(cached, token);
         } catch (_) { /* A damaged offline copy must not prevent a fresh download. */ }
       }
+      if (generation !== token) return;
+      await preparePdf(token, false);
       if (generation !== token) return;
       if (!navigator.onLine) {
         message(policy ? "Using the saved checklist offline." : "Connect and sign in once to download the checklist.", !policy);
@@ -351,6 +367,7 @@
           globalScope.localStorage.setItem(core.storageKey("policy", owner), JSON.stringify({ ...record, userId: owner }));
           if ((!oldHash || oldHash === hash) && !policyRevised && progressSaved) message("");
         } catch (_) { message("The checklist is open, but its offline copy could not be saved.", true); }
+        await preparePdf(token);
       } catch (_) {
         if (generation === token) message(policy ? "Could not refresh. The saved checklist is still available." : "Checklist unavailable. Refresh when connected.", true);
       }
@@ -385,6 +402,8 @@
     cloudLoaded = false;
     progressSaved = true;
     policyRevised = false;
+    cachedPdf = null;
+    restoredLabel.classList.add("hidden");
     refreshButton.disabled = !owner;
     render();
     message(owner ? "Loading checklist..." : "Sign in to load the checklist.");
@@ -395,6 +414,8 @@
     if (userId) {
       try { globalScope.localStorage.removeItem(core.storageKey("policy", userId)); }
       catch (_) { /* The signed-out view still clears all checklist text. */ }
+      try { globalScope.localStorage.removeItem(core.storageKey("progress", userId)); } catch (_) {}
+      backupApi?.forget?.(globalScope.localStorage, userId, "gps");
     }
     setContext(null, null);
   }
@@ -415,15 +436,20 @@
     persist();
   });
   downloadButton.addEventListener("click", async () => {
-    if (!policy || !hash || !fetchBackup || !backupApi || !navigator.onLine) return;
+    if (!policy || !hash || !backupApi || (!cachedPdf && (!fetchBackup || !navigator.onLine))) return;
+    const token = generation;
+    const expectedHash = hash;
     downloadButton.disabled = true;
     message("Preparing PDF backup...");
     try {
-      const record = await fetchBackup(hash);
-      await backupApi.download(record, { expectedKey: "gps", expectedContentHash: hash });
+      const record = cachedPdf || await fetchBackup(expectedHash);
+      if (generation !== token || hash !== expectedHash) return;
+      await backupApi.download(record, { expectedKey: "gps", expectedContentHash: expectedHash,
+        isCurrent: () => generation === token && hash === expectedHash });
+      if (generation !== token || hash !== expectedHash) return;
       message("PDF backup downloaded.");
     } catch (_) {
-      message("PDF backup unavailable. Refresh when connected.", true);
+      if (generation === token) message("PDF backup unavailable. Refresh when connected.", true);
     } finally {
       updateDownloadControl();
     }
@@ -437,6 +463,6 @@
       updateProgress();
     }
   });
-  globalScope.OpsDeckGpsUi = { setContext, load, forget };
+  globalScope.OpsDeckGpsUi = { setContext, load, forget, getStatus: () => ({ ready: Boolean(policy), saved: progressSaved }) };
   render();
 })(window);

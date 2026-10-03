@@ -51,11 +51,12 @@ test("LVTO conditional branch cannot be marked before it is selected", () => {
   state = core.setDecision(policy, state, "return-decision", "no");
   state = core.setChecked(policy, state, "alternate-action", true);
   state = core.setValue(policy, state, "alternate", "TEST");
-  assert.deepEqual(state.completedIds, ["alternate-action"]);
+  assert.deepEqual(state.completedIds, []);
+  state = core.setChecked(policy, state, "alternate-action", true);
   assert.equal(state.values.alternate, "TEST");
   state = core.setDecision(policy, state, "return-decision", "yes");
   assert.equal(core.isVisible(policy.sections[0].items[6], state), false);
-  assert.deepEqual(state.completedIds, ["alternate-action"]);
+  assert.deepEqual(state.completedIds, []);
   assert.equal(state.values.alternate, "TEST");
 });
 

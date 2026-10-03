@@ -224,14 +224,16 @@ test("trusted devices can reopen validated private checklists without a cloud se
   assert.match(app, /function restoreTrustedOfflineDevice\(\)/);
   assert.match(app, /setPrivateChecklistContext\(profile\.userId\)/);
   assert.match(app, /Offline on this device\. Cloud sync is paused; saved checklists and guidance remain available\./);
-  assert.match(app, /offlineDeviceApi\?\.forget\(localStorage\)/);
+  assert.match(app, /offlineDeviceApi\?\.forget\(deviceStorage\)/);
 });
 
-test("GPS and LVTO PDF backups remain private, version-matched online downloads", () => {
+test("GPS and LVTO PDF backups remain private and version-matched online or offline", () => {
   assert.match(index, /id="gpsDownloadButton"[^>]+aria-label="Download GPS checklist PDF backup"/);
   assert.match(index, /id="lvtoDownloadButton"[^>]+aria-label="Download low visibility take-off checklist PDF backup"/);
-  assert.match(gpsUi, /expectedKey: "gps", expectedContentHash: hash/);
-  assert.match(lvtoUi, /expectedKey: "lvto", expectedContentHash: hash/);
+  assert.match(gpsUi, /expectedKey: "gps", expectedContentHash: expectedHash/);
+  assert.match(lvtoUi, /expectedKey: "lvto", expectedContentHash: expectedHash/);
+  assert.match(gpsUi, /backupApi\?\.forget\?\./);
+  assert.match(lvtoUi, /backupApi\?\.forget\?\./);
   assert.match(app, /\.eq\("content_sha256", contentHash\)/);
   assert.doesNotMatch(serviceWorker, /\.pdf/);
   assert.doesNotMatch(index, /pdf_base64|OpsDeck-A320-GPS-Interference-Backup\.pdf/);

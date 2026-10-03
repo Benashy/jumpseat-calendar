@@ -50,7 +50,7 @@ test("GPS source hash is key-order independent and detects a wording change", as
   assert.notEqual(hash, await core.policyHash(p, webcrypto));
 });
 
-test("Pending verification is a standalone note, never an action or a conditional child", () => {
+test("Pending verification stays a standalone note, never a conditional action", () => {
   const p = fixture();
   const note = { id: "pending-review", type: "note", text: "Awaiting source verification", verificationPending: true };
   p.sections[0].blocks.push(note);

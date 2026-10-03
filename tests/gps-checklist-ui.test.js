@@ -2,7 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 const vm = require("node:vm");
 const fs = require("node:fs");
-const { webcrypto } = require("node:crypto");
+const { webcrypto, createHash } = require("node:crypto");
 const core = require("../gps-checklist-core");
 const uiSource = fs.readFileSync(require.resolve("../gps-checklist-ui"), "utf8");
 
@@ -108,10 +108,9 @@ test("GPS UI uses the established gold-rule treatment for checkable personal tec
   assert.equal(label, undefined);
 });
 
-test("GPS verification warnings are non-tickable, cannot be marked N/A and survive offline reopening", async () => {
+test("GPS verification warnings survive offline reopening and cannot be ticked or hidden as N/A", async () => {
   const data = await record();
-  data.checklist.sections[0].blocks.push({ id: "pending-review", type: "note",
-    text: "**Awaiting verification** Do not infer permission.", verificationPending: true });
+  data.checklist.sections[0].blocks.push({ id: "pending-review", type: "note", text: "**Awaiting verification** Do not infer permission.", verificationPending: true });
   data.content_sha256 = await core.policyHash(data.checklist, webcrypto);
   const page = harness();
   await page.load("one", async () => data);
@@ -119,10 +118,43 @@ test("GPS verification warnings are non-tickable, cannot be marked N/A and survi
   const offline = harness(page.storage);
   offline.navigator.onLine = false;
   await offline.load("one", async () => { throw new Error("Must not request"); });
-  assert.ok(offline.created.some((element) => element.classList.contains("gps-verification-pending")));
+  assert.ok(offline.created.some(element => element.classList.contains("gps-verification-pending")));
   assert.equal(offline.item("pending-review"), undefined);
-  assert.equal(offline.created.some((element) => element.dataset.gpsMarkNotApplicable === "pending-review"), false);
+  assert.equal(offline.created.some(element => element.dataset.gpsMarkNotApplicable === "pending-review"), false);
   assert.equal(offline.item("first").checked, true);
+});
+
+test("GPS previous progress is identified without preventing continuation", async () => {
+  const data = await record();
+  const page = harness();
+  await page.load("one", async () => data);
+  assert.equal(page.elements.get("#gpsRestoredLabel").classList.contains("hidden"), true);
+  page.tick("first");
+  const reopened = harness(page.storage);
+  await reopened.load("one", async () => data);
+  assert.equal(reopened.elements.get("#gpsRestoredLabel").classList.contains("hidden"), false);
+  reopened.tick("second");
+  assert.equal(reopened.elements.get("#gpsRestoredLabel").classList.contains("hidden"), true);
+});
+
+test("GPS PDF downloads from its verified private cache while offline and is removed on sign-out", async () => {
+  const data = await record();
+  const bytes = Buffer.from("%PDF-1.4\nSynthetic backup\n%%EOF");
+  const pdf = { checklist_key: "gps", content_sha256: data.content_sha256,
+    pdf_sha256: createHash("sha256").update(bytes).digest("hex"), filename: "GPS-test.pdf", pdf_base64: bytes.toString("base64") };
+  const api = { ...require("../checklist-backup"), download: async value => assert.deepEqual(value, pdf) };
+  const page = harness(new Map(), api);
+  await page.load("one", async () => data, async () => pdf);
+  page.tick("first");
+  const offline = harness(page.storage, api);
+  offline.navigator.onLine = false;
+  await offline.load("one", async () => { throw new Error("No network"); }, async () => { throw new Error("No network"); });
+  assert.equal(offline.elements.get("#gpsDownloadButton").disabled, false);
+  await offline.elements.get("#gpsDownloadButton").listeners.click();
+  assert.match(offline.status(), /downloaded/);
+  offline.ui.forget();
+  assert.equal(page.storage.has(api.storageKey("one", "gps")), false);
+  assert.equal(page.storage.has(core.storageKey("progress", "one")), false);
 });
 
 test("GPS UI downloads only the PDF supplied for the checklist version currently open", async () => {
