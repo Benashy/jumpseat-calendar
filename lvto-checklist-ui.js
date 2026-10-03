@@ -13,6 +13,7 @@
   const status = document.querySelector("#lvtoStatus");
   const revision = document.querySelector("#lvtoRevision");
   const restoredLabel = document.querySelector("#lvtoRestoredLabel");
+  const expiryNotice = document.querySelector("#lvtoExpiryNotice");
   const progressLabel = document.querySelector("#lvtoProgress");
   const completionStatus = document.querySelector("#lvtoCompletionStatus");
   const completionHint = document.createElement("p");
@@ -76,7 +77,8 @@
     if (latest?.policyHash === hash) state = core.restoreState(policy, userId, hash, latest);
   }
 
-  function persist() {
+  function persist({ automatic = false } = {}) {
+    if (!automatic) delete state.inactivityResetAt;
     restoredLabel.classList.add("hidden");
     try {
       globalScope.localStorage.setItem(core.storageKey("progress", userId), JSON.stringify(state));
@@ -88,6 +90,16 @@
       message("Progress is not saved on this device. Keep this page open.", true);
     }
     updateState();
+  }
+
+  function resume() {
+    if (!policy || !state) return;
+    readLatestState();
+    if (core.isInactive(state)) {
+      const now = new Date().toISOString();
+      state = { ...core.newState(userId, hash, now), inactivityResetAt: now };
+      persist({ automatic: true });
+    } else updateState();
   }
 
   function conditionAttributes(element, item) {
@@ -243,6 +255,7 @@
 
   function updateState() {
     if (!policy || !state) return;
+    expiryNotice.classList.toggle("hidden", !state.inactivityResetAt);
     revision.textContent = core.updatedLabel(state.updatedAt);
     const checklistProgress = core.progress(policy, state);
     progressLabel.textContent = `${checklistProgress.checked} of ${checklistProgress.total} actions checked`;
@@ -315,6 +328,7 @@
     hiddenStatus.textContent = "";
     hiddenStatus.classList.add("hidden");
     revision.textContent = "";
+    expiryNotice.classList.add("hidden");
     progressLabel.textContent = "";
     progressLabel.classList.add("hidden");
     completionStatus.textContent = "";
@@ -360,6 +374,7 @@
     state = core.restoreState(policy, userId, hash, previous);
     restoredLabel.classList.toggle("hidden", !(previous?.policyHash === hash && core.hasProgress(state)));
     render();
+    if (core.isInactive(state)) resume();
     if (previous && previous.policyHash !== hash) {
       persist();
       policyRevised = true;
@@ -513,6 +528,11 @@
   refreshButton.addEventListener("click", () => void load({ force: true }));
   globalScope.addEventListener("online", updateDownloadControl);
   globalScope.addEventListener("offline", updateDownloadControl);
+  const resumeVisible = () => {
+    if (!root.classList.contains("hidden") && document.visibilityState !== "hidden") resume();
+  };
+  globalScope.addEventListener("pageshow", resumeVisible);
+  document.addEventListener?.("visibilitychange", resumeVisible);
   globalScope.addEventListener("storage", (event) => {
     if (policy && event.key === core.storageKey("progress", userId)) {
       readLatestState();
@@ -520,6 +540,6 @@
     }
   });
 
-  globalScope.OpsDeckLvtoUi = { setContext, load, forget, getStatus: () => ({ ready: Boolean(policy), saved: progressSaved }) };
+  globalScope.OpsDeckLvtoUi = { setContext, load, resume, forget, getStatus: () => ({ ready: Boolean(policy), saved: progressSaved }) };
   render();
 })(window);

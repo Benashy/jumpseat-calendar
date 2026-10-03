@@ -50,6 +50,7 @@ function harness() {
     crewLimitRecords: [], ftlCrewControls: {}, activeFtlCrew: "flight", activeFdpTargetId: "flight",
     cabinCrewEnabled: true, ftlAnchorDate: "2026-08-31", fdpReferenceStatusTimer: 0,
     nextCrewNumbers: { flight: 2, cabin: 1 },
+    calculatorDataAge: ltot.normaliseDataAge(null),
     controllingFtlCrewIds: [], currentCrewComparison: null,
     createId: () => `test-${++nextId}`,
     window: { OpsDeckLtot: { ...ltot, utcTodayIso: () => "2026-08-31" }, requestAnimationFrame() {}, clearTimeout() {}, scrollBy() {}, confirm: () => true },

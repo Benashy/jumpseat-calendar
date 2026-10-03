@@ -92,6 +92,65 @@ function harness(storage = new Map(), backupApi = null) {
   };
 }
 
+test("GPS expiry clears ticks, N/A and section choices on offline reopening, retaining its source", async () => {
+  const data = await record();
+  const page = harness();
+  await page.load("one", async () => data);
+  page.tick("first");
+  page.markNotApplicable("second");
+  page.visible("phase", false);
+  const old = page.progress();
+  old.updatedAt = new Date(Date.now() - core.INACTIVITY_TIMEOUT_MS - 1000).toISOString();
+  page.storage.set(core.storageKey("progress", "one"), JSON.stringify(old));
+  const source = page.storage.get(core.storageKey("policy", "one"));
+  const reopened = harness(page.storage);
+  reopened.navigator.onLine = false;
+  await reopened.load("one", async () => { throw new Error("No network"); });
+  assert.deepEqual(reopened.progress().completedIds, []);
+  assert.deepEqual(reopened.progress().notApplicableIds, []);
+  assert.deepEqual(reopened.progress().hiddenSectionIds, []);
+  assert.ok(reopened.progress().inactivityResetAt);
+  assert.equal(reopened.elements.get("#gpsExpiryNotice").classList.contains("hidden"), false);
+  assert.equal(reopened.elements.get("#gpsRestoredLabel").classList.contains("hidden"), true);
+  assert.equal(reopened.storage.get(core.storageKey("policy", "one")), source);
+  const again = harness(page.storage);
+  again.navigator.onLine = false;
+  await again.load("one", async () => { throw new Error("No network"); });
+  assert.equal(again.elements.get("#gpsExpiryNotice").classList.contains("hidden"), false);
+  again.tick("first");
+  assert.equal(again.elements.get("#gpsExpiryNotice").classList.contains("hidden"), true);
+});
+
+test("GPS background refresh does not expire an on-screen checklist; returning does", async () => {
+  const page = harness();
+  await page.load("one", async () => await record());
+  page.tick("first");
+  const old = page.progress();
+  old.updatedAt = new Date(Date.now() - core.INACTIVITY_TIMEOUT_MS - 1000).toISOString();
+  page.storage.set(core.storageKey("progress", "one"), JSON.stringify(old));
+  await page.ui.load({ force: true });
+  assert.equal(page.item("first").checked, true);
+  page.ui.resume();
+  assert.equal(page.item("first").checked, false);
+  assert.deepEqual(page.progress().completedIds, []);
+});
+
+test("GPS expiry reports persistence failure instead of claiming a successful device save", async () => {
+  const page = harness();
+  await page.load("one", async () => await record());
+  page.tick("first");
+  const old = page.progress();
+  old.updatedAt = new Date(Date.now() - core.INACTIVITY_TIMEOUT_MS - 1000).toISOString();
+  page.storage.set(core.storageKey("progress", "one"), JSON.stringify(old));
+  page.window.localStorage.setItem = () => { throw new Error("Quota exceeded"); };
+  page.ui.resume();
+  assert.equal(page.item("first").checked, false);
+  assert.equal(page.ui.getStatus().saved, false);
+  assert.match(page.status(), /not saved/);
+  page.ui.resume();
+  assert.equal(page.item("first").checked, false);
+});
+
 test("GPS UI renders a restrained divider between operational phases", async () => {
   const page = harness();
   await page.load("one", async () => await record());

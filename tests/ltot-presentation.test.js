@@ -38,8 +38,12 @@ function harness(now = "2026-08-31T12:00:00Z") {
   elements.ftlMobileResultStrip = element();
   elements.ftlMobileResultStrip.innerText = "Calculated latest times";
   elements.ftlView = element();
+  const ageWarning = element();
   const context = {
     elements,
+    calculatorDataAge: ltot.normaliseDataAge(null),
+    document: { querySelector: () => ageWarning },
+    ageWarning,
     ftlAnchorDate: "2026-08-31",
     ftlLatestPushbackMinutes: null,
     ftlLatestTakeoffMinutes: null,
@@ -47,11 +51,12 @@ function harness(now = "2026-08-31T12:00:00Z") {
     window: { OpsDeckLtot: {
       ...ltot,
       countdownPresentation: (date, minutes) => ltot.countdownPresentation(date, minutes, Date.parse(now)),
+      showDataAgeWarning: (state) => ltot.showDataAgeWarning(state, Date.parse(now)),
     } },
   };
   const constants = ["FTL_DATE_FORMATTER", "FTL_SHORT_DATE_FORMATTER"]
     .map((name) => app.match(new RegExp(`^const ${name} = .+;`, "m"))[0]);
-  const functions = ["ftlResultDate", "updateCountdownElement", "updateFtlCountdown", "updateMobileFtlResults"]
+  const functions = ["ftlResultDate", "updateCountdownElement", "updateFtlCountdown", "updateMobileFtlResults", "updateCalculatorAgeWarning"]
     .map((name) => app.match(new RegExp(`^function ${name}\\([^]*?^}`, "m"))[0]);
   vm.runInNewContext([...constants, ...functions].join("\n"), context);
   return context;
@@ -75,6 +80,21 @@ test("mobile and full results agree on normal, amber and exceeded states", () =>
   }
   assert.ok(h.elements.latestPushbackCountdown.closest().classList.contains("is-overdue"));
   assert.ok(h.elements.latestTakeoffCountdown.closest().classList.contains("is-warning"));
+  assert.equal(h.elements.latestOnChocksCountdown.textContent, "1h 30m remaining");
+});
+
+test("the age warning does not change the calculated latest times or countdown", () => {
+  const h = harness();
+  h.calculatorDataAge = ltot.beginDataAge(null, "2026-08-30T21:00:00.000Z");
+  h.ftlLatestOnChocksMinutes = 810;
+  h.elements.latestOnChocks.textContent = "13:30Z";
+  h.updateFtlCountdown();
+  assert.equal(h.ageWarning.classList.contains("hidden"), false);
+  assert.equal(h.elements.latestOnChocks.textContent, "13:30Z");
+  assert.equal(h.elements.latestOnChocksCountdown.textContent, "1h 30m remaining");
+  h.calculatorDataAge.warningDismissed = true;
+  h.updateFtlCountdown();
+  assert.equal(h.ageWarning.classList.contains("hidden"), true);
   assert.equal(h.elements.latestOnChocksCountdown.textContent, "1h 30m remaining");
 });
 

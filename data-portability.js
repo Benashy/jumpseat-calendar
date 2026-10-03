@@ -37,6 +37,13 @@
   function validCalculator(value) {
     if (!object(value) || (value.schemaVersion !== undefined && !number(value.schemaVersion, 1, 5)) ||
       (value.anchorDate != null && !date(value.anchorDate))) return false;
+    if (value.dataAge !== undefined) {
+      const age = value.dataAge;
+      if (!object(age) || typeof age.warningDismissed !== "boolean" ||
+        (age.firstEntryAt !== null && (typeof age.firstEntryAt !== "string" ||
+          !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(age.firstEntryAt) ||
+          !Number.isFinite(Date.parse(age.firstEntryAt)) || new Date(age.firstEntryAt).toISOString() !== age.firstEntryAt))) return false;
+    }
     const crew = value.crewLimits;
     if (crew !== undefined) {
       const ids = new Set();

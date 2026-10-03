@@ -1,5 +1,16 @@
 # September Product Audit Implementation
 
+## 3 October 2026: Checklist and Calculator Age
+
+Prepared release: v2.92, cloud-sync-144, offline cache v160.
+
+- GPS and LVTO independently start a complete fresh checklist on opening/resume after six hours since the last deliberate checklist change. Ticks, N/A choices, hidden sections and LVTO values/decisions clear; cached guidance, matching PDFs and access are retained. An amber explanation survives reopening until the next deliberate change. No background timer silently clears an on-screen checklist.
+- FDP/LTOT retain their inputs and show a dismissible amber caution 15 hours after the first entry. Further edits do not move that clock. Dismissal persists with the calculation and does not change any input or calculated limit. Reset clears inputs, timestamp and dismissal. Legacy saves without a first-entry timestamp start tracking on the next deliberate edit rather than receiving an invented age. Portable backups retain the optional metadata and older backups remain compatible.
+- Verification: 278 unit/regression tests, exact CSP/offline-shell checks and 70 browser checks in each of Chromium and WebKit passed. Checks include notice visibility/dismissal, first-entry persistence, independent full checklist expiry, offline reopening with the real service worker, cached PDF downloads, storage failure and light/night iPad/iPhone notice layouts with automated accessibility checks. Visual inspection confirmed the new notices fit the iPad and iPhone layouts.
+- Private procedure content, source/PDF digests, accepted launch appearance, authentication and Telegram are unchanged. Existing matching PDFs were verified against the release manifest; no procedure change requires a new PDF. Under test and the red F-G/S verification note remain.
+
+Physical longer-interval acceptance and restricted BA Wi-Fi remain Ben's checks. The updated acceptance document distinguishes recent progress retained within six hours from visibly reset progress on a later reopening, and separates both from the retained FDP/LTOT inputs and their 15-hour caution. Publication evidence is retained privately after the test-gated deployment and live-byte checks.
+
 ## 3 October 2026: Audit Completion
 
 Published: v2.91, cloud-sync-143, offline cache v159. The main audit release was v2.90; v2.91 aligns the RA shortcut wording. Accepted launch appearance unchanged. The focused v2.89 GPS warning renderer, source validation and regression tests have been reconciled into this checkout.
@@ -19,11 +30,23 @@ Publication completed at release commit `45d7a530834423ea724b631f682a1aa2bbaf449
 
 The final v2.91 release at `3c86d96d8a812a0dfd3e86ebddd82f648921b825` passed Actions run `37118056477` and live byte/access checks on 3 October 2026.
 
-Active outstanding audit checks are now limited to Ben's physical iPad/offline PDF and restricted-Wi-Fi checks, plus the controlled backup and scheduled Telegram/snooze check. `USER-ACCEPTANCE-CHECKS.md` records the steps and expected results. VoiceOver and external-keyboard testing are relevant only if Ben uses those input methods. Browser results do not promise indefinite iPadOS storage retention or constitute independent aviation/SME approval.
+The outstanding audit checks were reduced to physical-device acceptance, an actual backup restore and scheduled Telegram/snooze delivery. Following the 3 October results recorded below, the remaining required device checks are restricted BA Wi-Fi and overnight/longer reopening. Immediate offline access/PDF checks, all-green iPad readiness, actual FDP/LTOT backup restoration and ordinary Telegram/snooze delivery have passed. `USER-ACCEPTANCE-CHECKS.md` records the steps and expected results. Ben confirms VoiceOver and external-keyboard testing are outside his use. Browser results do not promise indefinite iPadOS storage retention or constitute independent aviation/SME approval.
 
 Ben is handling the F-G/S question with a technical pilot, so it is removed from this task's outstanding list; the red source-verification warning is not removed. Hosting migration for framing headers and further code reorganisation are not necessary for this release and are removed from the active list. The lack of server-enforced framing headers remains an accepted, documented hosting limitation rather than a completed security control.
 
 Final visual-review refinement: v2.91 changes the RA Tools shortcut from Expected to Estimated, matching the result wording. Calculation logic, launch behaviour and private checklist/PDF content remain unchanged.
+
+### Physical acceptance and actual backup, 3 October 2026
+
+Ben reported successful immediate iPad offline reopening, persistent GPS tick/untick changes, offline download/opening of both checklist PDFs, and retention of newer progress after reconnecting. Restricted BA Wi-Fi and longer-interval reopening remain untested in this exercise, although FDP/LTOT retention overnight has worked in his previous testing. App and calculators initially showed Not confirmed, but he subsequently reran readiness and confirmed every resource shows Prepared in green. The readiness device check passes; the exact cause of the earlier transient indication was not established. Current v159 shell-readiness checks passed online/offline in both isolated browser engines and correctly failed when an app asset was deliberately removed from the test cache.
+
+The actual 11:58:32Z backup passed schema validation and isolated restore, re-export and close/reopen comparisons in Chromium and WebKit. The saved FDP/LTOT payload matched exactly. Its zero Jumpseat requests are consistent with export occurring before Ben created the TEST request, so a real populated-list restore is not proven by this file. No live account data was modified, and no external request occurred in the restore contexts. A private metadata-only test report is retained outside the public repository.
+
+Read-only security rechecks at approximately 12:10Z confirmed public sign-up disabled, anonymous reads denied for all six private app tables, and published release/index/service-worker bytes matching v2.91. The security advisor returned only an informational notice for the server-only snooze table lacking client policies; direct grant inspection confirmed neither anonymous nor signed-in browser roles can select or insert there. This is intentional denial, not an exposed table. This limited recheck is not a penetration test or procedure approval.
+
+The TEST request departs at 13:30Z. Ben confirmed that the original reminder arrived at the expected 75-minute-before-departure point, then confirmed the snoozed repeat arrived as expected approximately 15 minutes after his tap, and has deleted the temporary request. Both ordinary scheduled delivery and single-tap snooze are recorded as passed from his device report. No exact timestamp, independent delivery-log verification or rapid double-tap device test is claimed. Settings discoverability, backup terminology and readiness-panel scope are recorded as small UX proposals, not implemented changes. No application or private content/PDF change was made in this acceptance pass.
+
+Ben subsequently approved independent six-hour GPS/LVTO inactivity resets and a separate 15-hour FDP/LTOT caution, implemented in v2.92 below. The suggested 24-hour FDP/LTOT wipe is not implemented. Longer-interval device acceptance now expects fresh checklist progress after six hours, while prepared guidance/PDFs and FDP/LTOT inputs remain available.
 
 ## Focused GPS release, 18 September 2026
 

@@ -126,25 +126,25 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-143" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-144" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link
       rel="apple-touch-startup-image"
-      href="./icons/launch-ipad-pro-11-m4-portrait.png?v=cloud-sync-143"
+      href="./icons/launch-ipad-pro-11-m4-portrait.png?v=cloud-sync-144"
       media="screen and (device-width: 834px) and (device-height: 1210px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
     />
     <link
       rel="apple-touch-startup-image"
-      href="./icons/launch-ipad-pro-11-m4-landscape.png?v=cloud-sync-143"
+      href="./icons/launch-ipad-pro-11-m4-landscape.png?v=cloud-sync-144"
       media="screen and (device-width: 834px) and (device-height: 1210px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
     />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-143" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-144" />
   </head>
   <body>
     <div id="opsdeckLaunchScreen" aria-hidden="true">
-      <img src="./icons/opsdeck-wordmark.svg?v=cloud-sync-143" alt="" width="1024" height="320" />
+      <img src="./icons/opsdeck-wordmark.svg?v=cloud-sync-144" alt="" width="1024" height="320" />
     </div>
     <div class="app-shell">
       <script>
@@ -254,7 +254,7 @@
       </script>
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-143" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-144" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -366,7 +366,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.91</small>
+            <small class="app-version">v2.92</small>
           </section>
 
         </section>
@@ -456,6 +456,11 @@
               <button class="text-button secondary hidden" id="sendLtotTelegramButton" type="button">Send LTOT</button>
               <button class="text-button secondary" id="clearFtlButton" type="button" aria-label="Reset FDP and LTOT calculator">Reset</button>
             </div>
+          </div>
+
+          <div class="data-age-notice ftl-data-age-notice hidden" id="ftlDataAgeWarning">
+            <p role="status">Caution: this data is more than 15 hours old.</p>
+            <button class="icon-button" id="ftlDataAgeDismissButton" type="button" title="Dismiss data age warning" aria-label="Dismiss data age warning">&#215;</button>
           </div>
 
           <section class="ftl-results" aria-label="Calculated latest times">
@@ -832,7 +837,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.91</small>
+            <small class="app-version">v2.92</small>
           </section>
         </section>
 
@@ -906,7 +911,7 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.91</small>
+            <small class="app-version">v2.92</small>
           </section>
         </section>
 
@@ -930,6 +935,7 @@
           </div>
           <p id="gpsRevision" class="gps-revision"></p>
           <p id="gpsRestoredLabel" class="checklist-restored hidden">Previous checklist restored</p>
+          <p id="gpsExpiryNotice" class="data-age-notice hidden" role="status">New checklist started after six hours of inactivity.</p>
           <p id="gpsStatus" class="gps-status" role="status">Sign in to load the checklist.</p>
           <div id="gpsIntroduction" class="gps-introduction"></div>
           <details class="gps-section-options hidden" id="gpsSectionsControl">
@@ -947,7 +953,7 @@
               <button class="text-button secondary" id="gpsSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="gpsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.91</small>
+            <small class="app-version">v2.92</small>
           </section>
         </section>
 
@@ -975,6 +981,7 @@
             <p id="lvtoProgress" class="lvto-progress hidden" role="status" aria-atomic="true"></p>
           </div>
           <p id="lvtoStatus" class="lvto-status" role="status">Sign in to load the checklist.</p>
+          <p id="lvtoExpiryNotice" class="data-age-notice hidden" role="status">New checklist started after six hours of inactivity.</p>
           <details class="lvto-section-options hidden" id="lvtoSectionsControl">
             <summary class="lvto-disclosure"><span class="lvto-disclosure-title">Sections</span><span id="lvtoHiddenStatus" class="lvto-hidden-badge hidden" role="status" aria-atomic="true"></span></summary>
             <div id="lvtoSectionChoices" class="lvto-section-choices"></div>
@@ -991,7 +998,7 @@
               <button class="text-button secondary" id="lvtoSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="lvtoSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.91</small>
+            <small class="app-version">v2.92</small>
           </section>
         </section>
 
@@ -1132,7 +1139,7 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.91</small>
+            <small class="app-version">v2.92</small>
           </section>
         </section>
 
@@ -1228,7 +1235,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.91</small>
+            <small class="app-version">v2.92</small>
           </section>
         </section>
 
@@ -1350,7 +1357,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.91</small>
+            <small class="app-version">v2.92</small>
           </section>
         </section>
       </main>
@@ -1454,27 +1461,27 @@
       </article>
     </template>
 
-    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-143"></script>
-    <script src="./supabase-config.js?v=cloud-sync-143"></script>
-    <script src="./ltot-core.js?v=cloud-sync-143"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-143"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-143"></script>
-    <script src="./notoc-policy-store.js?v=cloud-sync-143"></script>
-    <script src="./notoc-core.js?v=cloud-sync-143"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-143"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-143"></script>
-    <script src="./offline-device.js?v=cloud-sync-143"></script>
-    <script src="./device-storage.js?v=cloud-sync-143"></script>
-    <script src="./auth-storage.js?v=cloud-sync-143"></script>
-    <script src="./network.js?v=cloud-sync-143"></script>
-    <script src="./checklist-backup.js?v=cloud-sync-143"></script>
-    <script src="./gps-checklist-core.js?v=cloud-sync-143"></script>
-    <script src="./gps-checklist-ui.js?v=cloud-sync-143"></script>
-    <script src="./lvto-checklist-core.js?v=cloud-sync-143"></script>
-    <script src="./lvto-checklist-ui.js?v=cloud-sync-143"></script>
-    <script src="./data-portability.js?v=cloud-sync-143"></script>
-    <script src="./request-retention.js?v=cloud-sync-143"></script>
-    <script src="./ui-accessibility.js?v=cloud-sync-143"></script>
-    <script src="./app.js?v=cloud-sync-143"></script>
+    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-144"></script>
+    <script src="./supabase-config.js?v=cloud-sync-144"></script>
+    <script src="./ltot-core.js?v=cloud-sync-144"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-144"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-144"></script>
+    <script src="./notoc-policy-store.js?v=cloud-sync-144"></script>
+    <script src="./notoc-core.js?v=cloud-sync-144"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-144"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-144"></script>
+    <script src="./offline-device.js?v=cloud-sync-144"></script>
+    <script src="./device-storage.js?v=cloud-sync-144"></script>
+    <script src="./auth-storage.js?v=cloud-sync-144"></script>
+    <script src="./network.js?v=cloud-sync-144"></script>
+    <script src="./checklist-backup.js?v=cloud-sync-144"></script>
+    <script src="./gps-checklist-core.js?v=cloud-sync-144"></script>
+    <script src="./gps-checklist-ui.js?v=cloud-sync-144"></script>
+    <script src="./lvto-checklist-core.js?v=cloud-sync-144"></script>
+    <script src="./lvto-checklist-ui.js?v=cloud-sync-144"></script>
+    <script src="./data-portability.js?v=cloud-sync-144"></script>
+    <script src="./request-retention.js?v=cloud-sync-144"></script>
+    <script src="./ui-accessibility.js?v=cloud-sync-144"></script>
+    <script src="./app.js?v=cloud-sync-144"></script>
   </body>
 </html>

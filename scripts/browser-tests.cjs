@@ -147,6 +147,127 @@ const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css
     await signedOut.close(); results.push("offline sign-out clears session and prevents private data reopening");
 
     for (const key of ["gps", "lvto"]) {
+      const ageContext = await context(); const page = await ageContext.newPage();
+      await page.goto(`${base}/?preview&view=${key}`);
+      const action = page.locator(key === "gps" ? '[data-gps-item="first"]' : '[data-lvto-check="action"]');
+      await action.check();
+      if (key === "lvto") {
+        await page.locator('[data-lvto-field="entered"]').fill("200");
+        await page.locator('[data-lvto-decision][data-lvto-option="no"]').click();
+      }
+      const otherKey = key === "gps" ? "lvto" : "gps";
+      const otherProgress = JSON.stringify({ unaffected: true });
+      await page.evaluate(({ key, otherKey, otherProgress }) => {
+        const core = key === "gps" ? OpsDeckGpsChecklist : OpsDeckLvtoChecklist;
+        const storageKey = core.storageKey("progress", "local-preview");
+        const state = JSON.parse(localStorage.getItem(storageKey));
+        state.updatedAt = new Date(Date.now() - core.INACTIVITY_TIMEOUT_MS - 1000).toISOString();
+        localStorage.setItem(storageKey, JSON.stringify(state));
+        const otherCore = otherKey === "gps" ? OpsDeckGpsChecklist : OpsDeckLvtoChecklist;
+        localStorage.setItem(otherCore.storageKey("progress", "local-preview"), otherProgress);
+      }, { key, otherKey, otherProgress });
+      // No wall-clock timer may silently clear the currently displayed procedure.
+      assert.equal(await action.isChecked(), true);
+      await page.locator(`#${key}BackToChecks`).click();
+      await page.locator(key === "gps" ? "#openGpsButton" : "#openLvtoButton").click();
+      assert.equal(await action.isChecked(), false);
+      assert.equal(await page.locator(`#${key}ExpiryNotice`).isVisible(), true);
+      const state = await page.evaluate(key => {
+        const core = key === "gps" ? OpsDeckGpsChecklist : OpsDeckLvtoChecklist;
+        return JSON.parse(localStorage.getItem(core.storageKey("progress", "local-preview")));
+      }, key);
+      assert.deepEqual(state.completedIds, []);
+      assert.deepEqual(state.hiddenSectionIds, []);
+      if (key === "gps") assert.deepEqual(state.notApplicableIds, []);
+      else { assert.deepEqual(state.values, {}); assert.deepEqual(state.decisions, {}); }
+      assert.equal(await page.evaluate(otherKey => {
+        const core = otherKey === "gps" ? OpsDeckGpsChecklist : OpsDeckLvtoChecklist;
+        return localStorage.getItem(core.storageKey("progress", "local-preview"));
+      }, otherKey), otherProgress);
+      await page.reload();
+      assert.equal(await page.locator(`#${key}ExpiryNotice`).isVisible(), true);
+      await action.check();
+      assert.equal(await page.locator(`#${key}ExpiryNotice`).isVisible(), false);
+      await ageContext.close();
+      results.push(`${key}: full six-hour reset on return, independent progress and persistent notice`);
+    }
+
+    const fdpAgeContext = await context(); const agePage = await fdpAgeContext.newPage();
+    await agePage.goto(`${base}/?preview&view=ftl`);
+    assert.equal(await agePage.evaluate(() => calculatorDataAge.firstEntryAt), null);
+    assert.equal(await agePage.locator('#ftlDataAgeWarning').isVisible(), false);
+    await agePage.locator('.crew-limit-duty-start').first().fill("08:00");
+    const enteredAt = await agePage.evaluate(() => calculatorDataAge.firstEntryAt);
+    assert.ok(enteredAt);
+    assert.equal(await agePage.locator('#ftlDataAgeWarning').isVisible(), false);
+    await agePage.locator('.crew-limit-max-hours').first().selectOption("13");
+    assert.equal(await agePage.evaluate(() => calculatorDataAge.firstEntryAt), enteredAt);
+    await agePage.reload();
+    assert.equal(await agePage.evaluate(() => calculatorDataAge.firstEntryAt), enteredAt);
+    await agePage.evaluate(() => {
+      const state = serializeCalculatorState();
+      state.dataAge = { firstEntryAt: new Date(Date.now() - OpsDeckLtot.DATA_AGE_WARNING_MS - 1000).toISOString(), warningDismissed: false };
+      applyCalculatorState(state); saveCalculatorEnvelope();
+    });
+    assert.equal(await agePage.locator('#ftlDataAgeWarning').isVisible(), true);
+    const ageBeforeDismiss = await agePage.evaluate(() => calculatorDataAge.firstEntryAt);
+    await agePage.locator('#ftlDataAgeDismissButton').click();
+    assert.equal(await agePage.locator('#ftlDataAgeWarning').isVisible(), false);
+    assert.equal(await agePage.evaluate(() => loadCalculatorEnvelope().state.dataAge.warningDismissed), true);
+    assert.equal(await agePage.locator('.crew-limit-duty-start').first().inputValue(), "08:00");
+    await agePage.reload();
+    assert.equal(await agePage.locator('#ftlDataAgeWarning').isVisible(), false,
+      JSON.stringify(await agePage.evaluate(() => ({ current: calculatorDataAge, saved: loadCalculatorEnvelope().state.dataAge }))));
+    assert.equal(await agePage.evaluate(() => calculatorDataAge.firstEntryAt), ageBeforeDismiss);
+    assert.equal(await agePage.evaluate(() => calculatorDataAge.warningDismissed), true);
+    agePage.once('dialog', dialog => dialog.accept());
+    await agePage.locator('#clearFtlButton').click();
+    assert.equal(await agePage.evaluate(() => calculatorDataAge.firstEntryAt), null);
+    assert.equal(await agePage.evaluate(() => calculatorDataAge.warningDismissed), false);
+    await agePage.locator('.crew-limit-duty-start').first().fill("09:00");
+    assert.notEqual(await agePage.evaluate(() => calculatorDataAge.firstEntryAt), ageBeforeDismiss);
+    await fdpAgeContext.close();
+    results.push("FDP: first-entry clock, persisted warning dismissal and complete reset without timed input deletion");
+
+    for (const [name, viewport] of [["ipad-landscape", { width: 1194, height: 834 }], ["ipad-portrait", { width: 834, height: 1194 }], ["ipad-split", { width: 507, height: 834 }], ["iphone", { width: 390, height: 844 }]]) {
+      for (const colorScheme of ["light", "dark"]) {
+        const warningContext = await context({ viewport, colorScheme });
+        const warningPage = await warningContext.newPage();
+        for (const view of ["ftl", "gps", "lvto"]) {
+          await warningPage.goto(`${base}/?preview&view=${view}`);
+          if (view === "ftl") {
+            await warningPage.evaluate(() => {
+              const state = serializeCalculatorState();
+              state.crewLimits[0].dutyStart = "08:00";
+              state.dataAge = { firstEntryAt: new Date(Date.now() - OpsDeckLtot.DATA_AGE_WARNING_MS - 1000).toISOString(), warningDismissed: false };
+              applyCalculatorState(state);
+            });
+          } else {
+            await warningPage.locator(view === "gps" ? '[data-gps-item="first"]' : '[data-lvto-check="action"]').check();
+            await warningPage.evaluate(view => {
+              const core = view === "gps" ? OpsDeckGpsChecklist : OpsDeckLvtoChecklist;
+              const key = core.storageKey("progress", "local-preview");
+              const state = JSON.parse(localStorage.getItem(key));
+              state.updatedAt = new Date(Date.now() - core.INACTIVITY_TIMEOUT_MS - 1000).toISOString();
+              localStorage.setItem(key, JSON.stringify(state));
+              (view === "gps" ? OpsDeckGpsUi : OpsDeckLvtoUi).resume();
+            }, view);
+          }
+          assert.equal(await warningPage.locator(view === "ftl" ? '#ftlDataAgeWarning' : `#${view}ExpiryNotice`).isVisible(), true);
+          assert.ok(await warningPage.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+          await warningPage.evaluate(fs.readFileSync(require.resolve("axe-core/axe.min.js"), "utf8"));
+          const violations = await warningPage.evaluate(async () => (await axe.run(document, {
+            runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"] },
+          })).violations.map(({ id, nodes }) => ({ id, targets: nodes.map(node => node.target) })));
+          assert.deepEqual(violations, [], `${name} ${colorScheme} ${view}: warning accessibility`);
+          await warningPage.screenshot({ path: path.join(output, `${name}-${colorScheme}-${view}-age-notice.png`), fullPage: true });
+          results.push(`${name} ${colorScheme}: ${view} age notice layout and accessibility`);
+        }
+        await warningContext.close();
+      }
+    }
+
+    for (const key of ["gps", "lvto"]) {
       const c = await context(); const page = await c.newPage();
       await page.goto(`${base}/?preview&view=${key}`);
       await page.locator(key === "gps" ? "[data-gps-item]" : "[data-lvto-check]").first().waitFor();
@@ -208,8 +329,17 @@ const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css
     await new Promise((resolve) => server.close(resolve));
     await offlinePage.reload();
     assert.equal(await offlinePage.locator('[data-gps-item="first"]').isChecked(), true);
+    await offlinePage.evaluate(() => {
+      const key = OpsDeckGpsChecklist.storageKey("progress", "local-preview");
+      const state = JSON.parse(localStorage.getItem(key));
+      state.updatedAt = new Date(Date.now() - OpsDeckGpsChecklist.INACTIVITY_TIMEOUT_MS - 1000).toISOString();
+      localStorage.setItem(key, JSON.stringify(state));
+    });
+    await offlinePage.reload();
+    assert.equal(await offlinePage.locator('[data-gps-item="first"]').isChecked(), false);
+    assert.equal(await offlinePage.locator('#gpsExpiryNotice').isVisible(), true);
     await offline.close(); networkBlocked = false;
-    results.push("real service worker: blocked Wi-Fi and unreachable-origin reopening preserve progress");
+    results.push("real service worker: blocked Wi-Fi preserves recent progress; expired progress resets offline with cached guidance");
     console.log(JSON.stringify({ passed: results.length, checks: results }, null, 2));
     fs.writeFileSync(path.join(output, "browser-results.json"), JSON.stringify(results, null, 2));
   } finally { await browser.close(); await new Promise((resolve) => server.close(resolve)); }

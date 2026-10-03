@@ -4,6 +4,25 @@
   const MINUTES_IN_DAY = 24 * 60;
   const MILLISECONDS_IN_MINUTE = 60 * 1000;
   const MILLISECONDS_IN_DAY = MINUTES_IN_DAY * MILLISECONDS_IN_MINUTE;
+  const DATA_AGE_WARNING_MS = 15 * 60 * MILLISECONDS_IN_MINUTE;
+
+  function normaliseDataAge(value) {
+    const timestamp = value?.firstEntryAt;
+    const valid = typeof timestamp === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(timestamp) &&
+      Number.isFinite(Date.parse(timestamp)) && new Date(timestamp).toISOString() === timestamp;
+    return { firstEntryAt: valid ? timestamp : null, warningDismissed: valid && value.warningDismissed === true };
+  }
+
+  function beginDataAge(value, now = new Date().toISOString()) {
+    const age = normaliseDataAge(value);
+    return age.firstEntryAt ? age : normaliseDataAge({ firstEntryAt: now, warningDismissed: false });
+  }
+
+  function showDataAgeWarning(value, nowMs = Date.now()) {
+    const age = normaliseDataAge(value);
+    return Boolean(age.firstEntryAt && !age.warningDismissed && Number.isFinite(nowMs) &&
+      nowMs - Date.parse(age.firstEntryAt) >= DATA_AGE_WARNING_MS);
+  }
 
   function isFiniteMinute(value) {
     return Number.isFinite(value);
@@ -238,6 +257,10 @@
   }
 
   const api = {
+    DATA_AGE_WARNING_MS,
+    normaliseDataAge,
+    beginDataAge,
+    showDataAgeWarning,
     MINUTES_IN_DAY,
     absoluteTargetMs,
     calculateCrewLimits,

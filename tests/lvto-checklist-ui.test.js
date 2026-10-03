@@ -127,6 +127,67 @@ function harness(storage = new Map(), backupApi = null) {
   };
 }
 
+test("LVTO expiry clears ticks, inputs, decisions and section choices on offline reopening", async () => {
+  const page = harness();
+  await page.load("owner", async () => await record());
+  page.check("action");
+  page.field("entered", "200");
+  page.choose("return-decision", "no");
+  page.visibility("planning", false);
+  const old = page.progress();
+  old.updatedAt = new Date(Date.now() - core.INACTIVITY_TIMEOUT_MS - 1000).toISOString();
+  page.storage.set(core.storageKey("progress", "owner"), JSON.stringify(old));
+  const source = page.storage.get(core.storageKey("policy", "owner"));
+  const reopened = harness(page.storage);
+  reopened.navigator.onLine = false;
+  await reopened.load("owner", async () => { throw new Error("No network"); });
+  assert.deepEqual(reopened.progress().completedIds, []);
+  assert.deepEqual(reopened.progress().values, {});
+  assert.deepEqual(reopened.progress().decisions, {});
+  assert.deepEqual(reopened.progress().hiddenSectionIds, []);
+  assert.equal(reopened.elements.get("#lvtoExpiryNotice").classList.contains("hidden"), false);
+  assert.equal(reopened.elements.get("#lvtoCompletionStatus").classList.contains("hidden"), true);
+  assert.equal(reopened.elements.get("#lvtoRestoredLabel").classList.contains("hidden"), true);
+  assert.equal(reopened.storage.get(core.storageKey("policy", "owner")), source);
+  reopened.field("entered", "125");
+  assert.equal(reopened.elements.get("#lvtoExpiryNotice").classList.contains("hidden"), true);
+});
+
+test("LVTO background refresh does not clear an active procedure; returning expires old progress", async () => {
+  const page = harness();
+  await page.load("owner", async () => await record());
+  page.field("entered", "200");
+  const old = page.progress();
+  old.updatedAt = new Date(Date.now() - core.INACTIVITY_TIMEOUT_MS - 1000).toISOString();
+  page.storage.set(core.storageKey("progress", "owner"), JSON.stringify(old));
+  await page.ui.load({ force: true });
+  assert.equal(page.item("entered", "lvtoField").value, "200");
+  page.ui.resume();
+  assert.equal(page.item("entered", "lvtoField").value, "");
+  assert.deepEqual(page.progress().values, {});
+});
+
+test("LVTO expiry retains a verified PDF for offline download", async () => {
+  const data = await record();
+  const bytes = Buffer.from("%PDF-1.4\nSynthetic backup\n%%EOF");
+  const pdf = { checklist_key: "lvto", content_sha256: data.content_sha256,
+    pdf_sha256: createHash("sha256").update(bytes).digest("hex"), filename: "LVTO-test.pdf", pdf_base64: bytes.toString("base64") };
+  const api = { ...require("../checklist-backup"), download: async value => assert.deepEqual(value, pdf) };
+  const page = harness(new Map(), api);
+  await page.load("owner", async () => data, async () => pdf);
+  page.check("action");
+  const old = page.progress();
+  old.updatedAt = new Date(Date.now() - core.INACTIVITY_TIMEOUT_MS - 1000).toISOString();
+  page.storage.set(core.storageKey("progress", "owner"), JSON.stringify(old));
+  const offline = harness(page.storage, api);
+  offline.navigator.onLine = false;
+  await offline.load("owner", async () => { throw new Error("No network"); });
+  assert.deepEqual(offline.progress().completedIds, []);
+  assert.equal(offline.elements.get("#lvtoDownloadButton").disabled, false);
+  await offline.elements.get("#lvtoDownloadButton").listeners.click();
+  assert.match(offline.status(), /downloaded/);
+});
+
 test("LVTO previous progress is identified without preventing continuation", async () => {
   const data = await record();
   const page = harness();

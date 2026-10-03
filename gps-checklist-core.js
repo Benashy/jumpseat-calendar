@@ -2,6 +2,7 @@
   "use strict";
 
   const SCHEMA_VERSION = 1;
+  const INACTIVITY_TIMEOUT_MS = 6 * 60 * 60 * 1000;
   const BLOCK_TYPES = new Set(["action", "acknowledgement", "note", "condition", "heading", "bullet"]);
   const CHECKABLE_TYPES = new Set(["action", "acknowledgement"]);
   const NOTE_PRESENTATIONS = new Set(["ongoing"]);
@@ -92,7 +93,18 @@
     }
     return { ...fresh, startedAt: Number.isFinite(Date.parse(stored.startedAt)) ? stored.startedAt : fresh.startedAt,
       updatedAt: Number.isFinite(Date.parse(stored.updatedAt)) ? stored.updatedAt : fresh.updatedAt,
-      completedIds: [...completed], notApplicableIds: [...notApplicable], hiddenSectionIds: [...hidden] };
+      completedIds: [...completed], notApplicableIds: [...notApplicable], hiddenSectionIds: [...hidden],
+      ...(Number.isFinite(Date.parse(stored.inactivityResetAt)) ? { inactivityResetAt: stored.inactivityResetAt } : {}) };
+  }
+
+  function hasProgress(state) {
+    return Boolean(state.completedIds.length || state.notApplicableIds?.length || state.hiddenSectionIds.length);
+  }
+
+  function isInactive(state, nowMs = Date.now()) {
+    const lastChange = Date.parse(state.updatedAt);
+    return hasProgress(state) && Number.isFinite(lastChange) && Number.isFinite(nowMs) &&
+      nowMs - lastChange >= INACTIVITY_TIMEOUT_MS;
   }
 
   function setChecked(policy, state, itemId, checked, now = new Date().toISOString()) {
@@ -168,8 +180,8 @@
     } catch (_) { return null; }
   }
 
-  const api = { SCHEMA_VERSION, CHECKABLE_TYPES, validatePolicy, canonicalJson, policyHash, items,
-    newState, restoreState, setChecked, setNotApplicable, setSectionVisible, progress, hiddenSeverity, hiddenStatus,
+  const api = { SCHEMA_VERSION, INACTIVITY_TIMEOUT_MS, CHECKABLE_TYPES, validatePolicy, canonicalJson, policyHash, items,
+    newState, restoreState, hasProgress, isInactive, setChecked, setNotApplicable, setSectionVisible, progress, hiddenSeverity, hiddenStatus,
     updatedLabel, storageKey, readSaved };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else globalScope.OpsDeckGpsChecklist = api;

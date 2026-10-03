@@ -2,6 +2,7 @@
   "use strict";
 
   const SCHEMA_VERSION = 1;
+  const INACTIVITY_TIMEOUT_MS = 6 * 60 * 60 * 1000;
   const ITEM_TYPES = new Set(["check", "computed", "decision", "field", "heading", "note", "reference"]);
   const INPUT_MODES = new Set(["text", "numeric", "decimal"]);
   const CALCULATIONS = new Set(["maximum"]);
@@ -118,6 +119,7 @@
       hiddenSectionIds,
       values: restoredValues,
       decisions: restoredDecisions,
+      ...(Number.isFinite(Date.parse(stored.inactivityResetAt)) ? { inactivityResetAt: stored.inactivityResetAt } : {}),
     };
   }
 
@@ -225,6 +227,12 @@
       Object.keys(state.values).some((id) => state.values[id]) || Object.keys(state.decisions).length);
   }
 
+  function isInactive(state, nowMs = Date.now()) {
+    const lastChange = Date.parse(state.updatedAt);
+    return hasProgress(state) && Number.isFinite(lastChange) && Number.isFinite(nowMs) &&
+      nowMs - lastChange >= INACTIVITY_TIMEOUT_MS;
+  }
+
   function updatedLabel(timestamp) {
     const date = new Date(timestamp);
     if (!Number.isFinite(date.getTime())) return "";
@@ -248,6 +256,8 @@
   }
 
   const api = {
+    INACTIVITY_TIMEOUT_MS,
+    isInactive,
     completion,
     SCHEMA_VERSION,
     allItems,

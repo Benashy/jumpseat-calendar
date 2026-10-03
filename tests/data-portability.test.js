@@ -24,6 +24,20 @@ test("rejects malformed records before restore", () => {
   }
 });
 
+test("backups preserve FDP first-entry age and dismissal, while older backups remain valid", () => {
+  const age = { firstEntryAt: "2026-10-03T08:00:00.000Z", warningDismissed: true };
+  const backup = buildBackup({ requests: [], calculatorState: { dataAge: age } });
+  assert.deepEqual(parseBackup(JSON.stringify(backup)).calculatorState.dataAge, age);
+  delete backup.calculatorState.dataAge;
+  assert.deepEqual(parseBackup(JSON.stringify(backup)).calculatorState, {});
+  for (const invalid of [null, { firstEntryAt: "invalid", warningDismissed: false },
+    { firstEntryAt: "2026-02-30T08:00:00.000Z", warningDismissed: false },
+    { firstEntryAt: null, warningDismissed: "yes" }]) {
+    backup.calculatorState.dataAge = invalid;
+    assert.throws(() => parseBackup(JSON.stringify(backup)), /valid FDP and LTOT data/);
+  }
+});
+
 test("spreadsheet formula prefixes are exported as text", () => {
   for (const name of ["=1+1", "+1", "-1", "@SUM(1)", "  =1", "＝1"]) {
     const csv = requestsToCsv([{ staff: [{ name }] }]);

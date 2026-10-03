@@ -12,6 +12,7 @@
   const status = document.querySelector("#gpsStatus");
   const revision = document.querySelector("#gpsRevision");
   const restoredLabel = document.querySelector("#gpsRestoredLabel");
+  const expiryNotice = document.querySelector("#gpsExpiryNotice");
   const resetButton = document.querySelector("#gpsResetButton");
   const restoreButton = document.querySelector("#gpsRestoreSectionsButton");
   const refreshButton = document.querySelector("#gpsRefreshButton");
@@ -81,7 +82,8 @@
     if (latest?.policyHash === hash) state = core.restoreState(policy, userId, hash, latest);
   }
 
-  function persist() {
+  function persist({ automatic = false } = {}) {
+    if (!automatic) delete state.inactivityResetAt;
     restoredLabel.classList.add("hidden");
     try {
       globalScope.localStorage.setItem(core.storageKey("progress", userId), JSON.stringify(state));
@@ -93,6 +95,16 @@
       message("Progress is not saved on this device. Keep this page open.", true);
     }
     updateProgress();
+  }
+
+  function resume() {
+    if (!policy || !state) return;
+    readLatestState();
+    if (core.isInactive(state)) {
+      const now = new Date().toISOString();
+      state = { ...core.newState(userId, hash, now), inactivityResetAt: now };
+      persist({ automatic: true });
+    } else updateProgress();
   }
 
   function renderBlock(block, parent) {
@@ -188,6 +200,7 @@
 
   function updateProgress() {
     if (!policy || !state) return;
+    expiryNotice.classList.toggle("hidden", !state.inactivityResetAt);
     const hidden = core.hiddenStatus(policy, state);
     hiddenStatus.textContent = hidden.count ? `${hidden.count} ${hidden.count === 1 ? "section" : "sections"} hidden` : "";
     hiddenStatus.dataset.severity = hidden.severity || "";
@@ -234,6 +247,7 @@
     hiddenStatus.textContent = "";
     hiddenStatus.classList.add("hidden");
     revision.textContent = "";
+    expiryNotice.classList.add("hidden");
     resetButton.disabled = true;
     restoreButton.disabled = true;
     downloadButton.disabled = true;
@@ -308,6 +322,7 @@
     restoredLabel.classList.toggle("hidden", !(previous?.policyHash === hash &&
       (state.completedIds.length || state.notApplicableIds.length || state.hiddenSectionIds.length)));
     render();
+    if (core.isInactive(state)) resume();
     if (previous && previous.policyHash !== hash) {
       persist();
       policyRevised = true;
@@ -457,12 +472,17 @@
   refreshButton.addEventListener("click", () => void load({ force: true }));
   globalScope.addEventListener("online", updateDownloadControl);
   globalScope.addEventListener("offline", updateDownloadControl);
+  const resumeVisible = () => {
+    if (!root.classList.contains("hidden") && document.visibilityState !== "hidden") resume();
+  };
+  globalScope.addEventListener("pageshow", resumeVisible);
+  document.addEventListener?.("visibilitychange", resumeVisible);
   globalScope.addEventListener("storage", (event) => {
     if (policy && event.key === core.storageKey("progress", userId)) {
       readLatestState();
       updateProgress();
     }
   });
-  globalScope.OpsDeckGpsUi = { setContext, load, forget, getStatus: () => ({ ready: Boolean(policy), saved: progressSaved }) };
+  globalScope.OpsDeckGpsUi = { setContext, load, resume, forget, getStatus: () => ({ ready: Boolean(policy), saved: progressSaved }) };
   render();
 })(window);

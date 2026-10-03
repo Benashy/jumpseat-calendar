@@ -2,7 +2,7 @@ const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
 const JUMPSEAT_DRAFT_KEY = "opsdeck-jumpseat-draft-v1";
 const JUMPSEAT_DRAFT_SCHEMA_VERSION = 1;
-const APP_VERSION = "2.91";
+const APP_VERSION = "2.92";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 5;
 const CREW_LIMIT_CAPS = { flight: 3, cabin: 6 };
@@ -318,6 +318,7 @@ let controllingFtlCrewIds = [];
 let currentCrewComparison = null;
 let crewLimitRecords = [];
 let calculatorInitialised = false;
+let calculatorDataAge = window.OpsDeckLtot.normaliseDataAge(null);
 let calculatorCloudLoaded = false;
 let calculatorCloudUpdatedAt = null;
 let calculatorLocalDirty = false;
@@ -979,8 +980,9 @@ function setActiveTool(toolName) {
 
   if (isJumpseat) setActiveTab("home");
   if (isNotoc) document.dispatchEvent(new CustomEvent("opsdeck:notoc-open"));
-  if (isGps) void window.OpsDeckGpsUi?.load();
-  if (isLvto) void window.OpsDeckLvtoUi?.load();
+  if (isGps) { window.OpsDeckGpsUi?.resume(); void window.OpsDeckGpsUi?.load(); }
+  if (isLvto) { window.OpsDeckLvtoUi?.resume(); void window.OpsDeckLvtoUi?.load(); }
+  if (isFtl) updateCalculatorAgeWarning();
 }
 
 function openSettings() {
@@ -1044,6 +1046,7 @@ function createDefaultCalculatorState() {
     schemaVersion: CALCULATOR_SCHEMA_VERSION,
     anchorDate: dutyDate,
     nextCrewNumbers: { flight: 2, cabin: 1 },
+    dataAge: window.OpsDeckLtot.normaliseDataAge(null),
     crewLimits: [createDefaultCrewLimitRecord("flight", { dutyDate })],
     sectorTiming: {
       taxiOutMinutes: "15",
@@ -1188,6 +1191,7 @@ function sanitizeCalculatorState(value) {
     schemaVersion: CALCULATOR_SCHEMA_VERSION,
     anchorDate: window.OpsDeckLtot.isIsoDate(flight.dutyDate) ? flight.dutyDate : null,
     nextCrewNumbers: counters,
+    dataAge: window.OpsDeckLtot.normaliseDataAge(value.dataAge),
     crewLimits,
     sectorTiming: {
       taxiOutMinutes: sanitizeStoredNumber(sourceTiming.taxiOutMinutes, 0, 59) || "15",
@@ -1892,6 +1896,7 @@ function serializeCalculatorState() {
     schemaVersion: CALCULATOR_SCHEMA_VERSION,
     anchorDate: ftlAnchorDate,
     nextCrewNumbers,
+    dataAge: calculatorDataAge,
     crewLimits,
     sectorTiming: {
       taxiOutMinutes: ftlDurationControls.taxiOut.minutes.value,
@@ -1917,6 +1922,10 @@ function saveCalculatorEnvelope() {
 
 function queueCalculatorSave() {
   if (!calculatorInitialised) return;
+  if (!calculatorDataAge.firstEntryAt && hasCalculatorEntry()) {
+    calculatorDataAge = window.OpsDeckLtot.beginDataAge(calculatorDataAge);
+  }
+  updateCalculatorAgeWarning();
   calculatorChangeRevision += 1;
   calculatorLocalDirty = true;
   if (calculatorCloudLoaded) calculatorLocalBaseUpdatedAt = calculatorCloudUpdatedAt;
@@ -1952,6 +1961,7 @@ function applySectorTimingState(sectorTiming) {
 
 function applyCalculatorState(value) {
   const state = sanitizeCalculatorState(value);
+  calculatorDataAge = state.dataAge;
   ftlAnchorDate = state.anchorDate;
   nextCrewNumbers = state.nextCrewNumbers;
   applySectorTimingState(state.sectorTiming);
@@ -2036,11 +2046,26 @@ function updateCountdownElement(element, targetMinutes) {
 }
 
 function updateFtlCountdown() {
+  updateCalculatorAgeWarning();
   updateCountdownElement(elements.latestOnChocksCountdown, ftlLatestOnChocksMinutes);
   updateCountdownElement(elements.latestPushbackCountdown, ftlLatestPushbackMinutes);
   updateCountdownElement(elements.latestTakeoffCountdown, ftlLatestTakeoffMinutes);
   elements.ftlView.classList.toggle("is-fdp-only", ftlLatestPushbackMinutes === null && ftlLatestTakeoffMinutes === null);
   updateMobileFtlResults();
+}
+
+function hasCalculatorEntry() {
+  const state = serializeCalculatorState();
+  return state.crewLimits.some((crew) => crew.dutyStart || crew.name || crew.maximumFdp.hours !== "" ||
+    crew.discretion.hours !== "" || crew.dutyDate && crew.dutyDate !== window.OpsDeckLtot.utcTodayIso()) ||
+    state.sectorTiming.flightTime.hours !== "" ||
+    ["taxiOutMinutes", "holdingMinutes", "taxiInMinutes"].some((key) => state.sectorTiming[key] !== "15") ||
+    state.sectorTiming.contingencyMinutes !== "0";
+}
+
+function updateCalculatorAgeWarning() {
+  const notice = document.querySelector("#ftlDataAgeWarning");
+  notice.classList.toggle("hidden", !window.OpsDeckLtot.showDataAgeWarning(calculatorDataAge));
 }
 
 function updateMobileFtlResults() {
@@ -2504,6 +2529,7 @@ function removeCabinCrew() {
 
 function setupFtlCalculator() {
   const saved = loadCalculatorEnvelope();
+  calculatorDataAge = saved.state.dataAge;
   calculatorLocalDirty = saved.dirty;
   calculatorLocalBaseUpdatedAt = saved.baseUpdatedAt;
   calculatorCloudUpdatedAt = saved.baseUpdatedAt;
@@ -2565,6 +2591,7 @@ function clearFtlCalculator() {
   window.clearTimeout(fdpReferenceStatusTimer);
   elements.fdpReferenceStatus?.classList.add("hidden");
   const state = createDefaultCalculatorState();
+  calculatorDataAge = state.dataAge;
   ftlAnchorDate = state.crewLimits[0].dutyDate;
   nextCrewNumbers = state.nextCrewNumbers;
   applySectorTimingState(state.sectorTiming);
@@ -4450,6 +4477,11 @@ document.addEventListener("opsdeck:notoc-back-to-tools", () => {
   elements.openNotocButton.focus();
 });
 elements.clearFtlButton.addEventListener("click", clearFtlCalculator);
+document.querySelector("#ftlDataAgeDismissButton").addEventListener("click", () => {
+  calculatorDataAge = { ...calculatorDataAge, warningDismissed: true };
+  queueCalculatorSave();
+  elements.ftlToolTab.focus({ preventScroll: true });
+});
 elements.sendLtotTelegramButton.addEventListener("click", sendLtotTelegramSummary);
 elements.ftlMobileResultStrip?.addEventListener("click", () => {
   document.querySelector(".ftl-results")?.scrollIntoView({ behavior: "smooth", block: "start" });

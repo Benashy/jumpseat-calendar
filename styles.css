@@ -3668,6 +3668,39 @@ html[data-theme="night"] input[type="time"] {
   line-height: 1.5;
 }
 
+.data-age-notice {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--amber);
+  border-radius: 4px;
+  background: var(--amber-soft);
+  color: var(--amber-ink);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.ftl-data-age-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ftl-data-age-notice.hidden {
+  display: none;
+}
+
+.ftl-data-age-notice p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+.ftl-data-age-notice .icon-button {
+  flex: 0 0 44px;
+  color: var(--amber-ink);
+  font-size: 1.4rem;
+}
+
 .checklist-restored {
   color: var(--muted);
   font-size: 0.875rem;
