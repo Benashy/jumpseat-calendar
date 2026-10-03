@@ -85,6 +85,8 @@ test("the RA interface exposes ILS only while retaining experimental modes in th
 });
 
 test("the ILS estimate uses cautious wording and the supported threshold range", () => {
+  assert.match(index, /Estimated QNH altitude and DME indication at 2,500 ft RA/);
+  assert.doesNotMatch(index, /Expected QNH altitude/);
   assert.match(index, /Estimated QNH altitude at 2,500 ft RA/);
   assert.match(index, /id="raDistanceResultLabel">Estimated DME indication/);
   assert.match(index, /id="raThresholdElevation"[^>]+max="7500"/);

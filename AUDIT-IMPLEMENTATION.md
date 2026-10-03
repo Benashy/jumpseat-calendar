@@ -19,6 +19,8 @@ Publication completed at release commit `45d7a530834423ea724b631f682a1aa2bbaf449
 
 Remaining boundaries: physical iPad reopening and restricted BA Wi-Fi tests, VoiceOver, longer-term iPadOS storage retention, independent aviation/SME approval, and server-enforced framing headers. GitHub Pages cannot supply the latter through this configuration; no hosting migration has been made. Optional further separation of the main app into domain modules remains deferred.
 
+Final visual-review refinement: v2.91 changes the RA Tools shortcut from Expected to Estimated, matching the result wording. Calculation logic, launch behaviour and private checklist/PDF content remain unchanged.
+
 ## Focused GPS release, 18 September 2026
 
 v2.89 is now published independently at `6916f0f4c62ab3e5ed8532507ebfc90e0bf96dba` from `../jumpseat-gps-verification`. It adds standalone red pending-verification notes to the GPS renderer. The private GPS checklist and matching PDF were updated together; the FLS vertical-guidance statement now awaits BA/Airbus verification rather than implying permission. Under test remains.
