@@ -13,7 +13,9 @@ New work in this pass:
 - Live public registration is disabled and leaked-password protection is enabled, verified through the dashboard and security advisor. No paid upgrade or credential change.
 - GitHub Pages now uses GitHub Actions, so publishing must wait for the validation job and its allow-listed artifact.
 
-Local verification: 263 unit/regression tests, exact CSP/shell checks and 43 browser checks in each of Chromium and WebKit passed, including real offline PDF downloads with byte comparison. Real-content layout checks passed 72 configurations in each engine with no overflow or automated accessibility findings. The pinned dependency lockfile installation and private source/PDF manifest check passed. Deployed-release verification must be completed before marking publication finished.
+Verification: 263 unit/regression tests, exact CSP/shell checks and 43 browser checks in each of Chromium and WebKit passed, including real offline PDF downloads with byte comparison. Real-content layout checks passed 72 configurations in each engine with no overflow or automated accessibility findings. The pinned dependency lockfile installation and private source/PDF manifest check passed.
+
+Publication completed at release commit `45d7a530834423ea724b631f682a1aa2bbaf4496`. Actions run `37117238832` passed validation and publication. All 34 distinct public files matched the tested local bytes on 3 October 2026; six excluded development/private-release paths returned 404, six anonymous private-data reads returned 401, and public registration remained disabled. The matching private GPS/LVTO checklist and PDF digests were verified separately. This evidence does not replace the remaining physical-device or operational checks.
 
 Remaining boundaries: physical iPad reopening and restricted BA Wi-Fi tests, VoiceOver, longer-term iPadOS storage retention, independent aviation/SME approval, and server-enforced framing headers. GitHub Pages cannot supply the latter through this configuration; no hosting migration has been made. Optional further separation of the main app into domain modules remains deferred.
 
