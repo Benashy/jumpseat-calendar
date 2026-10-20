@@ -15,4 +15,4 @@ for (const [key, expected] of Object.entries(manifest.checklists)) {
     assert.equal(row.pdf_bytes_verified, true, `${key}: PDF bytes failed integrity check`);
   }
 }
-console.log("GPS and LVTO PDFs match the live content and approved release manifest.");
+console.log("Checklist PDFs match the live content and approved release manifest.");

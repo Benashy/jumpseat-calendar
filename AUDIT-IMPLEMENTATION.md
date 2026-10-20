@@ -1,5 +1,17 @@
 # September Product Audit Implementation
 
+## 20 October 2026: Cold-Weather Practice Checklist
+
+Prepared release: v2.93, cloud-sync-145, offline cache v161.
+
+- Adds a private, owner-only Cold-weather operations tool, marked Under test in Tools and on the checklist. The six-phase draft has 17 manually acknowledged actions and expandable source locators beneath each item. No run-up, holdover-time or anti-ice calculation is added, and the unverified fuel-pump technique is not included.
+- Reuses the GPS renderer with independent state, source validation and PDF keys. Ticks, N/A choices, visible section warnings, complete New checklist reset and six-hour inactivity reset follow the established behaviour. Reading a reference does not count as checklist interaction. Sign-out clears the active owner's source, progress and PDF.
+- The matching two-page PDF is generated from the same private payload, with all actions and locators checked. Guidance, expanded references and the verified matching PDF work without the origin server after online preparation. Offline readiness now checks the additional checklist and PDF explicitly.
+- Source limitation remains explicit: the reviewed FCOM full text is retained from the February issue; current aircraft/MSN filtering must be checked. OM A Revision 43 was unavailable. References preserve that distinction rather than claiming current-fleet approval. The ICT/ice-T photograph request remains separate from checklist content.
+- Verification: 282 unit/regression tests, 78 browser checks in each engine, real-content iPad landscape/portrait/split-screen and iPhone light/night accessibility checks, actual offline reopening and byte-exact PDF download. Owner read, other-user denial, anonymous denial and authenticated write denial were exercised on the new live table. Existing GPS/LVTO source and PDF digests are unchanged.
+
+Physical iPad acceptance and current-manual procedural validation remain Ben's practice checks. The under-test status is not operational approval. Publication and live-byte verification evidence is retained privately after deployment.
+
 ## 3 October 2026: Checklist and Calculator Age
 
 Prepared release: v2.92, cloud-sync-144, offline cache v160.

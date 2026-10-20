@@ -6,6 +6,7 @@ const { webcrypto } = require("node:crypto");
 const { chromium, webkit } = require("playwright");
 const gpsCore = require("../gps-checklist-core");
 const lvtoCore = require("../lvto-checklist-core");
+const coldCore = require("../cold-checklist-core");
 const root = path.resolve(__dirname, "..");
 const output = process.env.BROWSER_OUTPUT || path.join(root, "test-results");
 const gpsPolicy = {
@@ -23,6 +24,7 @@ const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css
   const fixtures = {
     gps: { checklist: gpsPolicy, content_sha256: await gpsCore.policyHash(gpsPolicy, webcrypto) },
     lvto: { checklist: lvtoPolicy, content_sha256: await lvtoCore.policyHash(lvtoPolicy, webcrypto) },
+    cold: { checklist: require("../tests/cold-fixture").fixture(), content_sha256: await coldCore.policyHash(require("../tests/cold-fixture").fixture(), webcrypto) },
   };
   let networkBlocked = false;
   let nextWorker = false;
@@ -56,14 +58,15 @@ const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css
         window.auditCspErrors = [];
         document.addEventListener("securitypolicyviolation", (event) => window.auditCspErrors.push(event.violatedDirective));
       });
-      for (const view of ["checks", "ftl", "gps", "lvto", "ra", "settings"]) {
+      for (const view of ["checks", "ftl", "gps", "lvto", "cold", "ra", "settings"]) {
         await page.goto(`${base}/?preview&view=${view}`);
         if (view === "gps") await page.locator("[data-gps-item]").first().waitFor();
         if (view === "lvto") await page.locator("[data-lvto-check]").first().waitFor();
+        if (view === "cold") await page.locator("#coldView [data-gps-item]").first().waitFor();
         if (view === "settings") {
           await page.locator("#checkOfflineButton").click();
           await page.locator("#offlineReadinessList").waitFor();
-          assert.equal(await page.locator("#offlineReadinessList li").count(), 7);
+          assert.equal(await page.locator("#offlineReadinessList li").count(), 9);
         }
         const width = await page.evaluate(() => ({ view: innerWidth, document: document.documentElement.scrollWidth }));
         assert.ok(width.document <= width.view + 1, `${name} ${view}: horizontal page overflow`);
@@ -76,10 +79,11 @@ const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css
     }
     for (const colorScheme of ["light", "dark"]) {
       const c = await context({ viewport: { width: 834, height: 1194 }, colorScheme }); const page = await c.newPage();
-      for (const view of ["checks", "ftl", "gps", "lvto", "ra", "settings"]) {
+      for (const view of ["checks", "ftl", "gps", "lvto", "cold", "ra", "settings"]) {
         await page.goto(`${base}/?preview&view=${view}`);
         if (view === "gps") await page.locator("[data-gps-item]").first().waitFor();
         if (view === "lvto") await page.locator("[data-lvto-check]").first().waitFor();
+        if (view === "cold") await page.locator("#coldView [data-gps-item]").first().waitFor();
         if (view === "settings") {
           await page.locator("#checkOfflineButton").click();
           await page.locator("#offlineReadinessList").waitFor();
@@ -146,7 +150,48 @@ const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css
     assert.equal(await signedOutPage.evaluate(() => offlineDeviceApi.read(deviceStorage)), null);
     await signedOut.close(); results.push("offline sign-out clears session and prevents private data reopening");
 
-    for (const key of ["gps", "lvto"]) {
+    for (const key of ["gps", "lvto", "cold"]) {
+      if (key === "cold") {
+        const coldContext = await context(); const coldPage = await coldContext.newPage();
+        await coldPage.goto(`${base}/?preview&view=cold`);
+        const first = coldPage.locator('#coldView [data-gps-item="first"]');
+        await first.check();
+        const reference = coldPage.locator("#coldView .checklist-item-reference").first();
+        assert.equal(await reference.getAttribute("open"), null);
+        await reference.locator("summary").click();
+        assert.equal(await reference.locator("p").first().isVisible(), true);
+        assert.equal(await first.isChecked(), true);
+        await coldPage.locator('#coldView [data-gps-row="first"] summary').click();
+        await coldPage.locator('#coldView [data-gps-mark-not-applicable="first"]').click();
+        assert.equal(await coldPage.locator('#coldView [data-gps-na-status]').innerText(), "1 N/A");
+        assert.equal(await reference.isVisible(), false);
+        await coldPage.reload();
+        await coldPage.locator('#coldView [data-gps-restore-item="first"]').waitFor({state:"attached"});
+        await coldPage.locator('#coldView .gps-na-summary > summary').click();
+        await coldPage.locator('#coldView [data-gps-restore-item="first"]').click();
+        assert.equal(await first.isChecked(), false);
+        await coldPage.locator('#coldSectionsControl > summary').click();
+        await coldPage.locator('#coldView [data-gps-visibility="preparation"]').uncheck();
+        assert.equal(await coldPage.locator('#coldHiddenStatus').innerText(), "1 section hidden");
+        assert.equal(await coldPage.locator('#coldHiddenStatus').getAttribute('data-severity'), "red");
+        coldPage.once('dialog', dialog=>dialog.accept());
+        await coldPage.locator('#coldResetButton').click();
+        assert.equal(await coldPage.locator('#coldView [data-gps-visibility="preparation"]').isChecked(), true);
+        await first.check();
+        await coldPage.evaluate(() => {
+          const key = OpsDeckColdChecklist.storageKey('progress','local-preview');
+          const state = JSON.parse(localStorage.getItem(key));
+          state.updatedAt = new Date(Date.now() - OpsDeckColdChecklist.INACTIVITY_TIMEOUT_MS - 1000).toISOString();
+          localStorage.setItem(key,JSON.stringify(state));
+        });
+        await coldPage.reload();
+        await first.waitFor();
+        assert.equal(await first.isChecked(), false);
+        assert.equal(await coldPage.locator('#coldExpiryNotice').isVisible(), true);
+        await coldContext.close();
+        results.push("cold: references, N/A restoration, section warnings, full reset and six-hour expiry");
+        continue;
+      }
       const ageContext = await context(); const page = await ageContext.newPage();
       await page.goto(`${base}/?preview&view=${key}`);
       const action = page.locator(key === "gps" ? '[data-gps-item="first"]' : '[data-lvto-check="action"]');
@@ -267,21 +312,21 @@ const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css
       }
     }
 
-    for (const key of ["gps", "lvto"]) {
+    for (const key of ["gps", "lvto", "cold"]) {
       const c = await context(); const page = await c.newPage();
       await page.goto(`${base}/?preview&view=${key}`);
-      await page.locator(key === "gps" ? "[data-gps-item]" : "[data-lvto-check]").first().waitFor();
+      await page.locator(key === "lvto" ? "[data-lvto-check]" : `#${key}View [data-gps-item]`).first().waitFor();
       const bytes = Buffer.from("%PDF-1.4\nSynthetic private checklist backup\n%%EOF\n");
       const digest = Buffer.from(await webcrypto.subtle.digest("SHA-256", bytes)).toString("hex");
-      const pdf = { checklist_key: key, content_sha256: fixtures[key].content_sha256,
+      const pdf = { checklist_key: key === "cold" ? "cold-weather" : key, content_sha256: fixtures[key].content_sha256,
         pdf_sha256: digest, filename: `OpsDeck-${key}-test.pdf`, pdf_base64: bytes.toString("base64") };
       await page.evaluate(async ({ key, pdf, source }) => {
-        const ui = key === "gps" ? OpsDeckGpsUi : OpsDeckLvtoUi;
+        const ui = key === "gps" ? OpsDeckGpsUi : key === "cold" ? OpsDeckColdUi : OpsDeckLvtoUi;
         ui.setContext(null);
-        await OpsDeckChecklistBackup.prepare(localStorage, "pdf-test-owner", key, source.content_sha256, async () => pdf);
+        await OpsDeckChecklistBackup.prepare(localStorage, "pdf-test-owner", pdf.checklist_key, source.content_sha256, async () => pdf);
         Object.defineProperty(navigator, "onLine", { get: () => false, configurable: true });
         // The source itself must also be prepared for offline reopening.
-        const core = key === "gps" ? OpsDeckGpsChecklist : OpsDeckLvtoChecklist;
+        const core = key === "gps" ? OpsDeckGpsChecklist : key === "cold" ? OpsDeckColdChecklist : OpsDeckLvtoChecklist;
         localStorage.setItem(core.storageKey("policy", "pdf-test-owner"), JSON.stringify({ ...source, userId: "pdf-test-owner" }));
         ui.setContext("pdf-test-owner", async () => source);
         await ui.load();
@@ -294,9 +339,9 @@ const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css
       const download = await downloadPromise;
       assert.deepEqual(fs.readFileSync(await download.path()), bytes);
       await page.evaluate(key => {
-        (key === "gps" ? OpsDeckGpsUi : OpsDeckLvtoUi).forget();
+        (key === "gps" ? OpsDeckGpsUi : key === "cold" ? OpsDeckColdUi : OpsDeckLvtoUi).forget();
       }, key);
-      assert.equal(await page.evaluate(key => localStorage.getItem(OpsDeckChecklistBackup.storageKey("pdf-test-owner", key)), key), null);
+      assert.equal(await page.evaluate(key => localStorage.getItem(OpsDeckChecklistBackup.storageKey("pdf-test-owner", key === "cold" ? "cold-weather" : key)), key), null);
       await c.close(); results.push(`${key}: verified PDF downloads offline and is removed on sign-out`);
     }
 

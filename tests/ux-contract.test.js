@@ -230,7 +230,9 @@ test("trusted devices can reopen validated private checklists without a cloud se
 test("GPS and LVTO PDF backups remain private and version-matched online or offline", () => {
   assert.match(index, /id="gpsDownloadButton"[^>]+aria-label="Download GPS checklist PDF backup"/);
   assert.match(index, /id="lvtoDownloadButton"[^>]+aria-label="Download low visibility take-off checklist PDF backup"/);
-  assert.match(gpsUi, /expectedKey: "gps", expectedContentHash: expectedHash/);
+  assert.match(gpsUi, /expectedKey: backupKey, expectedContentHash: expectedHash/);
+  assert.match(gpsUi, /mountChecklist\(globalScope.OpsDeckGpsChecklist, "gps", "gps", "OpsDeckGpsUi"\)/);
+  assert.match(gpsUi, /mountChecklist\(globalScope.OpsDeckColdChecklist, "cold", "cold-weather", "OpsDeckColdUi"\)/);
   assert.match(lvtoUi, /expectedKey: "lvto", expectedContentHash: expectedHash/);
   assert.match(gpsUi, /backupApi\?\.forget\?\./);
   assert.match(lvtoUi, /backupApi\?\.forget\?\./);

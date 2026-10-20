@@ -6230,3 +6230,27 @@ html[data-theme="night"] .gps-panel {
   font-size: 0.875rem;
   text-align: center;
 }
+.checklist-item-reference {
+  margin: 0 44px 12px 44px;
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.checklist-item-reference > summary {
+  display: list-item;
+  min-height: 44px;
+  padding: 10px 0;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.checklist-item-reference > p {
+  margin: 4px 0 10px;
+}
+
+.checklist-item-reference > summary:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}

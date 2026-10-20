@@ -126,25 +126,25 @@
         );
       })();
     </script>
-    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-144" />
+    <link rel="manifest" href="./manifest.webmanifest?v=cloud-sync-145" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=opsdeck-wings-2" />
     <link
       rel="apple-touch-startup-image"
-      href="./icons/launch-ipad-pro-11-m4-portrait.png?v=cloud-sync-144"
+      href="./icons/launch-ipad-pro-11-m4-portrait.png?v=cloud-sync-145"
       media="screen and (device-width: 834px) and (device-height: 1210px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
     />
     <link
       rel="apple-touch-startup-image"
-      href="./icons/launch-ipad-pro-11-m4-landscape.png?v=cloud-sync-144"
+      href="./icons/launch-ipad-pro-11-m4-landscape.png?v=cloud-sync-145"
       media="screen and (device-width: 834px) and (device-height: 1210px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
     />
     <link rel="icon" href="./icons/opsdeck-logo.svg?v=opsdeck-wings-2" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png?v=opsdeck-wings-2" sizes="192x192" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=cloud-sync-144" />
+    <link rel="stylesheet" href="./styles.css?v=cloud-sync-145" />
   </head>
   <body>
     <div id="opsdeckLaunchScreen" aria-hidden="true">
-      <img src="./icons/opsdeck-wordmark.svg?v=cloud-sync-144" alt="" width="1024" height="320" />
+      <img src="./icons/opsdeck-wordmark.svg?v=cloud-sync-145" alt="" width="1024" height="320" />
     </div>
     <div class="app-shell">
       <script>
@@ -254,7 +254,7 @@
       </script>
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-144" alt="" width="1024" height="320" />
+          <img class="brand-logo" src="./icons/opsdeck-wordmark.svg?v=cloud-sync-145" alt="" width="1024" height="320" />
           <h1 class="visually-hidden">Ben's OpsDeck</h1>
         </div>
       </header>
@@ -366,7 +366,7 @@
               <button class="text-button secondary" id="homeSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="homeSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.92</small>
+            <small class="app-version">v2.93</small>
           </section>
 
         </section>
@@ -837,7 +837,7 @@
               <button class="text-button secondary" id="ftlSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="ftlSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.92</small>
+            <small class="app-version">v2.93</small>
           </section>
         </section>
 
@@ -897,6 +897,16 @@
               </span>
               <svg class="ui-icon checks-action-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
             </button>
+            <button class="checks-action-card" id="openColdButton" type="button">
+              <span class="checks-action-icon" aria-hidden="true">
+                <svg class="ui-icon" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07 19.07 4.93M8 2l4 4 4-4M8 22l4-4 4 4M2 8l4 4-4 4M22 8l-4 4 4 4" /></svg>
+              </span>
+              <span class="checks-action-copy">
+                <span class="checks-action-title-row"><strong>Cold-weather operations</strong><span class="under-test-badge">Under test</span></span>
+                <small>De-icing, anti-icing and cold-weather manual referrals</small>
+              </span>
+              <svg class="ui-icon checks-action-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+            </button>
           </div>
 
           <section class="account-panel hidden" id="checksAccountPanel" aria-label="Account">
@@ -911,7 +921,7 @@
               <button class="text-button secondary" id="checksSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="checksSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.92</small>
+            <small class="app-version">v2.93</small>
           </section>
         </section>
 
@@ -953,7 +963,7 @@
               <button class="text-button secondary" id="gpsSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="gpsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.92</small>
+            <small class="app-version">v2.93</small>
           </section>
         </section>
 
@@ -998,7 +1008,49 @@
               <button class="text-button secondary" id="lvtoSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="lvtoSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.92</small>
+            <small class="app-version">v2.93</small>
+          </section>
+        </section>
+
+        <section class="gps-panel view-panel hidden" id="coldView" role="tabpanel" aria-labelledby="checksToolTab" aria-hidden="true">
+          <div class="form-heading tool-heading gps-heading">
+            <div class="tool-title-row">
+              <button class="icon-button checks-back-button" id="coldBackToChecks" type="button" title="Back to Tools" aria-label="Back to Tools">
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+              </button>
+              <div><h2>Cold-weather operations</h2><span class="under-test-badge">Under test</span></div>
+            </div>
+            <div class="gps-actions">
+              <button class="icon-button checklist-download-button" id="coldDownloadButton" type="button" title="Download PDF backup" aria-label="Download cold-weather checklist PDF backup" disabled>
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg>
+              </button>
+              <button class="text-button secondary gps-new-button" id="coldResetButton" type="button" disabled>
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8M3 3v5h5" /></svg>
+                New checklist
+              </button>
+            </div>
+          </div>
+          <p id="coldRevision" class="gps-revision"></p>
+          <p id="coldRestoredLabel" class="checklist-restored hidden">Previous checklist restored</p>
+          <p id="coldExpiryNotice" class="data-age-notice hidden" role="status">New checklist started after six hours of inactivity.</p>
+          <p id="coldStatus" class="gps-status" role="status">Sign in to load the checklist.</p>
+          <div id="coldIntroduction" class="gps-introduction"></div>
+          <details class="gps-section-options hidden" id="coldSectionsControl">
+            <summary class="gps-disclosure"><span class="gps-disclosure-title">Sections</span><span id="coldHiddenStatus" class="gps-hidden-badge hidden" role="status" aria-atomic="true"></span></summary>
+            <div id="coldSectionChoices" class="gps-section-choices"></div>
+            <button class="text-button secondary" id="coldRestoreSectionsButton" type="button" disabled>Show all sections</button>
+          </details>
+          <div id="coldChecklistContent" class="gps-checklist-content"></div>
+          <section class="account-panel hidden" id="coldAccountPanel" aria-label="Account">
+            <span id="coldSyncStatus" aria-live="polite">Cloud ready</span>
+            <div class="account-actions">
+              <button class="icon-button" id="coldRefreshButton" type="button" title="Refresh checklist" aria-label="Refresh checklist">
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8M21 3v5h-5" /></svg>
+              </button>
+              <button class="text-button secondary" id="coldSettingsButton" type="button">Settings</button>
+              <button class="text-button secondary" id="coldSignOutButton" type="button">Sign out</button>
+            </div>
+            <small class="app-version">v2.93</small>
           </section>
         </section>
 
@@ -1139,7 +1191,7 @@
               <button class="text-button secondary" id="raSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="raSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.92</small>
+            <small class="app-version">v2.93</small>
           </section>
         </section>
 
@@ -1235,7 +1287,7 @@
               <button class="text-button secondary" id="notocSettingsButton" type="button">Settings</button>
               <button class="text-button secondary" id="notocSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.92</small>
+            <small class="app-version">v2.93</small>
           </section>
         </section>
 
@@ -1357,7 +1409,7 @@
               </button>
               <button class="text-button secondary" id="settingsSignOutButton" type="button">Sign out</button>
             </div>
-            <small class="app-version">v2.92</small>
+            <small class="app-version">v2.93</small>
           </section>
         </section>
       </main>
@@ -1461,27 +1513,28 @@
       </article>
     </template>
 
-    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-144"></script>
-    <script src="./supabase-config.js?v=cloud-sync-144"></script>
-    <script src="./ltot-core.js?v=cloud-sync-144"></script>
-    <script src="./radio-altimeter-core.js?v=cloud-sync-144"></script>
-    <script src="./notoc-policy.js?v=cloud-sync-144"></script>
-    <script src="./notoc-policy-store.js?v=cloud-sync-144"></script>
-    <script src="./notoc-core.js?v=cloud-sync-144"></script>
-    <script src="./radio-altimeter-ui.js?v=cloud-sync-144"></script>
-    <script src="./notoc-ui.js?v=cloud-sync-144"></script>
-    <script src="./offline-device.js?v=cloud-sync-144"></script>
-    <script src="./device-storage.js?v=cloud-sync-144"></script>
-    <script src="./auth-storage.js?v=cloud-sync-144"></script>
-    <script src="./network.js?v=cloud-sync-144"></script>
-    <script src="./checklist-backup.js?v=cloud-sync-144"></script>
-    <script src="./gps-checklist-core.js?v=cloud-sync-144"></script>
-    <script src="./gps-checklist-ui.js?v=cloud-sync-144"></script>
-    <script src="./lvto-checklist-core.js?v=cloud-sync-144"></script>
-    <script src="./lvto-checklist-ui.js?v=cloud-sync-144"></script>
-    <script src="./data-portability.js?v=cloud-sync-144"></script>
-    <script src="./request-retention.js?v=cloud-sync-144"></script>
-    <script src="./ui-accessibility.js?v=cloud-sync-144"></script>
-    <script src="./app.js?v=cloud-sync-144"></script>
+    <script src="./vendor/supabase-2.112.3.min.js?v=cloud-sync-145"></script>
+    <script src="./supabase-config.js?v=cloud-sync-145"></script>
+    <script src="./ltot-core.js?v=cloud-sync-145"></script>
+    <script src="./radio-altimeter-core.js?v=cloud-sync-145"></script>
+    <script src="./notoc-policy.js?v=cloud-sync-145"></script>
+    <script src="./notoc-policy-store.js?v=cloud-sync-145"></script>
+    <script src="./notoc-core.js?v=cloud-sync-145"></script>
+    <script src="./radio-altimeter-ui.js?v=cloud-sync-145"></script>
+    <script src="./notoc-ui.js?v=cloud-sync-145"></script>
+    <script src="./offline-device.js?v=cloud-sync-145"></script>
+    <script src="./device-storage.js?v=cloud-sync-145"></script>
+    <script src="./auth-storage.js?v=cloud-sync-145"></script>
+    <script src="./network.js?v=cloud-sync-145"></script>
+    <script src="./checklist-backup.js?v=cloud-sync-145"></script>
+    <script src="./gps-checklist-core.js?v=cloud-sync-145"></script>
+    <script src="./cold-checklist-core.js?v=cloud-sync-145"></script>
+    <script src="./gps-checklist-ui.js?v=cloud-sync-145"></script>
+    <script src="./lvto-checklist-core.js?v=cloud-sync-145"></script>
+    <script src="./lvto-checklist-ui.js?v=cloud-sync-145"></script>
+    <script src="./data-portability.js?v=cloud-sync-145"></script>
+    <script src="./request-retention.js?v=cloud-sync-145"></script>
+    <script src="./ui-accessibility.js?v=cloud-sync-145"></script>
+    <script src="./app.js?v=cloud-sync-145"></script>
   </body>
 </html>
