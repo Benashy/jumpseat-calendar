@@ -5,6 +5,7 @@
   const MILLISECONDS_IN_MINUTE = 60 * 1000;
   const MILLISECONDS_IN_DAY = MINUTES_IN_DAY * MILLISECONDS_IN_MINUTE;
   const DATA_AGE_WARNING_MS = 15 * 60 * MILLISECONDS_IN_MINUTE;
+  const DATA_EXPIRY_MS = 72 * 60 * MILLISECONDS_IN_MINUTE;
 
   function normaliseDataAge(value) {
     const timestamp = value?.firstEntryAt;
@@ -22,6 +23,27 @@
     const age = normaliseDataAge(value);
     return Boolean(age.firstEntryAt && !age.warningDismissed && Number.isFinite(nowMs) &&
       nowMs - Date.parse(age.firstEntryAt) >= DATA_AGE_WARNING_MS);
+  }
+
+  function isDataExpired(value, nowMs = Date.now()) {
+    const age = normaliseDataAge(value);
+    return Boolean(age.firstEntryAt && Number.isFinite(nowMs) &&
+      nowMs - Date.parse(age.firstEntryAt) >= DATA_EXPIRY_MS);
+  }
+
+  function restoreDataAge(state, savedAt, now = new Date().toISOString()) {
+    const age = normaliseDataAge(state?.dataAge);
+    if (age.firstEntryAt) return age;
+    // Legacy saves have no entry clock. Retain the oldest known save/report time.
+    const savedMs = typeof savedAt === "string" ? Date.parse(savedAt) : NaN;
+    const candidates = [Number.isFinite(savedMs) ? new Date(savedMs).toISOString() : null];
+    for (const crew of state?.crewLimits || []) {
+      if (!isIsoDate(crew.dutyDate)) continue;
+      const time = /^([01]\d|2[0-3]):[0-5]\d$/.test(crew.dutyStart || "") ? crew.dutyStart : "00:00";
+      candidates.push(`${crew.dutyDate}T${time}:00.000Z`);
+    }
+    const known = candidates.filter(Boolean).sort();
+    return beginDataAge(null, known[0] || now);
   }
 
   function isFiniteMinute(value) {
@@ -258,9 +280,12 @@
 
   const api = {
     DATA_AGE_WARNING_MS,
+    DATA_EXPIRY_MS,
     normaliseDataAge,
     beginDataAge,
     showDataAgeWarning,
+    isDataExpired,
+    restoreDataAge,
     MINUTES_IN_DAY,
     absoluteTargetMs,
     calculateCrewLimits,

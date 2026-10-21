@@ -13,6 +13,8 @@ function element() {
     textContent: "", dataset: {}, attributes: {},
     classList: {
       toggle(name, enabled) { if (enabled) classes.add(name); else classes.delete(name); },
+      add: (name) => classes.add(name),
+      remove: (name) => classes.delete(name),
       contains: (name) => classes.has(name),
     },
     setAttribute(name, value) { this.attributes[name] = value; },
@@ -42,6 +44,10 @@ function harness(now = "2026-08-31T12:00:00Z") {
   const context = {
     elements,
     calculatorDataAge: ltot.normaliseDataAge(null),
+    calculatorInitialised: true,
+    createDefaultCalculatorState: () => ({}),
+    applyCalculatorState() { context.calculatorDataAge = ltot.normaliseDataAge(null); },
+    queueCalculatorSave() {},
     document: { querySelector: () => ageWarning },
     ageWarning,
     ftlAnchorDate: "2026-08-31",
@@ -52,11 +58,12 @@ function harness(now = "2026-08-31T12:00:00Z") {
       ...ltot,
       countdownPresentation: (date, minutes) => ltot.countdownPresentation(date, minutes, Date.parse(now)),
       showDataAgeWarning: (state) => ltot.showDataAgeWarning(state, Date.parse(now)),
+      isDataExpired: (state) => ltot.isDataExpired(state, Date.parse(now)),
     } },
   };
   const constants = ["FTL_DATE_FORMATTER", "FTL_SHORT_DATE_FORMATTER"]
     .map((name) => app.match(new RegExp(`^const ${name} = .+;`, "m"))[0]);
-  const functions = ["ftlResultDate", "updateCountdownElement", "updateFtlCountdown", "updateMobileFtlResults", "updateCalculatorAgeWarning"]
+  const functions = ["ftlResultDate", "updateCountdownElement", "updateFtlCountdown", "updateMobileFtlResults", "updateCalculatorAgeWarning", "expireCalculatorInputs"]
     .map((name) => app.match(new RegExp(`^function ${name}\\([^]*?^}`, "m"))[0]);
   vm.runInNewContext([...constants, ...functions].join("\n"), context);
   return context;

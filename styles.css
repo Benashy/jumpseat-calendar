@@ -1503,6 +1503,10 @@ strong.fdp-state-x-label {
   min-height: 44px;
 }
 
+.device-actions {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+}
+
 .data-status.status-error {
   color: var(--danger);
 }

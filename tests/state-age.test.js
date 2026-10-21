@@ -50,3 +50,25 @@ test("FDP age tolerates older saves and rejects malformed or future age values",
   }
   assert.equal(ltot.showDataAgeWarning({ firstEntryAt: firstEntry }, start - 1), false);
 });
+
+test("FDP inputs expire at 72 hours even when the 15-hour warning was dismissed", () => {
+  assert.equal(ltot.DATA_EXPIRY_MS, 72 * 60 * 60 * 1000);
+  const age = { firstEntryAt: firstEntry, warningDismissed: true };
+  assert.equal(ltot.isDataExpired(age, start + ltot.DATA_EXPIRY_MS - 1), false);
+  assert.equal(ltot.isDataExpired(age, start + ltot.DATA_EXPIRY_MS), true);
+  assert.equal(ltot.isDataExpired(age, start + 21 * 24 * 60 * 60 * 1000), true);
+  assert.equal(ltot.isDataExpired(age, start - 1), false);
+  assert.equal(ltot.isDataExpired(age, NaN), false);
+  assert.equal(ltot.isDataExpired({ firstEntryAt: "invalid" }, start), false);
+});
+
+test("legacy FDP restores use known report/save times rather than renewing old duties", () => {
+  const legacy = { crewLimits: [{ dutyDate: "2026-10-03", dutyStart: "08:00" }] };
+  assert.equal(ltot.restoreDataAge(legacy, "2026-10-20T10:00:00.000Z").firstEntryAt, firstEntry);
+  assert.equal(ltot.restoreDataAge(legacy, "2026-10-02T10:00:00.000Z").firstEntryAt, "2026-10-02T10:00:00.000Z");
+  assert.equal(ltot.restoreDataAge({}, firstEntry).firstEntryAt, firstEntry);
+  assert.equal(ltot.restoreDataAge({}, "2026-10-03T08:00:00+00:00").firstEntryAt, firstEntry);
+  assert.equal(ltot.restoreDataAge({}, null, firstEntry).firstEntryAt, firstEntry);
+  const current = { dataAge: { firstEntryAt: firstEntry, warningDismissed: true }, ...legacy };
+  assert.deepEqual(ltot.restoreDataAge(current, "2026-10-01T00:00:00.000Z"), current.dataAge);
+});

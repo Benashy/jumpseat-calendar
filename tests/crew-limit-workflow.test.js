@@ -54,7 +54,7 @@ function harness() {
     controllingFtlCrewIds: [], currentCrewComparison: null,
     createId: () => `test-${++nextId}`,
     window: { OpsDeckLtot: { ...ltot, utcTodayIso: () => "2026-08-31" }, requestAnimationFrame() {}, clearTimeout() {}, scrollBy() {}, confirm: () => true },
-    document: { activeElement: null, createElement: () => element() },
+    document: { activeElement: null, createElement: () => element(), querySelector: () => element() },
     elements: Object.fromEntries([
       "crewTabsRow", "addCabinCrewButton", "flightCrewTab", "cabinCrewTab", "flightCrewInputs",
       "cabinCrewInputs", "addIndividualCrewButton", "fdpTargetBanner", "fdpReferenceStatus",

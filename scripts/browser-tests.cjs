@@ -271,8 +271,36 @@ const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css
     assert.equal(await agePage.evaluate(() => calculatorDataAge.warningDismissed), false);
     await agePage.locator('.crew-limit-duty-start').first().fill("09:00");
     assert.notEqual(await agePage.evaluate(() => calculatorDataAge.firstEntryAt), ageBeforeDismiss);
+
+    await agePage.evaluate(() => {
+      calculatorDataAge = { firstEntryAt: new Date(Date.now() - OpsDeckLtot.DATA_EXPIRY_MS + 60000).toISOString(), warningDismissed: true };
+      saveCalculatorEnvelope();
+    });
+    await agePage.reload();
+    assert.equal(await agePage.locator('.crew-limit-duty-start').first().inputValue(), "09:00");
+    await agePage.evaluate(() => {
+      calculatorDataAge.firstEntryAt = new Date(Date.now() - OpsDeckLtot.DATA_EXPIRY_MS - 1000).toISOString();
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    assert.equal(await agePage.locator('.crew-limit-duty-start').first().inputValue(), "");
+    assert.equal(await agePage.locator('#ftlExpiryNotice').isVisible(), true);
+    assert.equal(await agePage.locator('#latestOnChocks').innerText(), "--:--Z");
+    assert.equal(await agePage.evaluate(() => loadCalculatorEnvelope().dirty), true);
+    await agePage.reload();
+    assert.equal(await agePage.locator('.crew-limit-duty-start').first().inputValue(), "");
+    await agePage.locator('.crew-limit-duty-start').first().fill("10:00");
+    assert.equal(await agePage.locator('#ftlExpiryNotice').isVisible(), false);
+    await agePage.evaluate(() => {
+      const state = serializeCalculatorState();
+      delete state.dataAge;
+      state.crewLimits[0].dutyDate = "2026-01-01";
+      deviceStorage.setItem(CALCULATOR_STORAGE_KEY, JSON.stringify({ state, dirty: false, baseUpdatedAt: new Date().toISOString() }));
+    });
+    await agePage.reload();
+    assert.equal(await agePage.locator('.crew-limit-duty-start').first().inputValue(), "");
+    assert.equal(await agePage.locator('#ftlExpiryNotice').isVisible(), true);
     await fdpAgeContext.close();
-    results.push("FDP: first-entry clock, persisted warning dismissal and complete reset without timed input deletion");
+    results.push("FDP: first-entry clock, 15-hour dismissal, 72-hour expiry on reopen/return and legacy-duty migration");
 
     for (const [name, viewport] of [["ipad-landscape", { width: 1194, height: 834 }], ["ipad-portrait", { width: 834, height: 1194 }], ["ipad-split", { width: 507, height: 834 }], ["iphone", { width: 390, height: 844 }]]) {
       for (const colorScheme of ["light", "dark"]) {
@@ -353,19 +381,20 @@ const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css
       await Promise.race([navigator.serviceWorker.ready, new Promise((resolve, reject) => setTimeout(() => reject(new Error("Offline shell installation did not complete")), 15000))]);
     });
     await offlinePage.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
+    await offlinePage.evaluate(async () => watchAppUpdate(await navigator.serviceWorker.getRegistration()));
+    await offlinePage.evaluate(() => openSettings());
+    await offlinePage.locator("#checkAppUpdateButton").click();
+    await offlinePage.waitForFunction(() => document.querySelector("#appUpdateStatus").textContent.includes("up to date"));
     nextWorker = true;
-    await offlinePage.evaluate(async () => {
-      const registration = await navigator.serviceWorker.getRegistration();
-      watchAppUpdate(registration);
-      await registration.update();
-    });
+    await offlinePage.locator("#checkAppUpdateButton").click();
     await offlinePage.waitForFunction(async () => Boolean((await navigator.serviceWorker.getRegistration()).waiting));
     await offlinePage.locator("#appUpdateReloadButton").waitFor();
+    await offlinePage.evaluate(() => setActiveTool("gps"));
     assert.equal(await offlinePage.locator('[data-gps-item="first"]').isChecked(), true);
     offlinePage.once("dialog", (dialog) => dialog.accept());
     await offlinePage.locator("#appUpdateReloadButton").click();
     await offlinePage.waitForFunction(async () => !(await navigator.serviceWorker.getRegistration()).waiting);
-    results.push("a complete update waits for deliberate activation and preserves checklist progress");
+    results.push("Settings checks the live release and downloads a verified update; deliberate activation preserves checklist progress");
     networkBlocked = true;
     await offlinePage.reload();
     await offlinePage.locator('[data-gps-item="first"]').waitFor();

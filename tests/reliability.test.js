@@ -143,3 +143,18 @@ test("a genuinely divergent cloud copy raises a conflict and retains local input
   assert.equal(c.conflict, true);
   assert.equal(c.displayed.marker, "old local");
 });
+
+test("expired cloud calculator data is replaced and saved using the cloud revision", async () => {
+  const { c, finish } = cloudHarness();
+  c.applyCalculatorState = (value, updatedAt) => {
+    c.displayed = { marker: "reset" }; c.restoreTimestamp = updatedAt; return true;
+  };
+  c.saveCloudCalculatorState = async () => { c.savedReset = c.calculatorLocalDirty && c.calculatorCloudUpdatedAt === "old-revision"; };
+  const loading = c.loadCloudCalculatorState();
+  finish({ data: { state: { marker: "expired" }, updated_at: "old-revision" }, error: null });
+  await loading;
+  assert.equal(c.displayed.marker, "reset");
+  assert.equal(c.restoreTimestamp, "old-revision");
+  assert.equal(c.savedReset, true);
+  assert.equal(c.calculatorChangeRevision, 1);
+});

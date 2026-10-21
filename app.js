@@ -2,7 +2,7 @@ const STORAGE_KEY = "jumpseat-calendar-requests-v1";
 const REQUESTS_ENVELOPE_KEY = "opsdeck-jumpseat-state-v2";
 const JUMPSEAT_DRAFT_KEY = "opsdeck-jumpseat-draft-v1";
 const JUMPSEAT_DRAFT_SCHEMA_VERSION = 1;
-const APP_VERSION = "2.93";
+const APP_VERSION = "2.94";
 const CALCULATOR_STORAGE_KEY = "opsdeck-calculator-state-v1";
 const CALCULATOR_SCHEMA_VERSION = 5;
 const CREW_LIMIT_CAPS = { flight: 3, cabin: 6 };
@@ -337,6 +337,7 @@ let requestLoadGeneration = 0;
 let calculatorLoadGeneration = 0;
 let appWorkerRegistration = null;
 let updateRequested = false;
+let appUpdateChecking = false;
 let latestReadiness = null;
 const diagnosticErrors = [];
 
@@ -886,6 +887,7 @@ function setSignedInState(user) {
     requestLocalBaseUpdatedAt = local.baseUpdatedAt;
     const calculator = loadCalculatorEnvelope();
     applyCalculatorState(calculator.state);
+    document.querySelector("#ftlExpiryNotice").classList.toggle("hidden", !calculator.expired);
     calculatorLocalDirty = calculator.dirty;
     calculatorLocalBaseUpdatedAt = calculator.baseUpdatedAt;
     clearForm();
@@ -1231,16 +1233,25 @@ function loadCalculatorEnvelope() {
     const saved = JSON.parse(deviceStorage.getItem(CALCULATOR_STORAGE_KEY) || "null");
     if (!saved) return { state: createDefaultCalculatorState(), dirty: false, baseUpdatedAt: null };
     if (saved.state) {
+      const prepared = prepareCalculatorState(saved.state, saved.baseUpdatedAt);
       return {
-        state: sanitizeCalculatorState(saved.state),
-        dirty: Boolean(saved.dirty),
+        ...prepared,
+        dirty: Boolean(saved.dirty) || prepared.expired,
         baseUpdatedAt: saved.baseUpdatedAt || null,
       };
     }
-    return { state: sanitizeCalculatorState(saved), dirty: false, baseUpdatedAt: null };
+    const prepared = prepareCalculatorState(saved);
+    return { ...prepared, dirty: prepared.expired, baseUpdatedAt: null };
   } catch {
     return { state: createDefaultCalculatorState(), dirty: false, baseUpdatedAt: null };
   }
+}
+
+function prepareCalculatorState(value, savedAt) {
+  const state = sanitizeCalculatorState(value);
+  if (hasSavedCalculatorEntry(state)) state.dataAge = window.OpsDeckLtot.restoreDataAge(state, savedAt);
+  const expired = window.OpsDeckLtot.isDataExpired(state.dataAge);
+  return { state: expired ? createDefaultCalculatorState() : state, expired };
 }
 
 function isIsoDate(value) {
@@ -1948,6 +1959,7 @@ function queueCalculatorSave() {
   if (!calculatorDataAge.firstEntryAt && hasCalculatorEntry()) {
     calculatorDataAge = window.OpsDeckLtot.beginDataAge(calculatorDataAge);
   }
+  if (hasCalculatorEntry()) document.querySelector("#ftlExpiryNotice").classList.add("hidden");
   updateCalculatorAgeWarning();
   calculatorChangeRevision += 1;
   calculatorLocalDirty = true;
@@ -1982,8 +1994,8 @@ function applySectorTimingState(sectorTiming) {
   updateDurationIncompleteState(ftlDurationControls.flightTime);
 }
 
-function applyCalculatorState(value) {
-  const state = sanitizeCalculatorState(value);
+function applyCalculatorState(value, savedAt) {
+  const { state, expired } = prepareCalculatorState(value, savedAt);
   calculatorDataAge = state.dataAge;
   ftlAnchorDate = state.anchorDate;
   nextCrewNumbers = state.nextCrewNumbers;
@@ -1992,6 +2004,8 @@ function applyCalculatorState(value) {
   if (!cabinCrewEnabled && activeFtlCrew === "cabin") activeFtlCrew = "flight";
   renderFtlCrewMode();
   calculateFtl(false);
+  document.querySelector("#ftlExpiryNotice").classList.toggle("hidden", !expired);
+  return expired;
 }
 
 function hasDutyStartValue(crewKey) {
@@ -2069,6 +2083,7 @@ function updateCountdownElement(element, targetMinutes) {
 }
 
 function updateFtlCountdown() {
+  if (expireCalculatorInputs()) return;
   updateCalculatorAgeWarning();
   updateCountdownElement(elements.latestOnChocksCountdown, ftlLatestOnChocksMinutes);
   updateCountdownElement(elements.latestPushbackCountdown, ftlLatestPushbackMinutes);
@@ -2078,12 +2093,23 @@ function updateFtlCountdown() {
 }
 
 function hasCalculatorEntry() {
-  const state = serializeCalculatorState();
+  return hasSavedCalculatorEntry(serializeCalculatorState());
+}
+
+function hasSavedCalculatorEntry(state) {
   return state.crewLimits.some((crew) => crew.dutyStart || crew.name || crew.maximumFdp.hours !== "" ||
     crew.discretion.hours !== "" || crew.dutyDate && crew.dutyDate !== window.OpsDeckLtot.utcTodayIso()) ||
     state.sectorTiming.flightTime.hours !== "" ||
     ["taxiOutMinutes", "holdingMinutes", "taxiInMinutes"].some((key) => state.sectorTiming[key] !== "15") ||
     state.sectorTiming.contingencyMinutes !== "0";
+}
+
+function expireCalculatorInputs() {
+  if (!calculatorInitialised || !window.OpsDeckLtot.isDataExpired(calculatorDataAge)) return false;
+  applyCalculatorState(createDefaultCalculatorState());
+  document.querySelector("#ftlExpiryNotice").classList.remove("hidden");
+  queueCalculatorSave();
+  return true;
 }
 
 function updateCalculatorAgeWarning() {
@@ -2582,6 +2608,7 @@ function setupFtlCalculator() {
   renderFtlCrewMode();
   calculatorInitialised = true;
   calculateFtl(false);
+  document.querySelector("#ftlExpiryNotice").classList.toggle("hidden", !saved.expired);
   saveCalculatorEnvelope();
   window.clearInterval(ftlCountdownTimer);
   ftlCountdownTimer = window.setInterval(updateFtlCountdown, 1000);
@@ -2623,6 +2650,7 @@ function clearFtlCalculator() {
   controllingFtlCrewIds = [];
   currentCrewComparison = null;
   renderCrewLimitRecords(state.crewLimits);
+  document.querySelector("#ftlExpiryNotice").classList.add("hidden");
   calculateFtl();
 }
 
@@ -2919,15 +2947,85 @@ function downloadDiagnostics() {
 }
 
 function watchAppUpdate(registration) {
+  if (appWorkerRegistration === registration) { updateAppUpdateControls(); return; }
   appWorkerRegistration = registration;
-  const show = () => {
-    document.querySelector("#applyAppUpdateButton").classList.toggle("hidden", !registration.waiting);
-    document.querySelector("#appUpdateNotice").classList.toggle("hidden", !registration.waiting);
+  updateAppUpdateControls();
+  const observeInstalling = () => {
+    registration.installing?.addEventListener("statechange", () => window.setTimeout(updateAppUpdateControls, 0));
   };
-  show();
-  registration.addEventListener("updatefound", () => {
-    registration.installing?.addEventListener("statechange", () => window.setTimeout(show, 0));
+  observeInstalling();
+  registration.addEventListener("updatefound", observeInstalling);
+}
+
+function updateAppUpdateControls() {
+  const ready = Boolean(appWorkerRegistration?.waiting);
+  document.querySelector("#applyAppUpdateButton").classList.toggle("hidden", !ready);
+  document.querySelector("#appUpdateNotice").classList.toggle("hidden", !ready);
+  document.querySelector("#checkAppUpdateButton").disabled = appUpdateChecking || updateRequested;
+  if (ready && !updateRequested) document.querySelector("#appUpdateStatus").textContent = "Update downloaded. Select Update ready: reload when convenient.";
+}
+
+function downloadAppUpdate(registration, timeoutMs = 25000) {
+  return new Promise((resolve, reject) => {
+    let worker;
+    const finish = (error) => {
+      window.clearTimeout(timer);
+      worker?.removeEventListener("statechange", changed);
+      error ? reject(error) : resolve();
+    };
+    const changed = () => {
+      if (worker.state === "installed" || worker.state === "activated") finish();
+      else if (worker.state === "redundant") finish(new Error("App download incomplete"));
+    };
+    const timer = window.setTimeout(() => finish(new Error("App update timed out")), timeoutMs);
+    registration.update().then(() => {
+      worker = registration.installing;
+      if (!worker) { finish(); return; }
+      worker.addEventListener("statechange", changed);
+      changed();
+    }, finish);
   });
+}
+
+async function checkForAppUpdate() {
+  if (appUpdateChecking || updateRequested) return;
+  const status = document.querySelector("#appUpdateStatus");
+  if (appWorkerRegistration?.waiting) { updateAppUpdateControls(); return; }
+  if (!navigator.onLine) {
+    status.textContent = "Offline. Connect to unrestricted Wi-Fi or mobile data to check for updates. Saved tools remain available.";
+    return;
+  }
+  if (!("serviceWorker" in navigator)) {
+    status.textContent = "App updates are not supported in this browser. Open OpsDeck in Safari or your Home Screen app.";
+    return;
+  }
+  appUpdateChecking = true;
+  updateAppUpdateControls();
+  status.textContent = "Checking for updates...";
+  try {
+    const response = await window.OpsDeckNetwork.boundedFetch(window.fetch.bind(window))(
+      `./release.json?check=${Date.now()}`, { cache: "no-store" }
+    );
+    if (!response.ok || response.redirected || !response.headers.get("content-type")?.includes("application/json")) throw new Error("Update server unavailable");
+    const release = await response.json();
+    if (!/^\d+\.\d+$/.test(release.appVersion || "")) throw new Error("Invalid update information");
+    const registration = appWorkerRegistration || await navigator.serviceWorker.getRegistration();
+    if (!registration) throw new Error("App update preparation not ready");
+    watchAppUpdate(registration);
+    status.textContent = release.appVersion === APP_VERSION ? "Checking the saved app..." : `Downloading v${release.appVersion}...`;
+    await downloadAppUpdate(registration);
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+    updateAppUpdateControls();
+    if (!registration.waiting) status.textContent = release.appVersion === APP_VERSION
+      ? `You're up to date: v${APP_VERSION}.`
+      : `v${release.appVersion} is available, but the download is not complete. Try again on unrestricted Wi-Fi or mobile data.`;
+  } catch (_) {
+    if (appWorkerRegistration?.waiting) updateAppUpdateControls();
+    else status.textContent = "Could not check or finish the update. Try unrestricted Wi-Fi or mobile data. Your current app and saved data are unchanged.";
+  } finally {
+    appUpdateChecking = false;
+    updateAppUpdateControls();
+  }
 }
 
 function applyAppUpdate() {
@@ -2938,6 +3036,8 @@ function applyAppUpdate() {
   }
   if (!window.confirm("Reload OpsDeck to apply the downloaded update? Saved entries and checklist progress will be retained.")) return;
   updateRequested = true;
+  updateAppUpdateControls();
+  document.querySelector("#appUpdateStatus").textContent = "Applying update...";
   appWorkerRegistration.waiting.postMessage({ type: "ACTIVATE_UPDATE" });
 }
 
@@ -3259,12 +3359,17 @@ async function loadCloudCalculatorState(options = {}) {
   }
 
   if (data?.state) {
-    applyCalculatorState(data.state);
+    const expired = applyCalculatorState(data.state, data.updated_at);
     calculatorCloudLoaded = true;
     calculatorCloudUpdatedAt = data.updated_at || null;
     calculatorLocalBaseUpdatedAt = calculatorCloudUpdatedAt;
-    calculatorLocalDirty = false;
+    calculatorLocalDirty = expired;
     saveCalculatorEnvelope();
+    if (expired) {
+      calculatorChangeRevision += 1;
+      await saveCloudCalculatorState();
+      return;
+    }
     setCloudSuccessStatus();
     return;
   }
@@ -4624,6 +4729,7 @@ elements.restoreBackupButton.addEventListener("click", () => elements.restoreBac
 elements.restoreBackupInput.addEventListener("change", restoreJsonBackup);
 document.querySelector("#checkOfflineButton").addEventListener("click", () => void checkOfflineReadiness());
 document.querySelector("#downloadDiagnosticsButton").addEventListener("click", downloadDiagnostics);
+document.querySelector("#checkAppUpdateButton").addEventListener("click", () => void checkForAppUpdate());
 document.querySelector("#applyAppUpdateButton").addEventListener("click", applyAppUpdate);
 document.querySelector("#appUpdateReloadButton").addEventListener("click", applyAppUpdate);
 window.addEventListener("error", () => {
@@ -4637,6 +4743,8 @@ window.addEventListener("offline", () => {
   startOfflineMode("Offline: viewing saved data", privateAccess);
 });
 window.addEventListener("online", returnOnline);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) expireCalculatorInputs(); });
+window.addEventListener("pageshow", () => expireCalculatorInputs());
 document.addEventListener("pointerdown", releaseFtlPickerFocus, true);
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !elements.bdxInfoDialog?.classList.contains("hidden")) {
@@ -4647,6 +4755,7 @@ window.addEventListener("keydown", (event) => {
 });
 
 initialiseAppearance();
+document.querySelector("#appVersionStatus").textContent = `Version ${APP_VERSION} on this device`;
 setSelectedDate(todayIso());
 clearForm();
 setupFtlCalculator();
