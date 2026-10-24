@@ -128,21 +128,23 @@ test("the short-haul reporting-time clarification is available beside the FDP ta
   assert.match(index, /giving Cabin crew the same latest end time as Flight crew/);
 });
 
-test("Revision 8 on-duty variations show the confirmed short-haul timings alphabetically", () => {
+test("on-duty variations include CPH alphabetically without inventing its reporting time", () => {
   assert.match(index, /<h3 id="onDutyVariationTitle">On-duty time variations<\/h3>/);
-  assert.match(index, /<span>Revision 8<\/span>/);
+  assert.match(index, /<span>Revision 8 \+ CPH notice<\/span>/);
   assert.match(index, /standard short-haul report time down route is 60 minutes before scheduled departure/);
   assert.match(index, /variation may apply only to particular flights/);
   assert.match(index, /Pick-up times are published separately in the station brief and are not included here/);
   const list = index.match(/<ul class="station-code-list"[^>]*>([^]*?)<\/ul>/)?.[1] || "";
   assert.deepEqual([...list.matchAll(/<li><strong>([A-Z]{3})<\/strong>/g)].map((match) => match[1]),
-    ["AMM", "BCN", "IST", "LIS", "MAN", "MXP", "NAP", "ZRH"]);
+    ["AMM", "BCN", "CPH", "IST", "LIS", "MAN", "MXP", "NAP", "ZRH"]);
+  assert.match(list, /<li><strong>CPH<\/strong><span class="station-brief-note">Check station brief<\/span><\/li>/);
   assert.equal((list.match(/>D-65<\/span>/g) || []).length, 1);
   assert.equal((list.match(/>D-70<\/span>/g) || []).length, 5);
   assert.equal((list.match(/>D-75<\/span>/g) || []).length, 2);
   assert.doesNotMatch(list, /Check brief/);
   for (const code of ["BKK", "BOM", "DXB", "JED", "KUL", "MLE"]) assert.doesNotMatch(list, new RegExp(`>${code}<`));
   assert.match(styles, /\.station-code-list\s*\{[^}]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
+  assert.match(styles, /\.station-code-list \.station-brief-note\s*\{\s*white-space: normal;/);
 });
 
 test("FDP disclosures share one marker and the small OMA badge keeps a comfortable touch target", () => {

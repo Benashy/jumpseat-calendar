@@ -68,6 +68,20 @@ const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css
           await page.locator("#offlineReadinessList").waitFor();
           assert.equal(await page.locator("#offlineReadinessList li").count(), 9);
         }
+        if (view === "ftl") {
+          await page.locator("#ftlClarifications").evaluate((element) => { element.open = true; });
+          const cph = page.locator(".station-code-list li").filter({ hasText: "CPH" });
+          assert.match(await cph.innerText(), /CPH\s+Check station brief/);
+          const fits = await cph.evaluate((element) => {
+            const row = element.getBoundingClientRect();
+            const note = element.querySelector("span").getBoundingClientRect();
+            return note.right <= row.right + 1 && note.bottom <= row.bottom + 1;
+          });
+          assert.equal(fits, true, `${name}: CPH reporting note overflows`);
+          await page.locator(".on-duty-variation-reference").screenshot({ path: path.join(output, `${name}-on-duty-variations.png`) });
+          await page.locator("#ftlClarifications").evaluate((element) => { element.open = false; });
+          results.push(`${name}: CPH reference uses a readable station-brief referral, not an assumed time`);
+        }
         const width = await page.evaluate(() => ({ view: innerWidth, document: document.documentElement.scrollWidth }));
         assert.ok(width.document <= width.view + 1, `${name} ${view}: horizontal page overflow`);
         assert.deepEqual(await page.evaluate(() => window.auditCspErrors), [], "Application violates its own CSP");

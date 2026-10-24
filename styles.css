@@ -890,6 +890,10 @@ input[type="time"],
   white-space: nowrap;
 }
 
+.station-code-list .station-brief-note {
+  white-space: normal;
+}
+
 .guidance-content .guidance-note {
   color: var(--muted);
   font-size: 0.8rem;
